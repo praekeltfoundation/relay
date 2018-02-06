@@ -62,7 +62,7 @@ find protobufs/data-plane-api/envoy/api -name '*.proto' | \
 
 
 # :-/
-# rg --no-filename -o '\bGoogle.Protobuf.[A-Z]\w*' lib/envoy/ | sort -u
+# grep -REho '\bGoogle.Protobuf.[A-Z]\w*' lib/envoy | sort -u
 protobuf_protos=(
 	any
 	duration
