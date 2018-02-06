@@ -1,12 +1,21 @@
 defmodule Relay.Server do
+  alias GRPC.Server
+  alias Relay.Demo
+
   defmodule ListenerDiscoveryService do
     use GRPC.Server, service: Envoy.Api.V2.ListenerDiscoveryService.Service
 
     # rpc StreamListeners(stream DiscoveryRequest) returns (stream DiscoveryResponse)
     @spec stream_listeners(Enumerable.t, GRPC.Server.Stream.t) :: any
     def stream_listeners(request, stream) do
-      IO.puts("stream_listeners!")
-      Enum.each(request, fn(req) -> IO.inspect(req) end)
+      Enum.each(request, fn(req) ->
+        IO.puts("stream_listeners request:")
+        IO.inspect(req)
+        listeners = Demo.listeners()
+        IO.puts("stream_listeners response:")
+        IO.inspect(listeners)
+        Server.stream_send(stream, listeners)
+      end)
     end
 
     # rpc FetchListeners(DiscoveryRequest) returns (DiscoveryResponse)
@@ -39,8 +48,14 @@ defmodule Relay.Server do
     # rpc StreamClusters(stream DiscoveryRequest) returns (stream DiscoveryResponse)
     @spec stream_clusters(Enumerable.t, GRPC.Server.Stream.t) :: any
     def stream_clusters(request, stream) do
-      IO.puts("stream_clusters!")
-      Enum.each(request, fn(req) -> IO.inspect(req) end)
+      Enum.each(request, fn(req) ->
+        IO.puts("stream_clusters request:")
+        IO.inspect(req)
+        clusters = Demo.clusters()
+        IO.puts("stream_clusters response:")
+        IO.inspect(clusters)
+        Server.stream_send(stream, clusters)
+      end)
     end
 
     # rpc FetchClusters(DiscoveryRequest) returns (DiscoveryResponse)
