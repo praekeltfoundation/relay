@@ -23,8 +23,11 @@ defmodule Relay.MixProject do
   defp deps do
     [
       {:grpc, github: "tony612/grpc-elixir"},
-      # {:dep_from_hexpm, "~> 0.3.0"},
-      # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"},
+      # lager_logger stops the Eternal Logging System War.
+      {:lager_logger, "~> 1.0"},
+      # chatterbox (through grpc) specifies lager from github, which conflicts
+      # with version lager_logger wants. Overriding both of them fixes that.
+      {:lager, ">= 3.2.4", override: true},
     ]
   end
 end
