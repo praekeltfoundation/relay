@@ -33,10 +33,17 @@ for dep in "${deps[@]}"; do
 	protocargs+=("-I=protobufs/deps/$dep")
 done
 
+data_plane_modules=(
+	api
+	config
+)
+
 # TODO: Only generate the files we need.
 echo "Generating data-plane-api protos..."
-find protobufs/data-plane-api/envoy/api -name '*.proto' | \
-	xargs $protoc ${protocargs[@]} --plugin=elixir --elixir_out="${elixirarg}":"${root}/lib/"
+for module in "${data_plane_modules}"; do
+	find protobufs/data-plane-api/envoy/"$module" -name '*.proto' | \
+		xargs $protoc ${protocargs[@]} --plugin=elixir --elixir_out="${elixirarg}":"${root}/lib/"
+done
 
 
 # :-/
@@ -45,6 +52,7 @@ protobuf_protos=(
 	any
 	duration
 	struct
+	timestamp
 	wrappers
 )
 
