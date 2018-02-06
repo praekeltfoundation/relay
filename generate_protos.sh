@@ -14,34 +14,12 @@ echo "Expecting protoc version >= 3.5.0:"
 protoc=$(which protoc)
 $protoc --version
 
-pushd protobufs
-	echo "Expecting to find data-plane-api submodule..."
-	pushd data-plane-api
-		git log -1
-	popd
-
-	pushd deps
-		echo "Expecting to find com_github_gogo_protobuf submodule..."
-		pushd com_github_gogo_protobuf
-			git log -1
-		popd
-
-		echo "Expecting to find com_lyft_protoc_gen_validate submodule..."
-		pushd com_lyft_protoc_gen_validate
-			git log -1
-		popd
-
-		echo "Expecting to find googleapis submodule..."
-		pushd googleapis
-			git log -1
-		popd
-	popd
-
-	echo "Expecting to find googleapis submodule..."
-	pushd protobuf
-		git log -1
-	popd
-popd
+echo "Fetching/updating submodules..."
+git submodule init
+git submodule sync
+git submodule update --checkout
+echo "Checking submodules..."
+git submodule status
 
 elixirarg="plugins=grpc"
 
