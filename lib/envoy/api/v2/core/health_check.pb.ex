@@ -1,4 +1,4 @@
-defmodule Envoy.Api.V2.HealthCheck do
+defmodule Envoy.Api.V2.Core.HealthCheck do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
@@ -21,13 +21,13 @@ defmodule Envoy.Api.V2.HealthCheck do
   field :healthy_threshold, 5, type: Google.Protobuf.UInt32Value
   field :alt_port, 6, type: Google.Protobuf.UInt32Value
   field :reuse_connection, 7, type: Google.Protobuf.BoolValue
-  field :http_health_check, 8, type: Envoy.Api.V2.HealthCheck.HttpHealthCheck, oneof: 0
-  field :tcp_health_check, 9, type: Envoy.Api.V2.HealthCheck.TcpHealthCheck, oneof: 0
-  field :redis_health_check, 10, type: Envoy.Api.V2.HealthCheck.RedisHealthCheck, oneof: 0
-  field :grpc_health_check, 11, type: Envoy.Api.V2.HealthCheck.GrpcHealthCheck, oneof: 0
+  field :http_health_check, 8, type: Envoy.Api.V2.Core.HealthCheck.HttpHealthCheck, oneof: 0
+  field :tcp_health_check, 9, type: Envoy.Api.V2.Core.HealthCheck.TcpHealthCheck, oneof: 0
+  field :redis_health_check, 10, type: Envoy.Api.V2.Core.HealthCheck.RedisHealthCheck, oneof: 0
+  field :grpc_health_check, 11, type: Envoy.Api.V2.Core.HealthCheck.GrpcHealthCheck, oneof: 0
 end
 
-defmodule Envoy.Api.V2.HealthCheck.Payload do
+defmodule Envoy.Api.V2.Core.HealthCheck.Payload do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
@@ -40,46 +40,46 @@ defmodule Envoy.Api.V2.HealthCheck.Payload do
   field :binary, 2, type: :bytes, oneof: 0
 end
 
-defmodule Envoy.Api.V2.HealthCheck.HttpHealthCheck do
+defmodule Envoy.Api.V2.Core.HealthCheck.HttpHealthCheck do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
     host:         String.t,
     path:         String.t,
-    send:         Envoy.Api.V2.HealthCheck.Payload.t,
-    receive:      Envoy.Api.V2.HealthCheck.Payload.t,
+    send:         Envoy.Api.V2.Core.HealthCheck.Payload.t,
+    receive:      Envoy.Api.V2.Core.HealthCheck.Payload.t,
     service_name: String.t
   }
   defstruct [:host, :path, :send, :receive, :service_name]
 
   field :host, 1, type: :string
   field :path, 2, type: :string
-  field :send, 3, type: Envoy.Api.V2.HealthCheck.Payload
-  field :receive, 4, type: Envoy.Api.V2.HealthCheck.Payload
+  field :send, 3, type: Envoy.Api.V2.Core.HealthCheck.Payload
+  field :receive, 4, type: Envoy.Api.V2.Core.HealthCheck.Payload
   field :service_name, 5, type: :string
 end
 
-defmodule Envoy.Api.V2.HealthCheck.TcpHealthCheck do
+defmodule Envoy.Api.V2.Core.HealthCheck.TcpHealthCheck do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    send:    Envoy.Api.V2.HealthCheck.Payload.t,
-    receive: [Envoy.Api.V2.HealthCheck.Payload.t]
+    send:    Envoy.Api.V2.Core.HealthCheck.Payload.t,
+    receive: [Envoy.Api.V2.Core.HealthCheck.Payload.t]
   }
   defstruct [:send, :receive]
 
-  field :send, 1, type: Envoy.Api.V2.HealthCheck.Payload
-  field :receive, 2, repeated: true, type: Envoy.Api.V2.HealthCheck.Payload
+  field :send, 1, type: Envoy.Api.V2.Core.HealthCheck.Payload
+  field :receive, 2, repeated: true, type: Envoy.Api.V2.Core.HealthCheck.Payload
 end
 
-defmodule Envoy.Api.V2.HealthCheck.RedisHealthCheck do
+defmodule Envoy.Api.V2.Core.HealthCheck.RedisHealthCheck do
   use Protobuf, syntax: :proto3
 
   defstruct []
 
 end
 
-defmodule Envoy.Api.V2.HealthCheck.GrpcHealthCheck do
+defmodule Envoy.Api.V2.Core.HealthCheck.GrpcHealthCheck do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
@@ -90,7 +90,7 @@ defmodule Envoy.Api.V2.HealthCheck.GrpcHealthCheck do
   field :service_name, 1, type: :string
 end
 
-defmodule Envoy.Api.V2.HealthStatus do
+defmodule Envoy.Api.V2.Core.HealthStatus do
   use Protobuf, enum: true, syntax: :proto3
 
   field :UNKNOWN, 0

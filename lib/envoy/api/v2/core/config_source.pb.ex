@@ -1,21 +1,21 @@
-defmodule Envoy.Api.V2.ApiConfigSource do
+defmodule Envoy.Api.V2.Core.ApiConfigSource do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
     api_type:      integer,
     cluster_names: [String.t],
-    grpc_services: [Envoy.Api.V2.GrpcService.t],
+    grpc_services: [Envoy.Api.V2.Core.GrpcService.t],
     refresh_delay: Google.Protobuf.Duration.t
   }
   defstruct [:api_type, :cluster_names, :grpc_services, :refresh_delay]
 
-  field :api_type, 1, type: Envoy.Api.V2.ApiConfigSource.ApiType, enum: true
+  field :api_type, 1, type: Envoy.Api.V2.Core.ApiConfigSource.ApiType, enum: true
   field :cluster_names, 2, repeated: true, type: :string
-  field :grpc_services, 4, repeated: true, type: Envoy.Api.V2.GrpcService
+  field :grpc_services, 4, repeated: true, type: Envoy.Api.V2.Core.GrpcService
   field :refresh_delay, 3, type: Google.Protobuf.Duration
 end
 
-defmodule Envoy.Api.V2.ApiConfigSource.ApiType do
+defmodule Envoy.Api.V2.Core.ApiConfigSource.ApiType do
   use Protobuf, enum: true, syntax: :proto3
 
   field :REST_LEGACY, 0
@@ -23,14 +23,14 @@ defmodule Envoy.Api.V2.ApiConfigSource.ApiType do
   field :GRPC, 2
 end
 
-defmodule Envoy.Api.V2.AggregatedConfigSource do
+defmodule Envoy.Api.V2.Core.AggregatedConfigSource do
   use Protobuf, syntax: :proto3
 
   defstruct []
 
 end
 
-defmodule Envoy.Api.V2.ConfigSource do
+defmodule Envoy.Api.V2.Core.ConfigSource do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
@@ -40,6 +40,6 @@ defmodule Envoy.Api.V2.ConfigSource do
 
   oneof :config_source_specifier, 0
   field :path, 1, type: :string, oneof: 0
-  field :api_config_source, 2, type: Envoy.Api.V2.ApiConfigSource, oneof: 0
-  field :ads, 3, type: Envoy.Api.V2.AggregatedConfigSource, oneof: 0
+  field :api_config_source, 2, type: Envoy.Api.V2.Core.ApiConfigSource, oneof: 0
+  field :ads, 3, type: Envoy.Api.V2.Core.AggregatedConfigSource, oneof: 0
 end

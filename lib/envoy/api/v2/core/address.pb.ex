@@ -1,4 +1,4 @@
-defmodule Envoy.Api.V2.Pipe do
+defmodule Envoy.Api.V2.Core.Pipe do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
@@ -9,7 +9,7 @@ defmodule Envoy.Api.V2.Pipe do
   field :path, 1, type: :string
 end
 
-defmodule Envoy.Api.V2.SocketAddress do
+defmodule Envoy.Api.V2.Core.SocketAddress do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
@@ -22,7 +22,7 @@ defmodule Envoy.Api.V2.SocketAddress do
   defstruct [:port_specifier, :protocol, :address, :resolver_name, :ipv4_compat]
 
   oneof :port_specifier, 0
-  field :protocol, 1, type: Envoy.Api.V2.SocketAddress.Protocol, enum: true
+  field :protocol, 1, type: Envoy.Api.V2.Core.SocketAddress.Protocol, enum: true
   field :address, 2, type: :string
   field :port_value, 3, type: :uint32, oneof: 0
   field :named_port, 4, type: :string, oneof: 0
@@ -30,25 +30,25 @@ defmodule Envoy.Api.V2.SocketAddress do
   field :ipv4_compat, 6, type: :bool
 end
 
-defmodule Envoy.Api.V2.SocketAddress.Protocol do
+defmodule Envoy.Api.V2.Core.SocketAddress.Protocol do
   use Protobuf, enum: true, syntax: :proto3
 
   field :TCP, 0
   field :UDP, 1
 end
 
-defmodule Envoy.Api.V2.BindConfig do
+defmodule Envoy.Api.V2.Core.BindConfig do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    source_address: Envoy.Api.V2.SocketAddress.t
+    source_address: Envoy.Api.V2.Core.SocketAddress.t
   }
   defstruct [:source_address]
 
-  field :source_address, 1, type: Envoy.Api.V2.SocketAddress
+  field :source_address, 1, type: Envoy.Api.V2.Core.SocketAddress
 end
 
-defmodule Envoy.Api.V2.Address do
+defmodule Envoy.Api.V2.Core.Address do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
@@ -57,11 +57,11 @@ defmodule Envoy.Api.V2.Address do
   defstruct [:address]
 
   oneof :address, 0
-  field :socket_address, 1, type: Envoy.Api.V2.SocketAddress, oneof: 0
-  field :pipe, 2, type: Envoy.Api.V2.Pipe, oneof: 0
+  field :socket_address, 1, type: Envoy.Api.V2.Core.SocketAddress, oneof: 0
+  field :pipe, 2, type: Envoy.Api.V2.Core.Pipe, oneof: 0
 end
 
-defmodule Envoy.Api.V2.CidrRange do
+defmodule Envoy.Api.V2.Core.CidrRange do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{

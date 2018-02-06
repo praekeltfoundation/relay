@@ -1,11 +1,11 @@
-defmodule Envoy.Api.V2.TcpProtocolOptions do
+defmodule Envoy.Api.V2.Core.TcpProtocolOptions do
   use Protobuf, syntax: :proto3
 
   defstruct []
 
 end
 
-defmodule Envoy.Api.V2.Http1ProtocolOptions do
+defmodule Envoy.Api.V2.Core.Http1ProtocolOptions do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
@@ -16,7 +16,7 @@ defmodule Envoy.Api.V2.Http1ProtocolOptions do
   field :allow_absolute_url, 1, type: Google.Protobuf.BoolValue
 end
 
-defmodule Envoy.Api.V2.Http2ProtocolOptions do
+defmodule Envoy.Api.V2.Core.Http2ProtocolOptions do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
@@ -33,13 +33,13 @@ defmodule Envoy.Api.V2.Http2ProtocolOptions do
   field :initial_connection_window_size, 4, type: Google.Protobuf.UInt32Value
 end
 
-defmodule Envoy.Api.V2.GrpcProtocolOptions do
+defmodule Envoy.Api.V2.Core.GrpcProtocolOptions do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    http2_protocol_options: Envoy.Api.V2.Http2ProtocolOptions.t
+    http2_protocol_options: Envoy.Api.V2.Core.Http2ProtocolOptions.t
   }
   defstruct [:http2_protocol_options]
 
-  field :http2_protocol_options, 1, type: Envoy.Api.V2.Http2ProtocolOptions
+  field :http2_protocol_options, 1, type: Envoy.Api.V2.Core.Http2ProtocolOptions
 end

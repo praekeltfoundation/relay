@@ -3,7 +3,7 @@ defmodule Envoy.Api.V2.DiscoveryRequest do
 
   @type t :: %__MODULE__{
     version_info:   String.t,
-    node:           Envoy.Api.V2.Node.t,
+    node:           Envoy.Api.V2.Core.Node.t,
     resource_names: [String.t],
     type_url:       String.t,
     response_nonce: String.t
@@ -11,7 +11,7 @@ defmodule Envoy.Api.V2.DiscoveryRequest do
   defstruct [:version_info, :node, :resource_names, :type_url, :response_nonce]
 
   field :version_info, 1, type: :string
-  field :node, 2, type: Envoy.Api.V2.Node
+  field :node, 2, type: Envoy.Api.V2.Core.Node
   field :resource_names, 3, repeated: true, type: :string
   field :type_url, 4, type: :string
   field :response_nonce, 5, type: :string

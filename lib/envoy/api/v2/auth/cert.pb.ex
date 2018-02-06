@@ -29,53 +29,53 @@ defmodule Envoy.Api.V2.Auth.TlsCertificate do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    certificate_chain:            Envoy.Api.V2.DataSource.t,
-    private_key:                  Envoy.Api.V2.DataSource.t,
-    password:                     Envoy.Api.V2.DataSource.t,
-    ocsp_staple:                  Envoy.Api.V2.DataSource.t,
-    signed_certificate_timestamp: [Envoy.Api.V2.DataSource.t]
+    certificate_chain:            Envoy.Api.V2.Core.DataSource.t,
+    private_key:                  Envoy.Api.V2.Core.DataSource.t,
+    password:                     Envoy.Api.V2.Core.DataSource.t,
+    ocsp_staple:                  Envoy.Api.V2.Core.DataSource.t,
+    signed_certificate_timestamp: [Envoy.Api.V2.Core.DataSource.t]
   }
   defstruct [:certificate_chain, :private_key, :password, :ocsp_staple, :signed_certificate_timestamp]
 
-  field :certificate_chain, 1, type: Envoy.Api.V2.DataSource
-  field :private_key, 2, type: Envoy.Api.V2.DataSource
-  field :password, 3, type: Envoy.Api.V2.DataSource
-  field :ocsp_staple, 4, type: Envoy.Api.V2.DataSource
-  field :signed_certificate_timestamp, 5, repeated: true, type: Envoy.Api.V2.DataSource
+  field :certificate_chain, 1, type: Envoy.Api.V2.Core.DataSource
+  field :private_key, 2, type: Envoy.Api.V2.Core.DataSource
+  field :password, 3, type: Envoy.Api.V2.Core.DataSource
+  field :ocsp_staple, 4, type: Envoy.Api.V2.Core.DataSource
+  field :signed_certificate_timestamp, 5, repeated: true, type: Envoy.Api.V2.Core.DataSource
 end
 
 defmodule Envoy.Api.V2.Auth.TlsSessionTicketKeys do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    keys: [Envoy.Api.V2.DataSource.t]
+    keys: [Envoy.Api.V2.Core.DataSource.t]
   }
   defstruct [:keys]
 
-  field :keys, 1, repeated: true, type: Envoy.Api.V2.DataSource
+  field :keys, 1, repeated: true, type: Envoy.Api.V2.Core.DataSource
 end
 
 defmodule Envoy.Api.V2.Auth.CertificateValidationContext do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    trusted_ca:                           Envoy.Api.V2.DataSource.t,
+    trusted_ca:                           Envoy.Api.V2.Core.DataSource.t,
     verify_certificate_hash:              [String.t],
     verify_spki_sha256:                   [String.t],
     verify_subject_alt_name:              [String.t],
     require_ocsp_staple:                  Google.Protobuf.BoolValue.t,
     require_signed_certificate_timestamp: Google.Protobuf.BoolValue.t,
-    crl:                                  Envoy.Api.V2.DataSource.t
+    crl:                                  Envoy.Api.V2.Core.DataSource.t
   }
   defstruct [:trusted_ca, :verify_certificate_hash, :verify_spki_sha256, :verify_subject_alt_name, :require_ocsp_staple, :require_signed_certificate_timestamp, :crl]
 
-  field :trusted_ca, 1, type: Envoy.Api.V2.DataSource
+  field :trusted_ca, 1, type: Envoy.Api.V2.Core.DataSource
   field :verify_certificate_hash, 2, repeated: true, type: :string
   field :verify_spki_sha256, 3, repeated: true, type: :string
   field :verify_subject_alt_name, 4, repeated: true, type: :string
   field :require_ocsp_staple, 5, type: Google.Protobuf.BoolValue
   field :require_signed_certificate_timestamp, 6, type: Google.Protobuf.BoolValue
-  field :crl, 7, type: Envoy.Api.V2.DataSource
+  field :crl, 7, type: Envoy.Api.V2.Core.DataSource
 end
 
 defmodule Envoy.Api.V2.Auth.CommonTlsContext do
@@ -147,12 +147,12 @@ defmodule Envoy.Api.V2.Auth.SdsSecretConfig do
 
   @type t :: %__MODULE__{
     name:       String.t,
-    sds_config: Envoy.Api.V2.ConfigSource.t
+    sds_config: Envoy.Api.V2.Core.ConfigSource.t
   }
   defstruct [:name, :sds_config]
 
   field :name, 1, type: :string
-  field :sds_config, 2, type: Envoy.Api.V2.ConfigSource
+  field :sds_config, 2, type: Envoy.Api.V2.Core.ConfigSource
 end
 
 defmodule Envoy.Api.V2.Auth.Secret do

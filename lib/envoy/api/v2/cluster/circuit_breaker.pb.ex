@@ -21,7 +21,7 @@ defmodule Envoy.Api.V2.Cluster.CircuitBreakers.Thresholds do
   }
   defstruct [:priority, :max_connections, :max_pending_requests, :max_requests, :max_retries]
 
-  field :priority, 1, type: Envoy.Api.V2.RoutingPriority, enum: true
+  field :priority, 1, type: Envoy.Api.V2.Core.RoutingPriority, enum: true
   field :max_connections, 2, type: Google.Protobuf.UInt32Value
   field :max_pending_requests, 3, type: Google.Protobuf.UInt32Value
   field :max_requests, 4, type: Google.Protobuf.UInt32Value
