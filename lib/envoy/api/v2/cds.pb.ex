@@ -9,22 +9,22 @@ defmodule Envoy.Api.V2.Cluster do
     connect_timeout:                   Google.Protobuf.Duration.t,
     per_connection_buffer_limit_bytes: Google.Protobuf.UInt32Value.t,
     lb_policy:                         integer,
-    hosts:                             [Envoy.Api.V2.Address.t],
-    health_checks:                     [Envoy.Api.V2.HealthCheck.t],
+    hosts:                             [Envoy.Api.V2.Core.Address.t],
+    health_checks:                     [Envoy.Api.V2.Core.HealthCheck.t],
     max_requests_per_connection:       Google.Protobuf.UInt32Value.t,
     circuit_breakers:                  Envoy.Api.V2.Cluster.CircuitBreakers.t,
     tls_context:                       Envoy.Api.V2.Auth.UpstreamTlsContext.t,
-    http_protocol_options:             Envoy.Api.V2.Http1ProtocolOptions.t,
-    http2_protocol_options:            Envoy.Api.V2.Http2ProtocolOptions.t,
+    http_protocol_options:             Envoy.Api.V2.Core.Http1ProtocolOptions.t,
+    http2_protocol_options:            Envoy.Api.V2.Core.Http2ProtocolOptions.t,
     dns_refresh_rate:                  Google.Protobuf.Duration.t,
     dns_lookup_family:                 integer,
-    dns_resolvers:                     [Envoy.Api.V2.Address.t],
+    dns_resolvers:                     [Envoy.Api.V2.Core.Address.t],
     outlier_detection:                 Envoy.Api.V2.Cluster.OutlierDetection.t,
     cleanup_interval:                  Google.Protobuf.Duration.t,
-    upstream_bind_config:              Envoy.Api.V2.BindConfig.t,
+    upstream_bind_config:              Envoy.Api.V2.Core.BindConfig.t,
     lb_subset_config:                  Envoy.Api.V2.Cluster.LbSubsetConfig.t,
-    transport_socket:                  Envoy.Api.V2.TransportSocket.t,
-    metadata:                          Envoy.Api.V2.Metadata.t,
+    transport_socket:                  Envoy.Api.V2.Core.TransportSocket.t,
+    metadata:                          Envoy.Api.V2.Core.Metadata.t,
     protocol_selection:                integer
   }
   defstruct [:lb_config, :name, :type, :eds_cluster_config, :connect_timeout, :per_connection_buffer_limit_bytes, :lb_policy, :hosts, :health_checks, :max_requests_per_connection, :circuit_breakers, :tls_context, :http_protocol_options, :http2_protocol_options, :dns_refresh_rate, :dns_lookup_family, :dns_resolvers, :outlier_detection, :cleanup_interval, :upstream_bind_config, :lb_subset_config, :transport_socket, :metadata, :protocol_selection]
@@ -36,23 +36,23 @@ defmodule Envoy.Api.V2.Cluster do
   field :connect_timeout, 4, type: Google.Protobuf.Duration
   field :per_connection_buffer_limit_bytes, 5, type: Google.Protobuf.UInt32Value
   field :lb_policy, 6, type: Envoy.Api.V2.Cluster.LbPolicy, enum: true
-  field :hosts, 7, repeated: true, type: Envoy.Api.V2.Address
-  field :health_checks, 8, repeated: true, type: Envoy.Api.V2.HealthCheck
+  field :hosts, 7, repeated: true, type: Envoy.Api.V2.Core.Address
+  field :health_checks, 8, repeated: true, type: Envoy.Api.V2.Core.HealthCheck
   field :max_requests_per_connection, 9, type: Google.Protobuf.UInt32Value
   field :circuit_breakers, 10, type: Envoy.Api.V2.Cluster.CircuitBreakers
   field :tls_context, 11, type: Envoy.Api.V2.Auth.UpstreamTlsContext
-  field :http_protocol_options, 13, type: Envoy.Api.V2.Http1ProtocolOptions
-  field :http2_protocol_options, 14, type: Envoy.Api.V2.Http2ProtocolOptions
+  field :http_protocol_options, 13, type: Envoy.Api.V2.Core.Http1ProtocolOptions
+  field :http2_protocol_options, 14, type: Envoy.Api.V2.Core.Http2ProtocolOptions
   field :dns_refresh_rate, 16, type: Google.Protobuf.Duration
   field :dns_lookup_family, 17, type: Envoy.Api.V2.Cluster.DnsLookupFamily, enum: true
-  field :dns_resolvers, 18, repeated: true, type: Envoy.Api.V2.Address
+  field :dns_resolvers, 18, repeated: true, type: Envoy.Api.V2.Core.Address
   field :outlier_detection, 19, type: Envoy.Api.V2.Cluster.OutlierDetection
   field :cleanup_interval, 20, type: Google.Protobuf.Duration
-  field :upstream_bind_config, 21, type: Envoy.Api.V2.BindConfig
+  field :upstream_bind_config, 21, type: Envoy.Api.V2.Core.BindConfig
   field :lb_subset_config, 22, type: Envoy.Api.V2.Cluster.LbSubsetConfig
   field :ring_hash_lb_config, 23, type: Envoy.Api.V2.Cluster.RingHashLbConfig, oneof: 0
-  field :transport_socket, 24, type: Envoy.Api.V2.TransportSocket
-  field :metadata, 25, type: Envoy.Api.V2.Metadata
+  field :transport_socket, 24, type: Envoy.Api.V2.Core.TransportSocket
+  field :metadata, 25, type: Envoy.Api.V2.Core.Metadata
   field :protocol_selection, 26, type: Envoy.Api.V2.Cluster.ClusterProtocolSelection, enum: true
 end
 
@@ -60,12 +60,12 @@ defmodule Envoy.Api.V2.Cluster.EdsClusterConfig do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    eds_config:   Envoy.Api.V2.ConfigSource.t,
+    eds_config:   Envoy.Api.V2.Core.ConfigSource.t,
     service_name: String.t
   }
   defstruct [:eds_config, :service_name]
 
-  field :eds_config, 1, type: Envoy.Api.V2.ConfigSource
+  field :eds_config, 1, type: Envoy.Api.V2.Core.ConfigSource
   field :service_name, 2, type: :string
 end
 
@@ -166,11 +166,11 @@ defmodule Envoy.Api.V2.UpstreamBindConfig do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    source_address: Envoy.Api.V2.Address.t
+    source_address: Envoy.Api.V2.Core.Address.t
   }
   defstruct [:source_address]
 
-  field :source_address, 1, type: Envoy.Api.V2.Address
+  field :source_address, 1, type: Envoy.Api.V2.Core.Address
 end
 
 defmodule Envoy.Api.V2.ClusterDiscoveryService.Service do

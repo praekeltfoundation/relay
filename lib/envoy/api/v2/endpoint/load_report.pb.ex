@@ -2,7 +2,7 @@ defmodule Envoy.Api.V2.Endpoint.UpstreamLocalityStats do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    locality:                   Envoy.Api.V2.Locality.t,
+    locality:                   Envoy.Api.V2.Core.Locality.t,
     total_successful_requests:  non_neg_integer,
     total_requests_in_progress: non_neg_integer,
     total_error_requests:       non_neg_integer,
@@ -11,7 +11,7 @@ defmodule Envoy.Api.V2.Endpoint.UpstreamLocalityStats do
   }
   defstruct [:locality, :total_successful_requests, :total_requests_in_progress, :total_error_requests, :load_metric_stats, :priority]
 
-  field :locality, 1, type: Envoy.Api.V2.Locality
+  field :locality, 1, type: Envoy.Api.V2.Core.Locality
   field :total_successful_requests, 2, type: :uint64
   field :total_requests_in_progress, 3, type: :uint64
   field :total_error_requests, 4, type: :uint64

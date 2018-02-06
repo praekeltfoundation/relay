@@ -5,9 +5,9 @@ defmodule Envoy.Api.V2.RouteConfiguration do
     name:                       String.t,
     virtual_hosts:              [Envoy.Api.V2.Route.VirtualHost.t],
     internal_only_headers:      [String.t],
-    response_headers_to_add:    [Envoy.Api.V2.HeaderValueOption.t],
+    response_headers_to_add:    [Envoy.Api.V2.Core.HeaderValueOption.t],
     response_headers_to_remove: [String.t],
-    request_headers_to_add:     [Envoy.Api.V2.HeaderValueOption.t],
+    request_headers_to_add:     [Envoy.Api.V2.Core.HeaderValueOption.t],
     validate_clusters:          Google.Protobuf.BoolValue.t
   }
   defstruct [:name, :virtual_hosts, :internal_only_headers, :response_headers_to_add, :response_headers_to_remove, :request_headers_to_add, :validate_clusters]
@@ -15,9 +15,9 @@ defmodule Envoy.Api.V2.RouteConfiguration do
   field :name, 1, type: :string
   field :virtual_hosts, 2, repeated: true, type: Envoy.Api.V2.Route.VirtualHost
   field :internal_only_headers, 3, repeated: true, type: :string
-  field :response_headers_to_add, 4, repeated: true, type: Envoy.Api.V2.HeaderValueOption
+  field :response_headers_to_add, 4, repeated: true, type: Envoy.Api.V2.Core.HeaderValueOption
   field :response_headers_to_remove, 5, repeated: true, type: :string
-  field :request_headers_to_add, 6, repeated: true, type: Envoy.Api.V2.HeaderValueOption
+  field :request_headers_to_add, 6, repeated: true, type: Envoy.Api.V2.Core.HeaderValueOption
   field :validate_clusters, 7, type: Google.Protobuf.BoolValue
 end
 

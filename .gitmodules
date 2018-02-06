@@ -1,0 +1,15 @@
+[submodule "protobufs/data-plane-api"]
+	path = protobufs/data-plane-api
+	url = https://github.com/envoyproxy/data-plane-api.git
+[submodule "protobufs/protobuf"]
+	path = protobufs/protobuf
+	url = https://github.com/google/protobuf.git
+[submodule "protobufs/deps/com_github_gogo_protobuf"]
+	path = protobufs/deps/com_github_gogo_protobuf
+	url = https://github.com/gogo/protobuf.git
+[submodule "protobufs/deps/com_lyft_protoc_gen_validate"]
+	path = protobufs/deps/com_lyft_protoc_gen_validate
+	url = https://github.com/lyft/protoc-gen-validate.git
+[submodule "protobufs/deps/googleapis"]
+	path = protobufs/deps/googleapis
+	url = https://github.com/googleapis/googleapis.git

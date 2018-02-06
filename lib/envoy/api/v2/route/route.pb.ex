@@ -8,8 +8,8 @@ defmodule Envoy.Api.V2.Route.VirtualHost do
     require_tls:                integer,
     virtual_clusters:           [Envoy.Api.V2.Route.VirtualCluster.t],
     rate_limits:                [Envoy.Api.V2.Route.RateLimit.t],
-    request_headers_to_add:     [Envoy.Api.V2.HeaderValueOption.t],
-    response_headers_to_add:    [Envoy.Api.V2.HeaderValueOption.t],
+    request_headers_to_add:     [Envoy.Api.V2.Core.HeaderValueOption.t],
+    response_headers_to_add:    [Envoy.Api.V2.Core.HeaderValueOption.t],
     response_headers_to_remove: [String.t],
     cors:                       Envoy.Api.V2.Route.CorsPolicy.t,
     auth:                       Envoy.Api.V2.Auth.AuthAction.t
@@ -22,8 +22,8 @@ defmodule Envoy.Api.V2.Route.VirtualHost do
   field :require_tls, 4, type: Envoy.Api.V2.Route.VirtualHost.TlsRequirementType, enum: true
   field :virtual_clusters, 5, repeated: true, type: Envoy.Api.V2.Route.VirtualCluster
   field :rate_limits, 6, repeated: true, type: Envoy.Api.V2.Route.RateLimit
-  field :request_headers_to_add, 7, repeated: true, type: Envoy.Api.V2.HeaderValueOption
-  field :response_headers_to_add, 10, repeated: true, type: Envoy.Api.V2.HeaderValueOption
+  field :request_headers_to_add, 7, repeated: true, type: Envoy.Api.V2.Core.HeaderValueOption
+  field :response_headers_to_add, 10, repeated: true, type: Envoy.Api.V2.Core.HeaderValueOption
   field :response_headers_to_remove, 11, repeated: true, type: :string
   field :cors, 8, type: Envoy.Api.V2.Route.CorsPolicy
   field :auth, 9, type: Envoy.Api.V2.Auth.AuthAction
@@ -43,7 +43,7 @@ defmodule Envoy.Api.V2.Route.Route do
   @type t :: %__MODULE__{
     action:          {atom, any},
     match:           Envoy.Api.V2.Route.RouteMatch.t,
-    metadata:        Envoy.Api.V2.Metadata.t,
+    metadata:        Envoy.Api.V2.Core.Metadata.t,
     decorator:       Envoy.Api.V2.Route.Decorator.t,
     auth:            Envoy.Api.V2.Auth.AuthAction.t
   }
@@ -54,7 +54,7 @@ defmodule Envoy.Api.V2.Route.Route do
   field :route, 2, type: Envoy.Api.V2.Route.RouteAction, oneof: 0
   field :redirect, 3, type: Envoy.Api.V2.Route.RedirectAction, oneof: 0
   field :direct_response, 7, type: Envoy.Api.V2.Route.DirectResponseAction, oneof: 0
-  field :metadata, 4, type: Envoy.Api.V2.Metadata
+  field :metadata, 4, type: Envoy.Api.V2.Core.Metadata
   field :decorator, 5, type: Envoy.Api.V2.Route.Decorator
   field :auth, 6, type: Envoy.Api.V2.Auth.AuthAction
 end
@@ -80,18 +80,18 @@ defmodule Envoy.Api.V2.Route.WeightedCluster.ClusterWeight do
   @type t :: %__MODULE__{
     name:                       String.t,
     weight:                     Google.Protobuf.UInt32Value.t,
-    metadata_match:             Envoy.Api.V2.Metadata.t,
-    request_headers_to_add:     [Envoy.Api.V2.HeaderValueOption.t],
-    response_headers_to_add:    [Envoy.Api.V2.HeaderValueOption.t],
+    metadata_match:             Envoy.Api.V2.Core.Metadata.t,
+    request_headers_to_add:     [Envoy.Api.V2.Core.HeaderValueOption.t],
+    response_headers_to_add:    [Envoy.Api.V2.Core.HeaderValueOption.t],
     response_headers_to_remove: [String.t]
   }
   defstruct [:name, :weight, :metadata_match, :request_headers_to_add, :response_headers_to_add, :response_headers_to_remove]
 
   field :name, 1, type: :string
   field :weight, 2, type: Google.Protobuf.UInt32Value
-  field :metadata_match, 3, type: Envoy.Api.V2.Metadata
-  field :request_headers_to_add, 4, repeated: true, type: Envoy.Api.V2.HeaderValueOption
-  field :response_headers_to_add, 5, repeated: true, type: Envoy.Api.V2.HeaderValueOption
+  field :metadata_match, 3, type: Envoy.Api.V2.Core.Metadata
+  field :request_headers_to_add, 4, repeated: true, type: Envoy.Api.V2.Core.HeaderValueOption
+  field :response_headers_to_add, 5, repeated: true, type: Envoy.Api.V2.Core.HeaderValueOption
   field :response_headers_to_remove, 6, repeated: true, type: :string
 end
 
@@ -101,7 +101,7 @@ defmodule Envoy.Api.V2.Route.RouteMatch do
   @type t :: %__MODULE__{
     path_specifier:   {atom, any},
     case_sensitive:   Google.Protobuf.BoolValue.t,
-    runtime:          Envoy.Api.V2.RuntimeUInt32.t,
+    runtime:          Envoy.Api.V2.Core.RuntimeUInt32.t,
     headers:          [Envoy.Api.V2.Route.HeaderMatcher.t],
     query_parameters: [Envoy.Api.V2.Route.QueryParameterMatcher.t]
   }
@@ -112,7 +112,7 @@ defmodule Envoy.Api.V2.Route.RouteMatch do
   field :path, 2, type: :string, oneof: 0
   field :regex, 3, type: :string, oneof: 0
   field :case_sensitive, 4, type: Google.Protobuf.BoolValue
-  field :runtime, 5, type: Envoy.Api.V2.RuntimeUInt32
+  field :runtime, 5, type: Envoy.Api.V2.Core.RuntimeUInt32
   field :headers, 6, repeated: true, type: Envoy.Api.V2.Route.HeaderMatcher
   field :query_parameters, 7, repeated: true, type: Envoy.Api.V2.Route.QueryParameterMatcher
 end
@@ -147,14 +147,14 @@ defmodule Envoy.Api.V2.Route.RouteAction do
     cluster_specifier:               {atom, any},
     host_rewrite_specifier:          {atom, any},
     cluster_not_found_response_code: integer,
-    metadata_match:                  Envoy.Api.V2.Metadata.t,
+    metadata_match:                  Envoy.Api.V2.Core.Metadata.t,
     prefix_rewrite:                  String.t,
     timeout:                         Google.Protobuf.Duration.t,
     retry_policy:                    Envoy.Api.V2.Route.RouteAction.RetryPolicy.t,
     request_mirror_policy:           Envoy.Api.V2.Route.RouteAction.RequestMirrorPolicy.t,
     priority:                        integer,
-    request_headers_to_add:          [Envoy.Api.V2.HeaderValueOption.t],
-    response_headers_to_add:         [Envoy.Api.V2.HeaderValueOption.t],
+    request_headers_to_add:          [Envoy.Api.V2.Core.HeaderValueOption.t],
+    response_headers_to_add:         [Envoy.Api.V2.Core.HeaderValueOption.t],
     response_headers_to_remove:      [String.t],
     rate_limits:                     [Envoy.Api.V2.Route.RateLimit.t],
     include_vh_rate_limits:          Google.Protobuf.BoolValue.t,
@@ -170,16 +170,16 @@ defmodule Envoy.Api.V2.Route.RouteAction do
   field :cluster_header, 2, type: :string, oneof: 0
   field :weighted_clusters, 3, type: Envoy.Api.V2.Route.WeightedCluster, oneof: 0
   field :cluster_not_found_response_code, 20, type: Envoy.Api.V2.Route.RouteAction.ClusterNotFoundResponseCode, enum: true
-  field :metadata_match, 4, type: Envoy.Api.V2.Metadata
+  field :metadata_match, 4, type: Envoy.Api.V2.Core.Metadata
   field :prefix_rewrite, 5, type: :string
   field :host_rewrite, 6, type: :string, oneof: 1
   field :auto_host_rewrite, 7, type: Google.Protobuf.BoolValue, oneof: 1
   field :timeout, 8, type: Google.Protobuf.Duration
   field :retry_policy, 9, type: Envoy.Api.V2.Route.RouteAction.RetryPolicy
   field :request_mirror_policy, 10, type: Envoy.Api.V2.Route.RouteAction.RequestMirrorPolicy
-  field :priority, 11, type: Envoy.Api.V2.RoutingPriority, enum: true
-  field :request_headers_to_add, 12, repeated: true, type: Envoy.Api.V2.HeaderValueOption
-  field :response_headers_to_add, 18, repeated: true, type: Envoy.Api.V2.HeaderValueOption
+  field :priority, 11, type: Envoy.Api.V2.Core.RoutingPriority, enum: true
+  field :request_headers_to_add, 12, repeated: true, type: Envoy.Api.V2.Core.HeaderValueOption
+  field :response_headers_to_add, 18, repeated: true, type: Envoy.Api.V2.Core.HeaderValueOption
   field :response_headers_to_remove, 19, repeated: true, type: :string
   field :rate_limits, 13, repeated: true, type: Envoy.Api.V2.Route.RateLimit
   field :include_vh_rate_limits, 14, type: Google.Protobuf.BoolValue
@@ -304,12 +304,12 @@ defmodule Envoy.Api.V2.Route.DirectResponseAction do
 
   @type t :: %__MODULE__{
     status: non_neg_integer,
-    body:   Envoy.Api.V2.DataSource.t
+    body:   Envoy.Api.V2.Core.DataSource.t
   }
   defstruct [:status, :body]
 
   field :status, 1, type: :uint32
-  field :body, 2, type: Envoy.Api.V2.DataSource
+  field :body, 2, type: Envoy.Api.V2.Core.DataSource
 end
 
 defmodule Envoy.Api.V2.Route.Decorator do
@@ -335,7 +335,7 @@ defmodule Envoy.Api.V2.Route.VirtualCluster do
 
   field :pattern, 1, type: :string
   field :name, 2, type: :string
-  field :method, 3, type: Envoy.Api.V2.RequestMethod, enum: true
+  field :method, 3, type: Envoy.Api.V2.Core.RequestMethod, enum: true
 end
 
 defmodule Envoy.Api.V2.Route.RateLimit do
