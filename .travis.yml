@@ -1,0 +1,15 @@
+jobs:
+  include:
+    - elixir: '1.5'
+      otp_release: '19.0'
+
+    - elixir: '1.6'
+      otp_release: '20.2'
+
+    - group: trusty_latest
+      jdk: openjdk8
+
+      install: bash <(curl -L "https://github.com/bazelbuild/bazel/releases/download/0.10.0/bazel-0.10.0-installer-linux-x86_64.sh")
+      script:
+        - ./generate_protos.sh
+        - '[[ $(git status -s lib/) ]]'
