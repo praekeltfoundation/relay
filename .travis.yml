@@ -24,7 +24,7 @@ jobs:
         - curl -L https://github.com/google/protobuf/releases/download/v3.5.1/protoc-3.5.1-linux-x86_64.zip > protoc.zip
         - mkdir ~/protoc && unzip -d ~/protoc protoc.zip && ln -s ~/protoc/bin/protoc ~/bin/protoc
         # Install protoc-gen-elixir
-        - mix local.hex --force && mix escript.install hex protobuf
+        - mix local.hex --force && mix escript.install --force hex protobuf
         # Add everything to PATH
         - export PATH="~/.mix/escripts:~/bin:$PATH"
       script:
