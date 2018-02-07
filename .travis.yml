@@ -30,7 +30,7 @@ jobs:
         # Install protoc-gen-elixir
         - mix local.hex --force && mix escript.install --force hex protobuf "$PROTOBUF_ELIXIR_VERSION"
         # Check everything is available
-        - export "$HOME/.mix/escripts:$PATH"
+        - export PATH="$HOME/.mix/escripts:$PATH"
         - echo "Installed Bazel ($(which bazel)), protoc ($(which protoc)), protobuf-elixir ($(which protoc-gen-elixir))"
       script:
         - ./generate_protos.sh
