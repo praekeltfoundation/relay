@@ -1,3 +1,12 @@
+language: elixir
+
+script:
+  # This is basically `mix test` with coverage enabled.
+  - mix coveralls.json
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+
 jobs:
   include:
     - elixir: '1.5'
@@ -8,8 +17,12 @@ jobs:
 
     - group: trusty_latest
       jdk: openjdk8
+      cache:
+        directories: [~/.cache/bazel]
 
-      install: bash <(curl -L "https://github.com/bazelbuild/bazel/releases/download/0.10.0/bazel-0.10.0-installer-linux-x86_64.sh")
+      install:
+        - curl -L "https://github.com/bazelbuild/bazel/releases/download/0.10.0/bazel-0.10.0-without-jdk-installer-linux-x86_64.sh" > bazel-installer.sh
+        - bash bazel-installer.sh --user
       script:
         - ./generate_protos.sh
         - '[[ $(git status -s lib/) ]]'
