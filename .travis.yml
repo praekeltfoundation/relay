@@ -10,9 +10,6 @@ after_success:
 
 jobs:
   include:
-    - elixir: '1.5'
-      otp_release: '19.0'
-
     - elixir: '1.6'
       otp_release: '20.2'
 
