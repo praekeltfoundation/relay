@@ -19,12 +19,16 @@ jobs:
         directories: [~/.cache/bazel]
 
       install:
+        # Install Bazel
         - curl -L https://github.com/bazelbuild/bazel/releases/download/0.10.0/bazel-0.10.0-without-jdk-installer-linux-x86_64.sh > bazel-installer.sh
         - bash bazel-installer.sh --user
+        # Install protoc
         - curl -L https://github.com/google/protobuf/releases/download/v3.5.1/protoc-3.5.1-linux-x86_64.zip > protoc.zip
         - mkdir ~/protoc && unzip -d ~/protoc protoc.zip && ln -s ~/protoc/bin/protoc ~/bin/protoc
-        - export PATH="~/bin:$PATH"
-        - mix local.hex --force && mix escript.install --force hex protobuf
+        # Install protoc-gen-elixir
+        - mix local.hex --force && mix escript.install hex protobuf
+        # Add everything to PATH
+        - export PATH="~/.mix/escripts:~/bin:$PATH"
       script:
         - ./generate_protos.sh
         - '[[ $(git status -s lib/) ]]'
