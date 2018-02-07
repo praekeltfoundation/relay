@@ -27,7 +27,7 @@ jobs:
         - curl -L https://github.com/google/protobuf/releases/download/v3.5.1/protoc-3.5.1-linux-x86_64.zip > protoc.zip
         - mkdir ~/protoc && unzip -d ~/protoc protoc.zip && ln -s ~/protoc/bin/protoc ~/bin/protoc
         - export PATH="~/bin:$PATH"
-        - mix escript.install hex protobuf
+        - mix local.hex && mix escript.install hex protobuf
       script:
         - ./generate_protos.sh
         - '[[ $(git status -s lib/) ]]'
