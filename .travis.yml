@@ -27,7 +27,7 @@ jobs:
         - mkdir ~/protoc && unzip -d ~/protoc protoc.zip && ln -s ~/protoc/bin/protoc ~/bin/protoc
         # Install protoc-gen-elixir
         - mix local.hex --force && mix escript.install --force hex protobuf
-
+        - echo "$PATH"
         - echo "Installed Bazel ($(which bazel)), protoc ($(which protoc)), protobuf-elixir ($(which protoc-gen-elixir))"
       script:
         - ./generate_protos.sh
