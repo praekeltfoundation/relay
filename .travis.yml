@@ -27,6 +27,7 @@ jobs:
         - mix local.hex --force && mix escript.install --force hex protobuf
         # Add everything to PATH
         - export PATH="~/.mix/escripts:~/bin:$PATH"
+        - echo "Installed Bazel ($(which bazel)), protoc ($(which protoc)), protobuf-elixir ($(which protoc-gen-elixir))"
       script:
         - ./generate_protos.sh
         - '[[ $(git status -s lib/) ]]'
