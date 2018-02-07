@@ -15,8 +15,6 @@ jobs:
 
     - group: trusty_latest
       jdk: openjdk8
-      env:
-        - PATH="$HOME/.mix/escripts:$PATH"
 
       install:
         # Install Bazel
@@ -27,8 +25,9 @@ jobs:
         - mkdir ~/protoc && unzip -d ~/protoc protoc.zip && ln -s ~/protoc/bin/protoc ~/bin/protoc
         # Install protoc-gen-elixir
         - mix local.hex --force && mix escript.install --force hex protobuf
-        - echo "$PATH"
+        # Check everything is available
+        - export "$HOME/.mix/escripts:$PATH"
         - echo "Installed Bazel ($(which bazel)), protoc ($(which protoc)), protobuf-elixir ($(which protoc-gen-elixir))"
       script:
         - ./generate_protos.sh
-        - '[[ $(git status -s lib/) ]]'
+        - '[[ -z "$(git status -s lib/)" ]]'
