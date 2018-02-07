@@ -16,7 +16,7 @@ jobs:
     - group: trusty_latest
       jdk: openjdk8
       env:
-        - PATH="~/.mix/escripts:~/bin:$PATH"
+        - PATH="$HOME/.mix/escripts:$PATH"
 
       install:
         # Install Bazel
