@@ -15,8 +15,6 @@ jobs:
 
     - group: trusty_latest
       jdk: openjdk8
-      cache:
-        directories: [~/.cache/bazel]
 
       install:
         # Install Bazel
