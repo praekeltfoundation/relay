@@ -17,7 +17,7 @@ defmodule Relay.Demo do
 
   defp socket_address(address, port) do
     alias Envoy.Api.V2.Core.{Address, SocketAddress}
-    Address.new(socket_address: SocketAddress.new(address: address, port_value: port))
+    Address.new(address: SocketAddress.new(address: address, port_value: port))
   end
 
   def clusters do
