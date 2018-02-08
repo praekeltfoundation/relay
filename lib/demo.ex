@@ -6,9 +6,13 @@ defmodule Relay.Demo do
   @cds_type "type.googleapis.com/envoy.api.v2.Cluster"
   @lds_type "type.googleapis.com/envoy.api.v2.Listener"
 
+  defp typed_resource(type, res) do
+    value = GRPC.Message.Protobuf.encode(Any, res)
+    Any.new(type_url: type, value: value)
+  end
+
   defp typed_resources(type, resources) do
-    resources
-    |> Enum.map(fn(res) -> Any.new(type_url: type, value: res) end)
+    resources |> Enum.map(&typed_resource(type, &1))
   end
 
   defp socket_address(address, port) do
