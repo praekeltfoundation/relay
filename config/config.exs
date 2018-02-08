@@ -41,3 +41,6 @@ config :lager, :crash_log, false
 
 # Use LagerLogger as lager's only handler.
 config :lager, :handlers, [{LagerLogger, [level: :debug]}]
+
+# Increase lager's discard threshold to avoid dropping messages at startup.
+config :lager, :error_logger_hwm, 1024
