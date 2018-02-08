@@ -17,7 +17,8 @@ defmodule Relay.Demo do
 
   defp socket_address(address, port) do
     alias Envoy.Api.V2.Core.{Address, SocketAddress}
-    Address.new(address: SocketAddress.new(address: address, port_value: port))
+    sock = SocketAddress.new(address: address, port_specifier: {:port_value, port})
+    Address.new(address: {:socket_address, sock})
   end
 
   def clusters do
@@ -27,7 +28,7 @@ defmodule Relay.Demo do
       Cluster.new(
         name: "demo",
         type: Cluster.DiscoveryType.value(:STATIC),
-        hosts: [socket_address("127.0.0.1", 8080)],
+        hosts: [socket_address("127.0.0.1", 8081)],
         connect_timeout: Duration.new(seconds: 30),
         lb_policy: Cluster.LbPolicy.value(:ROUND_ROBIN),
         health_checks: [],
@@ -68,7 +69,7 @@ defmodule Relay.Demo do
     resources = [
       Listener.new(
         name: "http",
-        address: socket_address("0.0.0.0", 80),
+        address: socket_address("0.0.0.0", 8080),
         filter_chains: [
           Listener.FilterChain.new(
             filter_chain_match: Listener.FilterChainMatch.new(),

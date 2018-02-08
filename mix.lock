@@ -7,6 +7,6 @@
   "hpack": {:git, "https://github.com/joedevivo/hpack.git", "6b58b6231e9b6ab83096715120578976f72f4f7c", [tag: "0.2.3"]},
   "lager": {:hex, :lager, "3.6.1", "9d29c5ff7f926d25ecd9899990867c9152dcf34eee65bac8ec0dfc0d16a26e0c", [:rebar3], [{:goldrush, "0.1.9", [hex: :goldrush, repo: "hexpm", optional: false]}], "hexpm"},
   "lager_logger": {:hex, :lager_logger, "1.0.4", "6b5ccf8cd4836494b5da588e2deedbab17f6703d1f5eb330c0dd918ce1755a56", [:mix], [{:lager, ">= 2.1.0", [hex: :lager, repo: "hexpm", optional: false]}], "hexpm"},
-  "protobuf": {:hex, :protobuf, "0.5.0", "ec9857903f8c49cf01ad5f1340956e19ebe0ef05e225b15b442f33b13031ce08", [], [], "hexpm"},
+  "protobuf": {:git, "https://github.com/tony612/protobuf-elixir.git", "09c42e28b99ebef188ea5c06d5cc0a80abb0f205", []},
   "ranch": {:hex, :ranch, "1.4.0", "10272f95da79340fa7e8774ba7930b901713d272905d0012b06ca6d994f8826b", [], [], "hexpm"},
 }
