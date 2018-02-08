@@ -2,6 +2,7 @@
 # Based on the go-control-plane code:
 # https://github.com/envoyproxy/go-control-plane/blob/cd217031c55a80342a864f9aff3b7a7f22205891/generate_protos.sh
 # Requires:
+# - bazel (`brew install bazel`)
 # - protoc (`brew install protobuf`)
 # - protoc-gen-elixir (`mix escript.install hex protobuf`)
 set -o errexit
@@ -21,6 +22,12 @@ git submodule update --checkout
 echo "Checking submodules..."
 git submodule status
 
+echo "Fetching data-plane-api dependencies..."
+pushd data-plane-api
+bazel fetch //envoy/...
+output_base="$(bazel info output_base)"
+popd
+
 elixirarg="plugins=grpc"
 
 deps=(
@@ -28,9 +35,9 @@ deps=(
 	com_lyft_protoc_gen_validate
 	googleapis
 )
-protocargs=("-I=protobufs/data-plane-api")
+protocargs=("-I=data-plane-api")
 for dep in "${deps[@]}"; do
-	protocargs+=("-I=protobufs/deps/$dep")
+	protocargs+=("-I=$output_base/external/$dep")
 done
 
 data_plane_modules=(
@@ -41,7 +48,7 @@ data_plane_modules=(
 # TODO: Only generate the files we need.
 echo "Generating data-plane-api protos..."
 for module in "${data_plane_modules}"; do
-	find protobufs/data-plane-api/envoy/"$module" -name '*.proto' | \
+	find data-plane-api/envoy/"$module" -name '*.proto' | \
 		xargs $protoc ${protocargs[@]} --plugin=elixir --elixir_out="${elixirarg}":"${root}/lib/"
 done
 
@@ -57,8 +64,9 @@ protobuf_protos=(
 )
 
 echo "Generating protobuf protos..."
+protobuf_src="$output_base/external/com_google_protobuf/src"
 # These have no dependencies
 for proto in "${protobuf_protos[@]}"; do
-	$protoc -I=protobufs/protobuf/src --plugin=elixir --elixir_out="${elixirarg}":"${root}/lib/" \
-		protobufs/protobuf/src/google/protobuf/"$proto".proto
+	$protoc -I="$protobuf_src" --plugin=elixir --elixir_out="${elixirarg}":"${root}/lib/" \
+		"$protobuf_src"/google/protobuf/"$proto".proto
 done
