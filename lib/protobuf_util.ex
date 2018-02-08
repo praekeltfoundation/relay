@@ -1,9 +1,28 @@
 defmodule Relay.ProtobufUtil do
   alias Google.Protobuf.{Struct, NullValue, ListValue, Value}
 
-  def mkstruct(%_{} = struct) do
-    fields = Map.from_struct(struct)
-      |> Enum.into(%{}, fn {k, v} -> {Atom.to_string(k), struct_value(v)} end)
+  defp oneof_actual_vals(props, struct) do
+    # Copy/pasta-ed from:
+    # https://github.com/tony612/protobuf-elixir/blob/a4389fe18edc70430563d8591aa05bd3dba60adc/lib/protobuf/encoder.ex#L153-L160
+    # TODO: Understand this, make it more readable
+    Enum.reduce(props.oneof, %{}, fn {field, _}, acc ->
+      case Map.get(struct, field) do
+        {f, val} -> Map.put(acc, f, val)
+        nil -> acc
+      end
+    end)
+  end
+
+  def mkstruct(%{__struct__: mod} = struct) do
+    props = mod.__message_props__()
+    oneofs = oneof_actual_vals(props, struct)
+
+    fields = props.ordered_tags |> Enum.into(%{}, fn tag ->
+      prop = props.field_props[tag]
+      val = if prop.oneof, do: oneofs[prop.name_atom], else: Map.get(struct, prop.name_atom)
+
+      {prop.name, struct_value(val)}
+    end)
     Struct.new(fields: fields)
   end
 
