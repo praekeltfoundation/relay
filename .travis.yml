@@ -1,0 +1,37 @@
+language: elixir
+elixir: '1.6'
+
+script:
+  # This is basically `mix test` with coverage enabled.
+  # - mix coveralls.json
+
+after_success:
+  # - bash <(curl -s https://codecov.io/bash)
+
+jobs:
+  include:
+    - elixir: '1.6'
+      otp_release: '20.2'
+
+    - group: trusty_latest
+      jdk: openjdk8
+      env:
+        - BAZEL_VERSION=0.10.0
+        - PROTOC_VERSION=3.5.1
+        - PROTOBUF_ELIXIR_VERSION=0.5.0
+
+      install:
+        # Install Bazel
+        - curl -L "https://github.com/bazelbuild/bazel/releases/download/$BAZEL_VERSION/bazel-$BAZEL_VERSION-without-jdk-installer-linux-x86_64.sh" > bazel-installer.sh
+        - bash bazel-installer.sh --user
+        # Install protoc
+        - curl -L https://github.com/google/protobuf/releases/download/v$PROTOC_VERSION/protoc-$PROTOC_VERSION-linux-x86_64.zip > protoc.zip
+        - mkdir ~/protoc && unzip -d ~/protoc protoc.zip && ln -s ~/protoc/bin/protoc ~/bin/protoc
+        # Install protoc-gen-elixir
+        - mix local.hex --force && mix escript.install --force hex protobuf "$PROTOBUF_ELIXIR_VERSION"
+        # Check everything is available
+        - export PATH="$HOME/.mix/escripts:$PATH"
+        - echo "Installed Bazel ($(which bazel)), protoc ($(which protoc)), protobuf-elixir ($(which protoc-gen-elixir))"
+      script:
+        - ./generate_protos.sh
+        - '[[ -z "$(git status -s lib/)" ]]'

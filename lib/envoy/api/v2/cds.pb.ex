@@ -23,11 +23,12 @@ defmodule Envoy.Api.V2.Cluster do
     cleanup_interval:                  Google.Protobuf.Duration.t,
     upstream_bind_config:              Envoy.Api.V2.Core.BindConfig.t,
     lb_subset_config:                  Envoy.Api.V2.Cluster.LbSubsetConfig.t,
+    common_lb_config:                  Envoy.Api.V2.Cluster.CommonLbConfig.t,
     transport_socket:                  Envoy.Api.V2.Core.TransportSocket.t,
     metadata:                          Envoy.Api.V2.Core.Metadata.t,
     protocol_selection:                integer
   }
-  defstruct [:lb_config, :name, :type, :eds_cluster_config, :connect_timeout, :per_connection_buffer_limit_bytes, :lb_policy, :hosts, :health_checks, :max_requests_per_connection, :circuit_breakers, :tls_context, :http_protocol_options, :http2_protocol_options, :dns_refresh_rate, :dns_lookup_family, :dns_resolvers, :outlier_detection, :cleanup_interval, :upstream_bind_config, :lb_subset_config, :transport_socket, :metadata, :protocol_selection]
+  defstruct [:lb_config, :name, :type, :eds_cluster_config, :connect_timeout, :per_connection_buffer_limit_bytes, :lb_policy, :hosts, :health_checks, :max_requests_per_connection, :circuit_breakers, :tls_context, :http_protocol_options, :http2_protocol_options, :dns_refresh_rate, :dns_lookup_family, :dns_resolvers, :outlier_detection, :cleanup_interval, :upstream_bind_config, :lb_subset_config, :common_lb_config, :transport_socket, :metadata, :protocol_selection]
 
   oneof :lb_config, 0
   field :name, 1, type: :string
@@ -51,6 +52,7 @@ defmodule Envoy.Api.V2.Cluster do
   field :upstream_bind_config, 21, type: Envoy.Api.V2.Core.BindConfig
   field :lb_subset_config, 22, type: Envoy.Api.V2.Cluster.LbSubsetConfig
   field :ring_hash_lb_config, 23, type: Envoy.Api.V2.Cluster.RingHashLbConfig, oneof: 0
+  field :common_lb_config, 27, type: Envoy.Api.V2.Cluster.CommonLbConfig
   field :transport_socket, 24, type: Envoy.Api.V2.Core.TransportSocket
   field :metadata, 25, type: Envoy.Api.V2.Core.Metadata
   field :protocol_selection, 26, type: Envoy.Api.V2.Cluster.ClusterProtocolSelection, enum: true
@@ -125,6 +127,17 @@ defmodule Envoy.Api.V2.Cluster.RingHashLbConfig.DeprecatedV1 do
   defstruct [:use_std_hash]
 
   field :use_std_hash, 1, type: Google.Protobuf.BoolValue
+end
+
+defmodule Envoy.Api.V2.Cluster.CommonLbConfig do
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+    healthy_panic_threshold: Envoy.Api.V2.Core.Percent.t
+  }
+  defstruct [:healthy_panic_threshold]
+
+  field :healthy_panic_threshold, 1, type: Envoy.Api.V2.Core.Percent
 end
 
 defmodule Envoy.Api.V2.Cluster.DiscoveryType do
