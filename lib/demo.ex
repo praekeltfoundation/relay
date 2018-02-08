@@ -42,26 +42,30 @@ defmodule Relay.Demo do
     )
   end
 
-#  defp default_http_conn_manager_filter(name) do
-#    alias Envoy.Api.V2.Listener.Filter
-#    alias Envoy.Config.Filter.Network.HttpConnectionManager.V2.{HttpConnectionManager, HttpFilter}
-#    alias Google.Protobuf.Struct
-#    Filter.new(
-#      name: "envoy.http_connection_manager",
-#      config: Struct.new(fields: %{
-#        "codec_type" => HttpConnectionManager.CodecType.:AUTO,
-#        "stat_prefix" => name,
-#        "http_filters" => [
-#          HttpFilter.new(
-#            name: "envoy.router",
-#            config: Struct.new(fields: %{
-#
-#            })
-#          )
-#        ]
-#      })
-#    )
-#  end
+  def default_http_conn_manager_filter(name) do
+    # goddamn
+    alias Envoy.Api.V2.Listener.Filter
+    alias Envoy.Config.Filter.Network.HttpConnectionManager.V2.{HttpConnectionManager, HttpFilter}
+    alias Envoy.Config.Filter.Http.Router.V2.Router
+    alias Envoy.Config.Filter.Accesslog.V2.{AccessLog, FileAccessLog}
+    alias Relay.ProtobufUtil
+    Filter.new(
+      name: "envoy.http_connection_manager",
+      config: ProtobufUtil.mkstruct(HttpConnectionManager.new(
+        codec_type: HttpConnectionManager.CodecType.value(:AUTO),
+        stat_prefix: name,
+        http_filters: [
+          HttpFilter.new(
+            name: "envoy.router",
+            config: Router.new(upstream_log: [
+              AccessLog.new(
+                name: "envoy.file_access_log",
+                path: ProtobufUtil.mkstruct(FileAccessLog.new(path: "upstream.log")))
+            ])
+          )
+        ]))
+      )
+  end
 
   def listeners do
     alias Envoy.Api.V2.Listener
@@ -73,7 +77,7 @@ defmodule Relay.Demo do
         filter_chains: [
           Listener.FilterChain.new(
             filter_chain_match: Listener.FilterChainMatch.new(),
-            filters: []
+            filters: [default_http_conn_manager_filter("http")]
           ),
         ]
       )
