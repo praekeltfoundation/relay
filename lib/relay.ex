@@ -15,6 +15,7 @@ defmodule Relay do
       Relay.Server.EndpointDiscoveryService,
     ]
     children = [
+      {Relay.Demo2, []},
       supervisor(GRPC.Server.Supervisor, [{services, 5000}])
     ]
 

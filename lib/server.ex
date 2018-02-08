@@ -1,6 +1,6 @@
 defmodule Relay.Server do
   alias GRPC.Server
-  alias Relay.Demo
+  alias Relay.Demo2
 
   defmodule ListenerDiscoveryService do
     use GRPC.Server, service: Envoy.Api.V2.ListenerDiscoveryService.Service
@@ -9,8 +9,8 @@ defmodule Relay.Server do
     @spec stream_listeners(Enumerable.t, GRPC.Server.Stream.t) :: any
     def stream_listeners(req_enum, stream) do
       Enum.each(req_enum, fn(request) ->
-        IO.puts("stream_listeners request")
-        Server.stream_send(stream, Demo.listeners())
+        IO.inspect {:stream_listeners, self()}
+        Server.stream_send(stream, Demo2.listeners())
       end)
     end
 
@@ -46,8 +46,8 @@ defmodule Relay.Server do
     @spec stream_clusters(Enumerable.t, GRPC.Server.Stream.t) :: any
     def stream_clusters(req_enum, stream) do
       Enum.each(req_enum, fn(request) ->
-        IO.puts("stream_clusters request")
-        Server.stream_send(stream, Demo.clusters())
+        IO.inspect {:stream_clusters, self()}
+        Server.stream_send(stream, Demo2.clusters())
       end)
     end
 
