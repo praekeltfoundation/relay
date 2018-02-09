@@ -14,6 +14,8 @@ defmodule Relay.ProtobufUtil do
   end
 
   def mkstruct(%{__struct__: mod} = struct) do
+    Protobuf.Validator.validate!(struct)
+
     props = mod.__message_props__()
     oneofs = oneof_actual_vals(props, struct)
 

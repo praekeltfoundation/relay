@@ -9,14 +9,14 @@ defmodule Relay.ProtobufUtilTest do
       use Protobuf, syntax: :proto3
 
       @type t :: %__MODULE__{
-        foo: String.t
+        foo: Struct.t
       }
       defstruct [:foo]
 
-      field :foo, 1, type: :string
+      field :foo, 1, type: Struct
     end
 
-    proto = NullType.new(foo: nil)
+    proto = NullType.new() # Don't provide foo
     struct = ProtobufUtil.mkstruct(proto)
 
     assert struct == %Struct{
@@ -167,5 +167,24 @@ defmodule Relay.ProtobufUtilTest do
         "baz" => %Value{kind: {:string_value, "def"}},
       }
     }
+  end
+
+  test "protobufs validated before packing" do
+    defmodule ValidatedType do
+      use Protobuf, syntax: :proto3
+
+      @type t :: %__MODULE__{
+        foo: integer
+      }
+      defstruct [:foo]
+
+      field :foo, 1, type: :uint32
+    end
+
+    proto = ValidatedType.new(foo: "ghi")
+
+    assert_raise Protobuf.InvalidError, "Relay.ProtobufUtilTest.ValidatedType#foo is invalid!", fn ->
+      ProtobufUtil.mkstruct(proto)
+    end 
   end
 end
