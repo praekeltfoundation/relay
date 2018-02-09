@@ -42,45 +42,49 @@ defmodule Relay.Demo do
     )
   end
 
-  def default_http_conn_manager_filter(name) do
-    # goddamn
-    alias Envoy.Api.V2.Listener.Filter
-    alias Envoy.Config.Filter.Network.HttpConnectionManager.V2.{HttpConnectionManager, HttpFilter}
-    alias Envoy.Config.Filter.Http.Router.V2.Router
-    alias Envoy.Config.Filter.Accesslog.V2.{AccessLog, FileAccessLog}
+  defp route_config do
     alias Envoy.Api.V2.RouteConfiguration
     alias Envoy.Api.V2.Route.{Route, RouteAction, RouteMatch, VirtualHost}
-    alias Relay.ProtobufUtil
+    RouteConfiguration.new(
+      name: "demo",
+      virtual_hosts: [
+        VirtualHost.new(
+          name: "demo",
+          domains: ["example.com"],
+          routes: [
+            Route.new(
+              match: RouteMatch.new(path_specifier: {:prefix, "/"}),
+              action: {:route, RouteAction.new(cluster_specifier: {:cluster, "demo"})})
+          ])
+      ])
+  end
+
+  defp router_filter do
+    alias Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpFilter
+    alias Envoy.Config.Filter.Http.Router.V2.Router
+    alias Envoy.Config.Filter.Accesslog.V2.{AccessLog, FileAccessLog}
+    import Relay.ProtobufUtil
+    HttpFilter.new(
+      name: "envoy.router",
+      config: mkstruct(Router.new(upstream_log: [
+        AccessLog.new(
+          name: "envoy.file_access_log",
+          config: mkstruct(FileAccessLog.new(path: "upstream.log")))
+      ]))
+    )
+  end
+
+  defp default_http_conn_manager_filter(name) do
+    alias Envoy.Api.V2.Listener.Filter
+    alias Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionManager
+    import Relay.ProtobufUtil
     Filter.new(
       name: "envoy.http_connection_manager",
-      config: ProtobufUtil.mkstruct(HttpConnectionManager.new(
+      config: mkstruct(HttpConnectionManager.new(
         codec_type: HttpConnectionManager.CodecType.value(:AUTO),
-        route_specifier: {:route_config, RouteConfiguration.new(
-          name: "demo",
-          virtual_hosts: [
-            VirtualHost.new(
-              name: "demo",
-              domains: ["example.com"],
-              routes: [
-                Route.new(
-                  match: RouteMatch.new(path_specifier: {:prefix, "/"}),
-                  action: {:route, RouteAction.new(cluster_specifier: {:cluster, "demo"})}
-                )
-              ]
-            )
-          ],
-        )},
+        route_specifier: {:route_config, route_config()},
         stat_prefix: name,
-        http_filters: [
-          HttpFilter.new(
-            name: "envoy.router",
-            config: ProtobufUtil.mkstruct(Router.new(upstream_log: [
-              AccessLog.new(
-                name: "envoy.file_access_log",
-                config: ProtobufUtil.mkstruct(FileAccessLog.new(path: "upstream.log")))
-            ]))
-          )
-        ]))
+        http_filters: [router_filter()]))
       )
   end
 
