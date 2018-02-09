@@ -1,17 +1,18 @@
 Code.require_file(Path.join([__DIR__, "marathon_client_helper.exs"]))
 
 defmodule Relay.MarathonClient.SSEClientTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
 
   alias Relay.MarathonClient.SSEClient
-  import TestHelpers
-  import ExUnit.CaptureLog
+  import MarathonTestHelpers, only: [
+    marathon_event: 2,
+    setup_apps: 0,
+    cleanup_apps: 1,
+  ]
 
   setup_all do
-    {:ok, hackney_apps} = Application.ensure_all_started(:hackney)
-    {:ok, cowboy_apps} = Application.ensure_all_started(:cowboy)
-    apps = Enum.concat([hackney_apps, cowboy_apps])
-    on_exit(fn -> apps |> Enum.each(&Application.stop/1) end)
+    apps = setup_apps()
+    on_exit(fn -> cleanup_apps(apps) end)
   end
 
   def stream_events(fm, timeout \\ 60_000) do
@@ -96,6 +97,7 @@ defmodule Relay.MarathonClient.SSEClientTest do
     assert_receive {:sse, ^event}, 1_000
 
     # Capture the error that gets logged outside our control.
+    import ExUnit.CaptureLog
     assert capture_log(fn ->
       # Wait for the timeout.
       assert_receive {:DOWN, ^ref, :process, _, {:closed, :timeout}}, 150
