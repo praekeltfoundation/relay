@@ -15,7 +15,7 @@ defmodule Relay.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      applications: [:grpc],
+      mod: {Relay, []},
       extra_applications: [:logger]
     ]
   end
@@ -29,8 +29,13 @@ defmodule Relay.MixProject do
   defp deps do
     [
       {:grpc, github: "tony612/grpc-elixir"},
-      # {:dep_from_hexpm, "~> 0.3.0"},
-      # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"},
+      # https://github.com/tony612/protobuf-elixir/pull/18
+      {:protobuf, github: "tony612/protobuf-elixir", override: true},
+      # lager_logger stops the Eternal Logging System War.
+      {:lager_logger, "~> 1.0"},
+      # chatterbox (through grpc) specifies lager from github, which conflicts
+      # with version lager_logger wants. Overriding both of them fixes that.
+      {:lager, ">= 3.2.4", override: true},
 
       # 2017-12-13: The latest hackney release (1.10.1) has a bug in async
       # request cleanup: https://github.com/benoitc/hackney/issues/447 The
@@ -39,6 +44,7 @@ defmodule Relay.MixProject do
       {:hackney, "~> 1.9.0"},
       {:httpoison, "~> 0.13"},
 
+      # Test deps.
       {:exjsx, "~> 4.0", only: :test},
       {:sse_test_server,
        git: "https://github.com/praekeltfoundation/sse_test_server.git",

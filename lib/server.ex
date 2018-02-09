@@ -1,12 +1,17 @@
 defmodule Relay.Server do
+  alias GRPC.Server
+  alias Relay.Demo2
+
   defmodule ListenerDiscoveryService do
     use GRPC.Server, service: Envoy.Api.V2.ListenerDiscoveryService.Service
 
     # rpc StreamListeners(stream DiscoveryRequest) returns (stream DiscoveryResponse)
     @spec stream_listeners(Enumerable.t, GRPC.Server.Stream.t) :: any
-    def stream_listeners(request, stream) do
-      IO.puts("stream_listeners!")
-      Enum.each(request, fn(req) -> IO.inspect(req) end)
+    def stream_listeners(req_enum, stream) do
+      Enum.each(req_enum, fn(request) ->
+        IO.inspect {:stream_listeners, self()}
+        Server.stream_send(stream, Demo2.listeners())
+      end)
     end
 
     # rpc FetchListeners(DiscoveryRequest) returns (DiscoveryResponse)
@@ -21,9 +26,10 @@ defmodule Relay.Server do
 
     # rpc StreamRoutes(stream DiscoveryRequest) returns (stream DiscoveryResponse)
     @spec stream_routes(Enumerable.t, GRPC.Server.Stream.t) :: any
-    def stream_routes(request, stream) do
-      IO.puts("stream_routes!")
-      Enum.each(request, fn(req) -> IO.inspect(req) end)
+    def stream_routes(req_enum, stream) do
+      Enum.each(req_enum, fn(request) ->
+        IO.inspect(request)
+      end)
     end
 
     # rpc FetchRoutes(DiscoveryRequest) returns (DiscoveryResponse)
@@ -38,9 +44,11 @@ defmodule Relay.Server do
 
     # rpc StreamClusters(stream DiscoveryRequest) returns (stream DiscoveryResponse)
     @spec stream_clusters(Enumerable.t, GRPC.Server.Stream.t) :: any
-    def stream_clusters(request, stream) do
-      IO.puts("stream_clusters!")
-      Enum.each(request, fn(req) -> IO.inspect(req) end)
+    def stream_clusters(req_enum, stream) do
+      Enum.each(req_enum, fn(request) ->
+        IO.inspect {:stream_clusters, self()}
+        Server.stream_send(stream, Demo2.clusters())
+      end)
     end
 
     # rpc FetchClusters(DiscoveryRequest) returns (DiscoveryResponse)
@@ -55,9 +63,10 @@ defmodule Relay.Server do
 
     # rpc StreamEndpoints(stream DiscoveryRequest) returns (stream DiscoveryResponse)
     @spec stream_endpoints(Enumerable.t, GRPC.Server.Stream.t) :: any
-    def stream_endpoints(request, stream) do
-      IO.puts("stream_endpoints!")
-      Enum.each(request, fn(req) -> IO.inspect(req) end)
+    def stream_endpoints(req_enum, stream) do
+      Enum.each(req_enum, fn(request) ->
+        IO.inspect(request)
+      end)
     end
 
     # rpc FetchEndpoints(DiscoveryRequest) returns (DiscoveryResponse)
