@@ -13,6 +13,11 @@ defmodule Relay.ProtobufUtil do
     end)
   end
 
+  @doc """
+  Pack a protobuf struct into a Google.Protobuf.Struct type.
+
+  The protobuf struct will be validated before packing.
+  """
   def mkstruct(%{__struct__: mod} = struct) do
     Protobuf.Validator.validate!(struct)
 
