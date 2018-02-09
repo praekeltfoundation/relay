@@ -1,107 +1,45 @@
 defmodule Relay.ServerTest do
+  use ExUnit.Case, async: true
+
+  alias Relay.Server.ListenerDiscoveryService, as: Lds
+  alias Relay.Server.RouteDiscoveryService, as: Rds
+  alias Relay.Server.ClusterDiscoveryService, as: Cds
+  alias Relay.Server.EndpointDiscoveryService, as: Eds
+
   alias Envoy.Api.V2.{DiscoveryRequest, DiscoveryResponse}
 
-  defmodule ListenerDiscoveryServiceTest do
-    use ExUnit.Case, async: true
+  alias Envoy.Api.V2.ListenerDiscoveryService.Stub, as: LdsStub
+  alias Envoy.Api.V2.RouteDiscoveryService.Stub, as: RdsStub
+  alias Envoy.Api.V2.ClusterDiscoveryService.Stub, as: CdsStub
+  alias Envoy.Api.V2.EndpointDiscoveryService.Stub, as: EdsStub
 
-    alias Relay.Server.ListenerDiscoveryService
-    alias Envoy.Api.V2.ListenerDiscoveryService.Stub
+  setup do
+    servers = [Lds, Rds, Cds, Eds]
+    {:ok, pid, port} = GRPC.Server.start(servers, 0)
+    {:ok, channel} = GRPC.Stub.connect("127.0.0.1:#{port}")
 
-    setup do
-      {:ok, pid, port} = GRPC.Server.start(ListenerDiscoveryService, 0)
-      {:ok, channel} = GRPC.Stub.connect("127.0.0.1:#{port}")
+    on_exit fn -> GRPC.Server.stop(servers) end
 
-      on_exit fn -> GRPC.Server.stop(ListenerDiscoveryService) end
-
-      %{channel: channel, pid: pid}
-    end
-
-    test "fetch listeners unimplemented", %{channel: channel} do
-      request = DiscoveryRequest.new()
-      {:error, reply} = channel |> Stub.fetch_listeners(request)
-
-      assert reply == %GRPC.RPCError{
-        status: GRPC.Status.unimplemented(),
-        message: "not implemented"
-      }
-    end
+    %{channel: channel, pid: pid}
   end
 
-  defmodule RouteDiscoveryServiceTest do
-    use ExUnit.Case, async: true
+  test "fetch endpoints unimplemented", %{channel: channel} do
+    request = DiscoveryRequest.new()
+    unimplemented_error = %GRPC.RPCError{
+      status: GRPC.Status.unimplemented(),
+      message: "not implemented"
+    }
 
-    alias Relay.Server.RouteDiscoveryService
-    alias Envoy.Api.V2.RouteDiscoveryService.Stub
+    {:error, lds_reply} = channel |> LdsStub.fetch_listeners(request)
+    assert lds_reply == unimplemented_error
 
-    setup do
-      {:ok, pid, port} = GRPC.Server.start(RouteDiscoveryService, 0)
-      {:ok, channel} = GRPC.Stub.connect("127.0.0.1:#{port}")
+    {:error, rds_reply} = channel |> RdsStub.fetch_routes(request)
+    assert rds_reply == unimplemented_error
 
-      on_exit fn -> GRPC.Server.stop(RouteDiscoveryService) end
+    {:error, cds_reply} = channel |> CdsStub.fetch_clusters(request)
+    assert cds_reply == unimplemented_error
 
-      %{channel: channel, pid: pid}
-    end
-
-    test "fetch listeners unimplemented", %{channel: channel} do
-      request = DiscoveryRequest.new()
-      {:error, reply} = channel |> Stub.fetch_routes(request)
-
-      assert reply == %GRPC.RPCError{
-        status: GRPC.Status.unimplemented(),
-        message: "not implemented"
-      }
-    end
-  end
-
-  defmodule ClusterDiscoveryServiceTest do
-    use ExUnit.Case, async: true
-
-    alias Relay.Server.ClusterDiscoveryService
-    alias Envoy.Api.V2.ClusterDiscoveryService.Stub
-
-    setup do
-      {:ok, pid, port} = GRPC.Server.start(ClusterDiscoveryService, 0)
-      {:ok, channel} = GRPC.Stub.connect("127.0.0.1:#{port}")
-
-      on_exit fn -> GRPC.Server.stop(ClusterDiscoveryService) end
-
-      %{channel: channel, pid: pid}
-    end
-
-    test "fetch listeners unimplemented", %{channel: channel} do
-      request = DiscoveryRequest.new()
-      {:error, reply} = channel |> Stub.fetch_clusters(request)
-
-      assert reply == %GRPC.RPCError{
-        status: GRPC.Status.unimplemented(),
-        message: "not implemented"
-      }
-    end
-  end
-
-  defmodule EndpointDiscoveryServiceTest do
-    use ExUnit.Case, async: true
-
-    alias Relay.Server.EndpointDiscoveryService
-    alias Envoy.Api.V2.EndpointDiscoveryService.Stub
-
-    setup do
-      {:ok, pid, port} = GRPC.Server.start(EndpointDiscoveryService, 0)
-      {:ok, channel} = GRPC.Stub.connect("127.0.0.1:#{port}")
-
-      on_exit fn -> GRPC.Server.stop(EndpointDiscoveryService) end
-
-      %{channel: channel, pid: pid}
-    end
-
-    test "fetch listeners unimplemented", %{channel: channel} do
-      request = DiscoveryRequest.new()
-      {:error, reply} = channel |> Stub.fetch_endpoints(request)
-
-      assert reply == %GRPC.RPCError{
-        status: GRPC.Status.unimplemented(),
-        message: "not implemented"
-      }
-    end
+    {:error, eds_reply} = channel |> EdsStub.fetch_endpoints(request)
+    assert eds_reply == unimplemented_error
   end
 end
