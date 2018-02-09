@@ -1,0 +1,7 @@
+{
+  "skip_files": [
+    "data-plane-api",
+    "lib/envoy",
+    "lib/google"
+  ]
+}
