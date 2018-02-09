@@ -1,4 +1,4 @@
-defmodule Relay.SSEParser do
+defmodule Relay.MarathonClient.SSEParser do
   @moduledoc """
   A GenServer to turn a stream of bytes (usually from an HTTP response) into a
   stream of server-sent events.

@@ -14,7 +14,7 @@ defmodule EventCatcher do
 end
 
 defmodule TestHelpers do
-  alias Relay.SSEParser.Event
+  alias Relay.MarathonClient.SSEParser.Event
 
   @doc """
   Build a Marathon event from the given type and fields.

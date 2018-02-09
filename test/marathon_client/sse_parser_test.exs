@@ -1,7 +1,7 @@
-defmodule Relay.SSEParserTest do
+defmodule Relay.MarathonClient.SSEParserTest do
   use ExUnit.Case, async: true
 
-  alias Relay.SSEParser
+  alias Relay.MarathonClient.SSEParser
   alias SSEParser.{Event, State}
 
   setup do

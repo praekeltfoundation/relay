@@ -1,4 +1,4 @@
-defmodule Relay.SSEClient do
+defmodule Relay.MarathonClient.SSEClient do
   @moduledoc """
   A GenServer to receive async responses from the HTTP client and forward the
   data chunks to the SSE parser.
@@ -10,7 +10,7 @@ defmodule Relay.SSEClient do
 
   use GenServer
 
-  alias Relay.SSEParser
+  alias Relay.MarathonClient.SSEParser
 
   ## Client API
 

@@ -1,14 +1,16 @@
 Code.require_file(Path.join([__DIR__, "marathon_client_helper.exs"]))
 
-defmodule Relay.SSEClientTest do
+defmodule Relay.MarathonClient.SSEClientTest do
   use ExUnit.Case, async: true
 
-  alias Relay.SSEClient
+  alias Relay.MarathonClient.SSEClient
   import TestHelpers
   import ExUnit.CaptureLog
 
   setup_all do
-    {:ok, apps} = Application.ensure_all_started(:hackney)
+    {:ok, hackney_apps} = Application.ensure_all_started(:hackney)
+    {:ok, cowboy_apps} = Application.ensure_all_started(:cowboy)
+    apps = Enum.concat([hackney_apps, cowboy_apps])
     on_exit(fn -> apps |> Enum.each(&Application.stop/1) end)
   end
 
