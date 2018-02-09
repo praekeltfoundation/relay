@@ -16,8 +16,8 @@ defmodule Relay.Server do
 
     # rpc FetchListeners(DiscoveryRequest) returns (DiscoveryResponse)
     @spec fetch_listeners(Envoy.Api.V2.DiscoveryRequest.t, GRPC.Server.Stream.t) :: Envoy.Api.V2.DiscoveryResponse.t
-    def fetch_listeners(request, _stream) do
-      # TODO: Return unimplemented on FetchListeners
+    def fetch_listeners(_request, _stream) do
+      raise GRPC.RPCError, status: GRPC.Status.unimplemented(), message: "not implemented"
     end
   end
 
@@ -34,8 +34,8 @@ defmodule Relay.Server do
 
     # rpc FetchRoutes(DiscoveryRequest) returns (DiscoveryResponse)
     @spec fetch_routes(Envoy.Api.V2.DiscoveryRequest.t, GRPC.Server.Stream.t) :: Envoy.Api.V2.DiscoveryResponse.t
-    def fetch_routes(request, _stream) do
-      # TODO: Return unimplemented on FetchRoutes
+    def fetch_routes(_request, _stream) do
+      raise GRPC.RPCError, status: GRPC.Status.unimplemented(), message: "not implemented"
     end
   end
 
@@ -53,8 +53,8 @@ defmodule Relay.Server do
 
     # rpc FetchClusters(DiscoveryRequest) returns (DiscoveryResponse)
     @spec fetch_clusters(Envoy.Api.V2.DiscoveryRequest.t, GRPC.Server.Stream.t) :: Envoy.Api.V2.DiscoveryResponse.t
-    def fetch_clusters(request, _stream) do
-      # TODO: Return unimplemented on FetchClusters
+    def fetch_clusters(_request, _stream) do
+      raise GRPC.RPCError, status: GRPC.Status.unimplemented(), message: "not implemented"
     end
   end
 
@@ -71,8 +71,8 @@ defmodule Relay.Server do
 
     # rpc FetchEndpoints(DiscoveryRequest) returns (DiscoveryResponse)
     @spec fetch_endpoints(Envoy.Api.V2.DiscoveryRequest.t, GRPC.Server.Stream.t) :: Envoy.Api.V2.DiscoveryResponse.t
-    def fetch_endpoints(request, _stream) do
-      # TODO: Return unimplemented on FetchEndpoints
+    def fetch_endpoints(_request, _stream) do
+      raise GRPC.RPCError, status: GRPC.Status.unimplemented(), message: "not implemented"
     end
   end
 end
