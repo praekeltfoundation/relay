@@ -23,23 +23,27 @@ defmodule Relay.ServerTest do
     %{channel: channel, pid: pid}
   end
 
-  test "fetch endpoints unimplemented", %{channel: channel} do
-    request = DiscoveryRequest.new()
-    unimplemented_error = %GRPC.RPCError{
-      status: GRPC.Status.unimplemented(),
-      message: "not implemented"
-    }
+  test "fetch_listeners unimplemented", %{channel: channel} do
+    {:error, reply} = channel |> LdsStub.fetch_listeners(DiscoveryRequest.new())
+    assert reply == %GRPC.RPCError{
+      status: GRPC.Status.unimplemented(), message: "not implemented"}
+  end
 
-    {:error, lds_reply} = channel |> LdsStub.fetch_listeners(request)
-    assert lds_reply == unimplemented_error
+  test "fetch_routes unimplemented", %{channel: channel} do
+    {:error, reply} = channel |> RdsStub.fetch_routes(DiscoveryRequest.new())
+    assert reply == %GRPC.RPCError{
+      status: GRPC.Status.unimplemented(), message: "not implemented"}
+  end
 
-    {:error, rds_reply} = channel |> RdsStub.fetch_routes(request)
-    assert rds_reply == unimplemented_error
+  test "fetch_clusters unimplemented", %{channel: channel} do
+    {:error, reply} = channel |> CdsStub.fetch_clusters(DiscoveryRequest.new())
+    assert reply == %GRPC.RPCError{
+      status: GRPC.Status.unimplemented(), message: "not implemented"}
+  end
 
-    {:error, cds_reply} = channel |> CdsStub.fetch_clusters(request)
-    assert cds_reply == unimplemented_error
-
-    {:error, eds_reply} = channel |> EdsStub.fetch_endpoints(request)
-    assert eds_reply == unimplemented_error
+  test "fetch_endpoints unimplemented", %{channel: channel} do
+    {:error, reply} = channel |> EdsStub.fetch_endpoints(DiscoveryRequest.new())
+    assert reply == %GRPC.RPCError{
+      status: GRPC.Status.unimplemented(), message: "not implemented"}
   end
 end
