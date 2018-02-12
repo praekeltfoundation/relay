@@ -3,10 +3,10 @@ elixir: '1.6'
 
 script:
   # This is basically `mix test` with coverage enabled.
-  # - mix coveralls.json
+  - mix coveralls.json
 
 after_success:
-  # - bash <(curl -s https://codecov.io/bash)
+  - bash <(curl -s https://codecov.io/bash)
 
 jobs:
   include:

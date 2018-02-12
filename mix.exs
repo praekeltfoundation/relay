@@ -9,6 +9,12 @@ defmodule Relay.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       aliases: aliases(),
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        "coveralls": :test,
+        "coveralls.json": :test,
+        "coveralls.detail": :test,
+      ],
     ]
   end
 
@@ -52,6 +58,8 @@ defmodule Relay.MixProject do
        only: :test,
        # We need this installed, but we don't want to run its app.
        app: false},
+
+      {:excoveralls, "~> 0.8", only: :test},
     ]
   end
 end
