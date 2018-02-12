@@ -13,6 +13,8 @@ defmodule Relay.ServerTest do
   alias Envoy.Api.V2.ClusterDiscoveryService.Stub, as: CDSStub
   alias Envoy.Api.V2.EndpointDiscoveryService.Stub, as: EDSStub
 
+  alias Google.Protobuf.Any
+
   setup do
     TestHelpers.override_log_level(:info)
 
@@ -50,7 +52,8 @@ defmodule Relay.ServerTest do
   end
 
   test "stream_listeners streams a DiscoveryResponse", %{channel: channel} do
-    stream = channel |> LDSStub.stream_listeners()
+    stream = channel |> LDSStub.stream_listeners
+    type_url = LDS.type_url
 
     task = Task.async(fn ->
       GRPC.Stub.stream_send(stream, DiscoveryRequest.new(), end_stream: true)
@@ -60,17 +63,17 @@ defmodule Relay.ServerTest do
     Task.await(task)
 
     assert [response] = Enum.to_list(result_enum)
-    assert %DiscoveryResponse{type_url: type_url, resources: resources} = response
+    assert %DiscoveryResponse{type_url: ^type_url, resources: resources} = response
 
-    assert type_url == LDS.type_url
     assert length(resources) > 0
     resources |> Enum.each(fn(resource) ->
-      assert resource.type_url == LDS.type_url
+      assert %Any{type_url: ^type_url} = resource
     end)
   end
 
   test "stream_clusters streams a DiscoveryResponse", %{channel: channel} do
-    stream = channel |> CDSStub.stream_clusters()
+    stream = channel |> CDSStub.stream_clusters
+    type_url = CDS.type_url
 
     task = Task.async(fn ->
       GRPC.Stub.stream_send(stream, DiscoveryRequest.new(), end_stream: true)
@@ -80,17 +83,17 @@ defmodule Relay.ServerTest do
     Task.await(task)
 
     assert [response] = Enum.to_list(result_enum)
-    assert %DiscoveryResponse{type_url: type_url, resources: resources} = response
+    assert %DiscoveryResponse{type_url: ^type_url, resources: resources} = response
 
-    assert type_url == CDS.type_url
     assert length(resources) > 0
     resources |> Enum.each(fn(resource) ->
-      assert resource.type_url == CDS.type_url
+      assert %Any{type_url: ^type_url} = resource
     end)
   end
 
   test "stream_routes streams a DiscoveryResponse", %{channel: channel} do
-    stream = channel |> RDSStub.stream_routes()
+    stream = channel |> RDSStub.stream_routes
+    type_url = RDS.type_url
 
     task = Task.async(fn ->
       GRPC.Stub.stream_send(stream, DiscoveryRequest.new(), end_stream: true)
@@ -100,15 +103,15 @@ defmodule Relay.ServerTest do
     Task.await(task)
 
     assert [response] = Enum.to_list(result_enum)
-    assert %DiscoveryResponse{type_url: type_url, resources: resources} = response
+    assert %DiscoveryResponse{type_url: ^type_url, resources: resources} = response
 
-    assert type_url == RDS.type_url
     # TODO: Return some resources
     assert resources == []
   end
 
   test "stream_endpoints streams a DiscoveryResponse", %{channel: channel} do
-    stream = channel |> EDSStub.stream_endpoints()
+    stream = channel |> EDSStub.stream_endpoints
+    type_url = EDS.type_url
 
     task = Task.async(fn ->
       GRPC.Stub.stream_send(stream, DiscoveryRequest.new(), end_stream: true)
@@ -118,9 +121,8 @@ defmodule Relay.ServerTest do
     Task.await(task)
 
     assert [response] = Enum.to_list(result_enum)
-    assert %DiscoveryResponse{type_url: type_url, resources: resources} = response
+    assert %DiscoveryResponse{type_url: ^type_url, resources: resources} = response
 
-    assert type_url == EDS.type_url
     # TODO: Return some resources
     assert resources == []
   end
