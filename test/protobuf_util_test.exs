@@ -189,21 +189,10 @@ defmodule Relay.ProtobufUtilTest do
   end
 
   test "Any encodes a type" do
-    defmodule SimpleType do
-      use Protobuf, syntax: :proto3
-
-      @type t :: %__MODULE__{
-        baz: String.t
-      }
-      defstruct [:baz]
-
-      field :baz, 1, type: :string
-    end
-
-    proto = SimpleType.new(baz: "abcdef")
+    proto = Value.new(kind: {:string_value, "abcdef"})
     any = ProtobufUtil.mkany("example.com/mytype", proto)
 
     assert %Any{type_url: "example.com/mytype", value: value} = any
-    assert SimpleType.decode(value) == %SimpleType{baz: "abcdef"}
+    assert Value.decode(value) == proto
   end
 end

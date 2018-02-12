@@ -63,7 +63,7 @@ defmodule Relay.ProtobufUtil do
   @doc """
   Encode a Protobuf struct into a Google.Protobuf.Any type.
   """
-  def mkany(type_url, value) do
-    Any.new(type_url: type_url, value: Protobuf.encode(value))
+  def mkany(type_url, %{__struct__: mod} = value) do
+    Any.new(type_url: type_url, value: mod.encode(value))
   end
 end
