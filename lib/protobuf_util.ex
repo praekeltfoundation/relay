@@ -23,7 +23,7 @@ defmodule Relay.ProtobufUtil do
 
   The Protobuf struct will be validated before packing.
   """
-  def mkstruct(%{__struct__: mod} = struct) do
+  def mkstruct(%mod{} = struct) do
     Protobuf.Validator.validate!(struct)
 
     props = mod.__message_props__()
@@ -63,6 +63,6 @@ defmodule Relay.ProtobufUtil do
   @doc """
   Encode a Protobuf struct into a Google.Protobuf.Any type.
   """
-  def mkany(type_url, %{__struct__: mod} = value), do:
+  def mkany(type_url, %mod{} = value), do:
     Any.new(type_url: type_url, value: mod.encode(value))
 end
