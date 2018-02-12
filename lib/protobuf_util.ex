@@ -1,4 +1,9 @@
 defmodule Relay.ProtobufUtil do
+  @moduledoc """
+  Utility functions for working with Protobuf structs, primarily when using the
+  Google.Protobuf types.
+  """
+
   alias Google.Protobuf.{Struct, NullValue, ListValue, Value}
 
   defp oneof_actual_vals(props, struct) do
@@ -13,7 +18,14 @@ defmodule Relay.ProtobufUtil do
     end)
   end
 
+  @doc """
+  Pack a Protobuf struct into a Google.Protobuf.Struct type.
+
+  The Protobuf struct will be validated before packing.
+  """
   def mkstruct(%{__struct__: mod} = struct) do
+    Protobuf.Validator.validate!(struct)
+
     props = mod.__message_props__()
     oneofs = oneof_actual_vals(props, struct)
 
