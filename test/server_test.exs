@@ -14,6 +14,8 @@ defmodule Relay.ServerTest do
   alias Envoy.Api.V2.EndpointDiscoveryService.Stub, as: EDSStub
 
   setup do
+    TestHelpers.override_log_level(:info)
+
     servers = [LDS, RDS, CDS, EDS]
     {:ok, pid, port} = GRPC.Server.start(servers, 0)
     {:ok, channel} = GRPC.Stub.connect("127.0.0.1:#{port}")
