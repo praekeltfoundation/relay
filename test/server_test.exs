@@ -52,7 +52,7 @@ defmodule Relay.ServerTest do
   end
 
   test "stream_listeners streams a DiscoveryResponse", %{channel: channel} do
-    stream = channel |> LDSStub.stream_listeners
+    stream = channel |> LDSStub.stream_listeners()
     type_url = LDS.type_url
 
     task = Task.async(fn ->
@@ -72,7 +72,7 @@ defmodule Relay.ServerTest do
   end
 
   test "stream_clusters streams a DiscoveryResponse", %{channel: channel} do
-    stream = channel |> CDSStub.stream_clusters
+    stream = channel |> CDSStub.stream_clusters()
     type_url = CDS.type_url
 
     task = Task.async(fn ->
@@ -92,7 +92,7 @@ defmodule Relay.ServerTest do
   end
 
   test "stream_routes streams a DiscoveryResponse", %{channel: channel} do
-    stream = channel |> RDSStub.stream_routes
+    stream = channel |> RDSStub.stream_routes()
     type_url = RDS.type_url
 
     task = Task.async(fn ->
@@ -110,7 +110,7 @@ defmodule Relay.ServerTest do
   end
 
   test "stream_endpoints streams a DiscoveryResponse", %{channel: channel} do
-    stream = channel |> EDSStub.stream_endpoints
+    stream = channel |> EDSStub.stream_endpoints()
     type_url = EDS.type_url
 
     task = Task.async(fn ->
