@@ -1,6 +1,6 @@
 defmodule Relay.Server do
   alias Relay.{Demo2, ProtobufUtil}
-  alias Envoy.Api.V2.DiscoveryResponse
+  alias Envoy.Api.V2.{DiscoveryRequest, DiscoveryResponse}
 
   def mkresponse(type_url, resources, opts \\ []) do
     typed_resources = resources |> Enum.map(fn res -> ProtobufUtil.mkany(type_url, res) end)
@@ -26,7 +26,7 @@ defmodule Relay.Server do
     end
 
     # rpc FetchListeners(DiscoveryRequest) returns (DiscoveryResponse)
-    @spec fetch_listeners(Envoy.Api.V2.DiscoveryRequest.t, GRPC.Server.Stream.t) :: Envoy.Api.V2.DiscoveryResponse.t
+    @spec fetch_listeners(DiscoveryRequest.t, GRPC.Server.Stream.t) :: DiscoveryResponse.t
     def fetch_listeners(_request, _stream) do
       raise GRPC.RPCError, status: GRPC.Status.unimplemented(), message: "not implemented"
     end
@@ -51,7 +51,7 @@ defmodule Relay.Server do
     end
 
     # rpc FetchRoutes(DiscoveryRequest) returns (DiscoveryResponse)
-    @spec fetch_routes(Envoy.Api.V2.DiscoveryRequest.t, GRPC.Server.Stream.t) :: Envoy.Api.V2.DiscoveryResponse.t
+    @spec fetch_routes(DiscoveryRequest.t, GRPC.Server.Stream.t) :: DiscoveryResponse.t
     def fetch_routes(_request, _stream) do
       raise GRPC.RPCError, status: GRPC.Status.unimplemented(), message: "not implemented"
     end
@@ -76,7 +76,7 @@ defmodule Relay.Server do
     end
 
     # rpc FetchClusters(DiscoveryRequest) returns (DiscoveryResponse)
-    @spec fetch_clusters(Envoy.Api.V2.DiscoveryRequest.t, GRPC.Server.Stream.t) :: Envoy.Api.V2.DiscoveryResponse.t
+    @spec fetch_clusters(DiscoveryRequest.t, GRPC.Server.Stream.t) :: DiscoveryResponse.t
     def fetch_clusters(_request, _stream) do
       raise GRPC.RPCError, status: GRPC.Status.unimplemented(), message: "not implemented"
     end
@@ -101,7 +101,7 @@ defmodule Relay.Server do
     end
 
     # rpc FetchEndpoints(DiscoveryRequest) returns (DiscoveryResponse)
-    @spec fetch_endpoints(Envoy.Api.V2.DiscoveryRequest.t, GRPC.Server.Stream.t) :: Envoy.Api.V2.DiscoveryResponse.t
+    @spec fetch_endpoints(DiscoveryRequest.t, GRPC.Server.Stream.t) :: DiscoveryResponse.t
     def fetch_endpoints(_request, _stream) do
       raise GRPC.RPCError, status: GRPC.Status.unimplemented(), message: "not implemented"
     end
