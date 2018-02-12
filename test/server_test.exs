@@ -48,4 +48,44 @@ defmodule Relay.ServerTest do
     assert reply == %GRPC.RPCError{
       status: GRPC.Status.unimplemented(), message: "not implemented"}
   end
+
+  test "stream_listeners streams a DiscoveryResponse", %{channel: channel} do
+    stream = channel |> LDSStub.stream_listeners()
+
+    task = Task.async(fn ->
+      GRPC.Stub.stream_send(stream, DiscoveryRequest.new(), end_stream: true)
+    end)
+
+    result_enum = GRPC.Stub.recv(stream)
+    Task.await(task)
+
+    assert [response] = Enum.to_list(result_enum)
+    assert %DiscoveryResponse{type_url: type_url, resources: resources} = response
+
+    assert type_url == "type.googleapis.com/envoy.api.v2.Listener"
+    assert length(resources) > 0
+    resources |> Enum.each(fn(resource) ->
+      assert resource.type_url == "type.googleapis.com/envoy.api.v2.Listener"
+    end)
+  end
+
+  test "stream_clusters streams a DiscoveryResponse", %{channel: channel} do
+    stream = channel |> CDSStub.stream_clusters()
+
+    task = Task.async(fn ->
+      GRPC.Stub.stream_send(stream, DiscoveryRequest.new(), end_stream: true)
+    end)
+
+    result_enum = GRPC.Stub.recv(stream)
+    Task.await(task)
+
+    assert [response] = Enum.to_list(result_enum)
+    assert %DiscoveryResponse{type_url: type_url, resources: resources} = response
+
+    assert type_url == "type.googleapis.com/envoy.api.v2.Cluster"
+    assert length(resources) > 0
+    resources |> Enum.each(fn(resource) ->
+      assert resource.type_url == "type.googleapis.com/envoy.api.v2.Cluster"
+    end)
+  end
 end
