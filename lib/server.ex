@@ -11,6 +11,7 @@ defmodule Relay.Server do
     use GRPC.Server, service: Envoy.Api.V2.ListenerDiscoveryService.Service
 
     @type_url "type.googleapis.com/envoy.api.v2.Listener"
+    def type_url, do: @type_url
 
     # rpc StreamListeners(stream DiscoveryRequest) returns (stream DiscoveryResponse)
     @spec stream_listeners(Enumerable.t, GRPC.Server.Stream.t) :: any
@@ -36,6 +37,7 @@ defmodule Relay.Server do
     use GRPC.Server, service: Envoy.Api.V2.RouteDiscoveryService.Service
 
     @type_url "type.googleapis.com/envoy.api.v2.RouteConfiguration"
+    def type_url, do: @type_url
 
     # rpc StreamRoutes(stream DiscoveryRequest) returns (stream DiscoveryResponse)
     @spec stream_routes(Enumerable.t, GRPC.Server.Stream.t) :: any
@@ -61,6 +63,7 @@ defmodule Relay.Server do
     use GRPC.Server, service: Envoy.Api.V2.ClusterDiscoveryService.Service
 
     @type_url "type.googleapis.com/envoy.api.v2.Cluster"
+    def type_url, do: @type_url
 
     # rpc StreamClusters(stream DiscoveryRequest) returns (stream DiscoveryResponse)
     @spec stream_clusters(Enumerable.t, GRPC.Server.Stream.t) :: any
@@ -86,6 +89,7 @@ defmodule Relay.Server do
     use GRPC.Server, service: Envoy.Api.V2.EndpointDiscoveryService.Service
 
     @type_url "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment"
+    def type_url, do: @type_url
 
     # rpc StreamEndpoints(stream DiscoveryRequest) returns (stream DiscoveryResponse)
     @spec stream_endpoints(Enumerable.t, GRPC.Server.Stream.t) :: any

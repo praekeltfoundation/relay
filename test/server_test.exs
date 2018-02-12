@@ -62,10 +62,10 @@ defmodule Relay.ServerTest do
     assert [response] = Enum.to_list(result_enum)
     assert %DiscoveryResponse{type_url: type_url, resources: resources} = response
 
-    assert type_url == "type.googleapis.com/envoy.api.v2.Listener"
+    assert type_url == LDS.type_url
     assert length(resources) > 0
     resources |> Enum.each(fn(resource) ->
-      assert resource.type_url == "type.googleapis.com/envoy.api.v2.Listener"
+      assert resource.type_url == LDS.type_url
     end)
   end
 
@@ -82,10 +82,10 @@ defmodule Relay.ServerTest do
     assert [response] = Enum.to_list(result_enum)
     assert %DiscoveryResponse{type_url: type_url, resources: resources} = response
 
-    assert type_url == "type.googleapis.com/envoy.api.v2.Cluster"
+    assert type_url == CDS.type_url
     assert length(resources) > 0
     resources |> Enum.each(fn(resource) ->
-      assert resource.type_url == "type.googleapis.com/envoy.api.v2.Cluster"
+      assert resource.type_url == CDS.type_url
     end)
   end
 end
