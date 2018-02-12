@@ -29,29 +29,6 @@ defmodule MarathonTestHelpers do
     |> JSX.encode
     %Event{event: event_type, data: data}
   end
-
-  @doc """
-  Start the apps we need for HTTP-based tests.
-
-  Returns a list of all apps started so we can stop them later.
-  """
-  def setup_apps() do
-    {:ok, hackney_apps} = Application.ensure_all_started(:hackney)
-    {:ok, cowboy_apps} = Application.ensure_all_started(:cowboy)
-    Enum.concat([hackney_apps, cowboy_apps])
-  end
-
-  @doc """
-  Stop multiple running apps, usually those started by setup_apps/0.
-
-  This captures logs while stopping to reduce log noise.
-  """
-  def cleanup_apps(apps) do
-    import ExUnit.CaptureLog
-    capture_log(fn ->
-      apps |> Enum.each(&Application.stop/1)
-    end)
-  end
 end
 
 defmodule FakeMarathon do

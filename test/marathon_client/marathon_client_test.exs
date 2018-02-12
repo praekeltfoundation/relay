@@ -4,15 +4,10 @@ defmodule Relay.MarathonClientTest do
   use ExUnit.Case
 
   alias Relay.MarathonClient
-  import MarathonTestHelpers, only: [
-    marathon_event: 2,
-    setup_apps: 0,
-    cleanup_apps: 1,
-  ]
+  import MarathonTestHelpers, only: [marathon_event: 2]
 
   setup_all do
-    apps = setup_apps()
-    on_exit(fn -> cleanup_apps(apps) end)
+    TestHelpers.setup_apps([:cowboy, :hackney])
   end
 
   test "watch marathon events" do

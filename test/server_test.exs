@@ -15,6 +15,10 @@ defmodule Relay.ServerTest do
 
   alias Google.Protobuf.Any
 
+  setup_all do
+    TestHelpers.setup_apps([:relay])
+  end
+
   setup do
     TestHelpers.override_log_level(:info)
 

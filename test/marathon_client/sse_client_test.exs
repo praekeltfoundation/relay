@@ -4,15 +4,10 @@ defmodule Relay.MarathonClient.SSEClientTest do
   use ExUnit.Case
 
   alias Relay.MarathonClient.SSEClient
-  import MarathonTestHelpers, only: [
-    marathon_event: 2,
-    setup_apps: 0,
-    cleanup_apps: 1,
-  ]
+  import MarathonTestHelpers, only: [marathon_event: 2]
 
   setup_all do
-    apps = setup_apps()
-    on_exit(fn -> cleanup_apps(apps) end)
+    TestHelpers.setup_apps([:cowboy, :hackney])
   end
 
   def stream_events(fm, timeout \\ 60_000) do
