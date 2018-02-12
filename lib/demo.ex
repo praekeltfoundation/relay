@@ -1,20 +1,4 @@
 defmodule Relay.Demo do
-  alias Envoy.Api.V2.DiscoveryResponse
-  alias Envoy.Api.V2.Core.{Http1ProtocolOptions}
-  alias Google.Protobuf.{Any, Duration}
-
-  @cds_type "type.googleapis.com/envoy.api.v2.Cluster"
-  @lds_type "type.googleapis.com/envoy.api.v2.Listener"
-
-  defp typed_resource(type, res) do
-    value = GRPC.Message.Protobuf.encode(Any, res)
-    Any.new(type_url: type, value: value)
-  end
-
-  defp typed_resources(type, resources) do
-    resources |> Enum.map(&typed_resource(type, &1))
-  end
-
   defp socket_address(address, port) do
     alias Envoy.Api.V2.Core.{Address, SocketAddress}
     sock = SocketAddress.new(address: address, port_specifier: {:port_value, port})
@@ -23,8 +7,10 @@ defmodule Relay.Demo do
 
   def clusters do
     alias Envoy.Api.V2.Cluster
+    alias Envoy.Api.V2.Core.Http1ProtocolOptions
+    alias Google.Protobuf.Duration
 
-    resources = [
+    [
       Cluster.new(
         name: "demo",
         type: Cluster.DiscoveryType.value(:STATIC),
@@ -35,11 +21,6 @@ defmodule Relay.Demo do
         http_protocol_options: Http1ProtocolOptions.new()
       )
     ]
-    DiscoveryResponse.new(
-      version_info: "1",
-      resources: typed_resources(@cds_type, resources),
-      type_url: @cds_type
-    )
   end
 
   defp route_config do
@@ -91,7 +72,7 @@ defmodule Relay.Demo do
   def listeners do
     alias Envoy.Api.V2.Listener
 
-    resources = [
+    [
       Listener.new(
         name: "http",
         address: socket_address("0.0.0.0", 8080),
@@ -103,11 +84,5 @@ defmodule Relay.Demo do
         ]
       )
     ]
-
-    DiscoveryResponse.new(
-      version_info: "1",
-      resources: typed_resources(@lds_type, resources),
-      type_url: @lds_type
-    )
   end
 end

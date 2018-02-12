@@ -2,7 +2,7 @@ defmodule Relay.ProtobufUtilTest do
   use ExUnit.Case, async: true
 
   alias Relay.ProtobufUtil
-  alias Google.Protobuf.{ListValue, NullValue, Struct, Value}
+  alias Google.Protobuf.{Any, ListValue, NullValue, Struct, Value}
 
   test "null type packed" do
     defmodule NullType do
@@ -185,6 +185,25 @@ defmodule Relay.ProtobufUtilTest do
 
     assert_raise Protobuf.InvalidError, "Relay.ProtobufUtilTest.ValidatedType#foo is invalid!", fn ->
       ProtobufUtil.mkstruct(proto)
-    end 
+    end
+  end
+
+  test "Any encodes a type" do
+    defmodule SimpleType do
+      use Protobuf, syntax: :proto3
+
+      @type t :: %__MODULE__{
+        baz: String.t
+      }
+      defstruct [:baz]
+
+      field :baz, 1, type: :string
+    end
+
+    proto = SimpleType.new(baz: "abcdef")
+    any = ProtobufUtil.mkany("example.com/mytype", proto)
+
+    assert %Any{type_url: "example.com/mytype", value: value} = any
+    assert SimpleType.decode(value) == %SimpleType{baz: "abcdef"}
   end
 end
