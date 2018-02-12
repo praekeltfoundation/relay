@@ -7,7 +7,13 @@ defmodule Relay.MixProject do
       version: "0.1.0",
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        "coveralls": :test,
+        "coveralls.json": :test,
+        "coveralls.detail": :test,
+      ],
     ]
   end
 
@@ -30,6 +36,8 @@ defmodule Relay.MixProject do
       # chatterbox (through grpc) specifies lager from github, which conflicts
       # with version lager_logger wants. Overriding both of them fixes that.
       {:lager, ">= 3.2.4", override: true},
+
+      {:excoveralls, "~> 0.8", only: :test},
     ]
   end
 end

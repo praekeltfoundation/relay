@@ -4,7 +4,7 @@ defmodule Relay.ProtobufUtil do
   Google.Protobuf types.
   """
 
-  alias Google.Protobuf.{Struct, NullValue, ListValue, Value}
+  alias Google.Protobuf.{Any, Struct, NullValue, ListValue, Value}
 
   defp oneof_actual_vals(props, struct) do
     # Copy/pasta-ed from:
@@ -23,7 +23,7 @@ defmodule Relay.ProtobufUtil do
 
   The Protobuf struct will be validated before packing.
   """
-  def mkstruct(%{__struct__: mod} = struct) do
+  def mkstruct(%mod{} = struct) do
     Protobuf.Validator.validate!(struct)
 
     props = mod.__message_props__()
@@ -59,4 +59,10 @@ defmodule Relay.ProtobufUtil do
   end
 
   defp value(kind, val), do: Value.new(kind: {kind, val})
+
+  @doc """
+  Encode a Protobuf struct into a Google.Protobuf.Any type.
+  """
+  def mkany(type_url, %mod{} = value), do:
+    Any.new(type_url: type_url, value: mod.encode(value))
 end
