@@ -2,9 +2,13 @@ defmodule Relay.Server do
   alias Relay.{Demo2, ProtobufUtil}
   alias Envoy.Api.V2.{DiscoveryRequest, DiscoveryResponse}
 
-  def mkresponse(type_url, resources, opts \\ []) do
+  defp mkresponse(type_url, resources, opts \\ []) do
     typed_resources = resources |> Enum.map(fn res -> ProtobufUtil.mkany(type_url, res) end)
     DiscoveryResponse.new([type_url: type_url, resources: typed_resources] ++ opts)
+  end
+
+  def stream_send_response(stream, type_url, resources, opts \\ []) do
+    GRPC.Server.stream_send(stream, mkresponse(type_url, resources, opts))
   end
 
   defmodule ListenerDiscoveryService do
@@ -17,7 +21,7 @@ defmodule Relay.Server do
     def stream_listeners(req_enum, stream) do
       Enum.each(req_enum, fn(request) ->
         IO.inspect {:stream_listeners, self()}
-        GRPC.Server.stream_send(stream, Relay.Server.mkresponse(type_url(), listeners()))
+        Relay.Server.stream_send_response(stream, type_url(), listeners())
       end)
     end
 
@@ -42,7 +46,7 @@ defmodule Relay.Server do
     def stream_routes(req_enum, stream) do
       Enum.each(req_enum, fn(request) ->
         IO.inspect {:stream_routes, self()}
-        GRPC.Server.stream_send(stream, Relay.Server.mkresponse(type_url(), routes()))
+        Relay.Server.stream_send_response(stream, type_url(), routes())
       end)
     end
 
@@ -67,7 +71,7 @@ defmodule Relay.Server do
     def stream_clusters(req_enum, stream) do
       Enum.each(req_enum, fn(request) ->
         IO.inspect {:stream_clusters, self()}
-        GRPC.Server.stream_send(stream, Relay.Server.mkresponse(type_url(), clusters()))
+        Relay.Server.stream_send_response(stream, type_url(), clusters())
       end)
     end
 
@@ -92,7 +96,7 @@ defmodule Relay.Server do
     def stream_endpoints(req_enum, stream) do
       Enum.each(req_enum, fn(request) ->
         IO.inspect {:stream_endpoints, self()}
-        GRPC.Server.stream_send(stream, Relay.Server.mkresponse(type_url(), endpoints()))
+        Relay.Server.stream_send_response(stream, type_url(), endpoints())
       end)
     end
 
