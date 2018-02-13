@@ -73,7 +73,10 @@ defmodule Relay.StoreTest do
     old_resources = [:foo, :bar]
     assert update(store, xds, "1", old_resources) == :ok
 
+    # Assert the stored resources haven't changed
     assert %Resources{version_info: "2", resources: ^resources} = get_resources(store, xds)
+    # Assert we don't receive any updates for this xds
+    refute_received {^xds, _, _}
   end
 
   # TODO: break out these tests into smaller tests
