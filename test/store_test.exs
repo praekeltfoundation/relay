@@ -50,6 +50,31 @@ defmodule Relay.StoreTest do
 
   xds_tests("unsubscribe idempotent", :assert_unsubscribe_idempotent)
 
+  defp assert_subscribers_receive_updates(store, xds) do
+    assert apply(Store, :"subscribe_#{xds}", [store, self()]) == {:ok, "", []}
+
+    resources = [:foo, :bar]
+    assert apply(Store, :"update_#{xds}", [store, "1", resources]) == :ok
+
+    assert_receive {^xds, "1", ^resources}, 1_000
+  end
+
+  xds_tests("subscribers receive updates", :assert_subscribers_receive_updates)
+
+  defp assert_old_updates_ignored(store, xds) do
+    resources = [:foobar, :baz]
+    assert apply(Store, :"update_#{xds}", [store, "2", resources]) == :ok
+
+    assert apply(Store, :"subscribe_#{xds}", [store, self()]) == {:ok, "2", resources}
+
+    old_resources = [:foo, :bar]
+    assert apply(Store, :"update_#{xds}", [store, "1", old_resources]) == :ok
+
+    assert %Resources{version_info: "2", resources: ^resources} = get_resources(store, xds)
+  end
+
+  xds_tests("old updates ignored", :assert_old_updates_ignored)
+
   # TODO: break out these tests into smaller tests
   test "lds basics", %{store: store} do
     # We can store something
