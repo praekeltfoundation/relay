@@ -5,15 +5,18 @@ defmodule Relay.StoreTest do
   alias Store.Resources
   alias Envoy.Api.V2.{Cluster, ClusterLoadAssignment, Listener, RouteConfiguration}
 
+  setup do
+    {:ok, store} = start_supervised(Store)
+    %{store: store}
+  end
+
   def get_resources(store, xds) do
     {:ok, resources} = GenServer.call(store, {:_get_resources, xds})
     resources
   end
 
   # TODO: break out these tests into smaller tests
-  test "lds basics" do
-    {:ok, store} = start_supervised({Store, :ok})
-
+  test "lds basics", %{store: store} do
     # We can store something
     resources = [Listener.new(name: "test")]
     assert Store.update_lds(store, "1", resources) == :ok
@@ -41,9 +44,7 @@ defmodule Relay.StoreTest do
     assert subscribers == MapSet.new()
   end
 
-  test "rds basics" do
-    {:ok, store} = start_supervised({Store, :ok})
-
+  test "rds basics", %{store: store} do
     # We can store something
     resources = [RouteConfiguration.new(name: "test")]
     assert Store.update_rds(store, "1", resources) == :ok
@@ -71,9 +72,7 @@ defmodule Relay.StoreTest do
     assert subscribers == MapSet.new()
   end
 
-  test "cds basics" do
-    {:ok, store} = start_supervised({Store, :ok})
-
+  test "cds basics", %{store: store} do
     # We can store something
     resources = [Cluster.new(name: "test")]
     assert Store.update_cds(store, "1", resources) == :ok
@@ -101,9 +100,7 @@ defmodule Relay.StoreTest do
     assert subscribers == MapSet.new()
   end
 
-  test "eds basics" do
-    {:ok, store} = start_supervised({Store, :ok})
-
+  test "eds basics", %{store: store} do
     # We can store something
     resources = [ClusterLoadAssignment.new(name: "test")]
     assert Store.update_eds(store, "1", resources) == :ok
