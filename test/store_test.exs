@@ -1,9 +1,23 @@
+defmodule Relay.StoreTest.Macros do
+  defmacro xds_tests(name_suffix, assertion) do
+    [:lds, :rds, :cds, :eds]
+    |> Enum.map(fn(xds) ->
+      quote do
+        test "#{unquote(xds)} #{unquote(name_suffix)}", %{store: store},
+          do: unquote(assertion)(store, unquote(xds))
+      end
+    end)
+  end
+end
+
 defmodule Relay.StoreTest do
   use ExUnit.Case, async: true
 
   alias Relay.Store
   alias Store.Resources
   alias Envoy.Api.V2.{Cluster, ClusterLoadAssignment, Listener, RouteConfiguration}
+
+  import Relay.StoreTest.Macros
 
   setup do
     {:ok, store} = start_supervised(Store)
@@ -15,7 +29,7 @@ defmodule Relay.StoreTest do
     resources
   end
 
-  defp assert_subscribe_idempotent(xds, store) do
+  defp assert_subscribe_idempotent(store, xds) do
     assert get_resources(store, xds) == %Resources{subscribers: MapSet.new()}
     assert apply(Store, :"subscribe_#{xds}", [store, self()]) == {:ok, "", []}
     assert get_resources(store, xds) == %Resources{subscribers: MapSet.new([self()])}
@@ -23,19 +37,9 @@ defmodule Relay.StoreTest do
     assert get_resources(store, xds) == %Resources{subscribers: MapSet.new([self()])}
   end
 
-  test "lds subscribe idempotent", %{store: store}, do:
-    assert_subscribe_idempotent(:lds, store)
+  xds_tests("subscribe idempotent", :assert_subscribe_idempotent)
 
-  test "rds subscribe idempotent", %{store: store}, do:
-    assert_subscribe_idempotent(:rds, store)
-
-  test "cds subscribe idempotent", %{store: store}, do:
-    assert_subscribe_idempotent(:cds, store)
-
-  test "eds subscribe idempotent", %{store: store}, do:
-    assert_subscribe_idempotent(:eds, store)
-
-  defp assert_unsubscribe_idempotent(xds, store) do
+  defp assert_unsubscribe_idempotent(store, xds) do
     assert apply(Store, :"subscribe_#{xds}", [store, self()]) == {:ok, "", []}
     assert get_resources(store, xds) == %Resources{subscribers: MapSet.new([self()])}
     assert apply(Store, :"unsubscribe_#{xds}", [store, self()]) == :ok
@@ -44,19 +48,7 @@ defmodule Relay.StoreTest do
     assert get_resources(store, xds) == %Resources{subscribers: MapSet.new()}
   end
 
-  test "lds unsubscribe idempotent", %{store: store}, do:
-    assert_unsubscribe_idempotent(:lds, store)
-
-  test "rds unsubscribe idempotent", %{store: store}, do:
-    assert_unsubscribe_idempotent(:rds, store)
-
-  test "cds unsubscribe idempotent", %{store: store}, do:
-    assert_unsubscribe_idempotent(:cds, store)
-
-  test "eds unsubscribe idempotent", %{store: store}, do:
-    assert_unsubscribe_idempotent(:eds, store)
-
-  defp assert_
+  xds_tests("unsubscribe idempotent", :assert_unsubscribe_idempotent)
 
   # TODO: break out these tests into smaller tests
   test "lds basics", %{store: store} do
