@@ -15,6 +15,49 @@ defmodule Relay.StoreTest do
     resources
   end
 
+  defp assert_subscribe_idempotent(xds, store) do
+    assert get_resources(store, xds) == %Resources{subscribers: MapSet.new()}
+    assert apply(Store, :"subscribe_#{xds}", [store, self()]) == {:ok, "", []}
+    assert get_resources(store, xds) == %Resources{subscribers: MapSet.new([self()])}
+    assert apply(Store, :"subscribe_#{xds}", [store, self()]) == {:ok, "", []}
+    assert get_resources(store, xds) == %Resources{subscribers: MapSet.new([self()])}
+  end
+
+  test "lds subscribe idempotent", %{store: store}, do:
+    assert_subscribe_idempotent(:lds, store)
+
+  test "rds subscribe idempotent", %{store: store}, do:
+    assert_subscribe_idempotent(:rds, store)
+
+  test "cds subscribe idempotent", %{store: store}, do:
+    assert_subscribe_idempotent(:cds, store)
+
+  test "eds subscribe idempotent", %{store: store}, do:
+    assert_subscribe_idempotent(:eds, store)
+
+  defp assert_unsubscribe_idempotent(xds, store) do
+    assert apply(Store, :"subscribe_#{xds}", [store, self()]) == {:ok, "", []}
+    assert get_resources(store, xds) == %Resources{subscribers: MapSet.new([self()])}
+    assert apply(Store, :"unsubscribe_#{xds}", [store, self()]) == :ok
+    assert get_resources(store, xds) == %Resources{subscribers: MapSet.new()}
+    assert apply(Store, :"unsubscribe_#{xds}", [store, self()]) == :ok
+    assert get_resources(store, xds) == %Resources{subscribers: MapSet.new()}
+  end
+
+  test "lds unsubscribe idempotent", %{store: store}, do:
+    assert_unsubscribe_idempotent(:lds, store)
+
+  test "rds unsubscribe idempotent", %{store: store}, do:
+    assert_unsubscribe_idempotent(:rds, store)
+
+  test "cds unsubscribe idempotent", %{store: store}, do:
+    assert_unsubscribe_idempotent(:cds, store)
+
+  test "eds unsubscribe idempotent", %{store: store}, do:
+    assert_unsubscribe_idempotent(:eds, store)
+
+  defp assert_
+
   # TODO: break out these tests into smaller tests
   test "lds basics", %{store: store} do
     # We can store something
