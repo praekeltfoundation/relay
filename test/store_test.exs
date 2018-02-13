@@ -4,7 +4,7 @@ defmodule Relay.StoreTest.Macros do
     |> Enum.map(fn(xds) ->
       quote do
         test "#{unquote(xds)} #{unquote(name_suffix)}", %{store: store},
-          do: unquote(assertion)(store, unquote(xds))
+          do: unquote(assertion).(store, unquote(xds))
       end
     end)
   end
@@ -29,7 +29,7 @@ defmodule Relay.StoreTest do
     resources
   end
 
-  defp assert_subscribe_idempotent(store, xds) do
+  xds_tests "subscribe idempotent", fn(store, xds) ->
     assert get_resources(store, xds) == %Resources{subscribers: MapSet.new()}
     assert apply(Store, :"subscribe_#{xds}", [store, self()]) == {:ok, "", []}
     assert get_resources(store, xds) == %Resources{subscribers: MapSet.new([self()])}
@@ -37,9 +37,7 @@ defmodule Relay.StoreTest do
     assert get_resources(store, xds) == %Resources{subscribers: MapSet.new([self()])}
   end
 
-  xds_tests("subscribe idempotent", :assert_subscribe_idempotent)
-
-  defp assert_unsubscribe_idempotent(store, xds) do
+  xds_tests "unsubscribe idempotent", fn(store, xds) ->
     assert apply(Store, :"subscribe_#{xds}", [store, self()]) == {:ok, "", []}
     assert get_resources(store, xds) == %Resources{subscribers: MapSet.new([self()])}
     assert apply(Store, :"unsubscribe_#{xds}", [store, self()]) == :ok
@@ -48,9 +46,7 @@ defmodule Relay.StoreTest do
     assert get_resources(store, xds) == %Resources{subscribers: MapSet.new()}
   end
 
-  xds_tests("unsubscribe idempotent", :assert_unsubscribe_idempotent)
-
-  defp assert_subscribers_receive_updates(store, xds) do
+  xds_tests "subscribers receive updates", fn(store, xds) ->
     assert apply(Store, :"subscribe_#{xds}", [store, self()]) == {:ok, "", []}
 
     resources = [:foo, :bar]
@@ -59,9 +55,7 @@ defmodule Relay.StoreTest do
     assert_receive {^xds, "1", ^resources}, 1_000
   end
 
-  xds_tests("subscribers receive updates", :assert_subscribers_receive_updates)
-
-  defp assert_old_updates_ignored(store, xds) do
+  xds_tests "old updates ignored", fn(store, xds) ->
     resources = [:foobar, :baz]
     assert apply(Store, :"update_#{xds}", [store, "2", resources]) == :ok
 
@@ -72,8 +66,6 @@ defmodule Relay.StoreTest do
 
     assert %Resources{version_info: "2", resources: ^resources} = get_resources(store, xds)
   end
-
-  xds_tests("old updates ignored", :assert_old_updates_ignored)
 
   # TODO: break out these tests into smaller tests
   test "lds basics", %{store: store} do
