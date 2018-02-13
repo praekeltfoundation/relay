@@ -29,40 +29,49 @@ defmodule Relay.StoreTest do
     resources
   end
 
+  defp subscribe(store, xds, pid), do:
+    apply(Store, :"subscribe_#{xds}", [store, pid])
+
+  defp unsubscribe(store, xds, pid), do:
+    apply(Store, :"unsubscribe_#{xds}", [store, pid])
+
+  defp update(store, xds, version_info, resources), do:
+    apply(Store, :"update_#{xds}", [store, version_info, resources])
+
   xds_tests "subscribe idempotent", fn(store, xds) ->
     assert get_resources(store, xds) == %Resources{subscribers: MapSet.new()}
-    assert apply(Store, :"subscribe_#{xds}", [store, self()]) == {:ok, "", []}
+    assert subscribe(store, xds, self()) == {:ok, "", []}
     assert get_resources(store, xds) == %Resources{subscribers: MapSet.new([self()])}
-    assert apply(Store, :"subscribe_#{xds}", [store, self()]) == {:ok, "", []}
+    assert subscribe(store, xds, self()) == {:ok, "", []}
     assert get_resources(store, xds) == %Resources{subscribers: MapSet.new([self()])}
   end
 
   xds_tests "unsubscribe idempotent", fn(store, xds) ->
-    assert apply(Store, :"subscribe_#{xds}", [store, self()]) == {:ok, "", []}
+    assert subscribe(store, xds, self()) == {:ok, "", []}
     assert get_resources(store, xds) == %Resources{subscribers: MapSet.new([self()])}
-    assert apply(Store, :"unsubscribe_#{xds}", [store, self()]) == :ok
+    assert unsubscribe(store, xds, self()) == :ok
     assert get_resources(store, xds) == %Resources{subscribers: MapSet.new()}
-    assert apply(Store, :"unsubscribe_#{xds}", [store, self()]) == :ok
+    assert unsubscribe(store, xds, self()) == :ok
     assert get_resources(store, xds) == %Resources{subscribers: MapSet.new()}
   end
 
   xds_tests "subscribers receive updates", fn(store, xds) ->
-    assert apply(Store, :"subscribe_#{xds}", [store, self()]) == {:ok, "", []}
+    assert subscribe(store, xds, self()) == {:ok, "", []}
 
     resources = [:foo, :bar]
-    assert apply(Store, :"update_#{xds}", [store, "1", resources]) == :ok
+    assert update(store, xds, "1", resources) == :ok
 
     assert_receive {^xds, "1", ^resources}, 1_000
   end
 
   xds_tests "old updates ignored", fn(store, xds) ->
     resources = [:foobar, :baz]
-    assert apply(Store, :"update_#{xds}", [store, "2", resources]) == :ok
+    assert update(store, xds, "2", resources) == :ok
 
-    assert apply(Store, :"subscribe_#{xds}", [store, self()]) == {:ok, "2", resources}
+    assert subscribe(store, xds, self()) == {:ok, "2", resources}
 
     old_resources = [:foo, :bar]
-    assert apply(Store, :"update_#{xds}", [store, "1", old_resources]) == :ok
+    assert update(store, xds, "1", old_resources) == :ok
 
     assert %Resources{version_info: "2", resources: ^resources} = get_resources(store, xds)
   end
