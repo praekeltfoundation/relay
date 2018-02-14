@@ -85,4 +85,12 @@ defmodule Relay.Demo do
       )
     ]
   end
+
+  def routes do
+    []
+  end
+
+  def endpoints do
+    []
+  end
 end

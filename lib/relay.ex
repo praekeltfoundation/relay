@@ -5,22 +5,10 @@ defmodule Relay do
 
   use Application
 
+  alias Relay.Supervisor
+
   def start(_type, _args) do
-    import Supervisor.Spec
-
-    services = [
-      Relay.Server.ListenerDiscoveryService,
-      Relay.Server.RouteDiscoveryService,
-      Relay.Server.ClusterDiscoveryService,
-      Relay.Server.EndpointDiscoveryService,
-    ]
-    children = [
-      {Relay.Demo2, []},
-      supervisor(GRPC.Server.Supervisor, [{services, 5000}])
-    ]
-
-    opts = [strategy: :one_for_one, name: Relay]
-    Supervisor.start_link(children, opts)
+    Supervisor.start_link({5000}, name: Supervisor)
   end
 
 end

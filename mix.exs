@@ -9,6 +9,7 @@ defmodule Relay.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       test_coverage: [tool: ExCoveralls],
+      aliases: aliases(),
       preferred_cli_env: [
         "coveralls": :test,
         "coveralls.json": :test,
@@ -24,6 +25,11 @@ defmodule Relay.MixProject do
       extra_applications: [:logger]
     ]
   end
+
+  defp aliases, do: [
+    # Don't start application for tests.
+    test: "test --no-start",
+  ]
 
   # Run "mix help deps" to learn about dependencies.
   defp deps do

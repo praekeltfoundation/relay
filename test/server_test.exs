@@ -18,6 +18,7 @@ defmodule Relay.ServerTest do
   alias Envoy.Api.V2.EndpointDiscoveryService.Stub, as: EDSStub
 
   setup do
+    TestHelpers.setup_apps([:grpc])
     TestHelpers.override_log_level(:warn)
 
     {:ok, store} = start_supervised({Store, [name: Store]})
