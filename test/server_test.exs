@@ -58,9 +58,10 @@ defmodule Relay.ServerTest do
   defp assert_streams_responses(stream, server, example_resource) do
     xds = server.xds()
     type_url = server.type_url()
+    request = DiscoveryRequest.new(type_url: type_url)
 
     # Send the first request
-    task1 = Task.async(fn -> GRPC.Stub.stream_send(stream, DiscoveryRequest.new()) end)
+    task1 = Task.async(fn -> GRPC.Stub.stream_send(stream, request) end)
 
     result_enum = GRPC.Stub.recv(stream)
     Task.await(task1)
@@ -71,7 +72,7 @@ defmodule Relay.ServerTest do
 
     # Make the second request, this requires something to be updated in the store
     task2 = Task.async(fn ->
-      GRPC.Stub.stream_send(stream, DiscoveryRequest.new(), end_stream: true)
+      GRPC.Stub.stream_send(stream, request, end_stream: true)
     end)
 
     # Once we update something in the store it should be returned in a response
