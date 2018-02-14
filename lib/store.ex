@@ -1,6 +1,11 @@
 defmodule Relay.Store do
   use GenServer
 
+  # We need both an attribute (so that the list can be used at compile time in
+  # guards) and a function (so that the list can be used in tests).
+  @discovery_services [:lds, :rds, :cds, :eds]
+  def discovery_services, do: @discovery_services
+
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, :ok, opts)
   end
@@ -9,57 +14,28 @@ defmodule Relay.Store do
     defstruct version_info: "", resources: [], subscribers: MapSet.new()
   end
 
-  defmodule State do
-    defstruct lds: %Resources{}, rds: %Resources{}, cds: %Resources{}, eds: %Resources{}
-  end
-
 
   ## Client interface
 
-  def subscribe_lds(server, pid), do:
-    GenServer.call(server, {:subscribe, :lds, pid})
+  defguardp is_xds(xds) when xds in @discovery_services
 
-  def unsubscribe_lds(server, pid), do:
-    GenServer.call(server, {:unsubscribe, :lds, pid})
+  def subscribe(server, xds, pid) when is_xds(xds), do:
+    GenServer.call(server, {:subscribe, xds, pid})
 
-  def update_lds(server, version_info, resources), do:
-    GenServer.call(server, {:update, :lds, version_info, resources})
+  def unsubscribe(server, xds, pid) when is_xds(xds), do:
+    GenServer.call(server, {:unsubscribe, xds, pid})
 
-  def subscribe_rds(server, pid), do:
-    GenServer.call(server, {:subscribe, :rds, pid})
-
-  def unsubscribe_rds(server, pid), do:
-    GenServer.call(server, {:unsubscribe, :rds, pid})
-
-  def update_rds(server, version_info, resources), do:
-    GenServer.call(server, {:update, :rds, version_info, resources})
-
-  def subscribe_cds(server, pid), do:
-    GenServer.call(server, {:subscribe, :cds, pid})
-
-  def unsubscribe_cds(server, pid), do:
-    GenServer.call(server, {:unsubscribe, :cds, pid})
-
-  def update_cds(server, version_info, resources), do:
-    GenServer.call(server, {:update, :cds, version_info, resources})
-
-  def subscribe_eds(server, pid), do:
-    GenServer.call(server, {:subscribe, :eds, pid})
-
-  def unsubscribe_eds(server, pid), do:
-    GenServer.call(server, {:unsubscribe, :eds, pid})
-
-  def update_eds(server, version_info, resources), do:
-    GenServer.call(server, {:update, :eds, version_info, resources})
+  def update(server, xds, version_info, resources) when is_xds(xds), do:
+    GenServer.call(server, {:update, xds, version_info, resources})
 
 
   ## Server callbacks
 
   def init(:ok) do
-    {:ok, %State{}}
+    {:ok, Map.new(Enum.map(@discovery_services, fn xds -> {xds, %Resources{}} end))}
   end
 
-  defp subscribe(xds, pid, state) do
+  defp subscribe_impl(xds, pid, state) do
     resources = Map.get(state, xds)
 
     new_subscribers = MapSet.put(resources.subscribers, pid)
@@ -69,7 +45,7 @@ defmodule Relay.Store do
     {:reply, {:ok, resources.version_info, resources.resources}, new_state}
   end
 
-  defp unsubscribe(xds, pid, state) do
+  defp unsubscribe_impl(xds, pid, state) do
     resources = Map.get(state, xds)
 
     new_subscribers = MapSet.delete(resources.subscribers, pid)
@@ -78,7 +54,7 @@ defmodule Relay.Store do
     {:reply, :ok, new_state}
   end
 
-  defp update(xds, version_info, resources, state) do
+  defp update_impl(xds, version_info, resources, state) do
     xds_resources = Map.get(state, xds)
     new_state = if xds_resources.version_info < version_info do
       notify_subscribers(xds_resources.subscribers, xds, version_info, resources)
@@ -95,13 +71,13 @@ defmodule Relay.Store do
     Enum.each(subscribers, fn l -> send(l, {xds, version_info, resources}) end)
 
   def handle_call({:subscribe, xds, pid}, _from, state), do:
-    subscribe(xds, pid, state)
+    subscribe_impl(xds, pid, state)
 
   def handle_call({:unsubscribe, xds, pid}, _from, state), do:
-    unsubscribe(xds, pid, state)
+    unsubscribe_impl(xds, pid, state)
 
   def handle_call({:update, xds, version_info, resources}, _from, state), do:
-    update(xds, version_info, resources, state)
+    update_impl(xds, version_info, resources, state)
 
   # For testing only
   def handle_call({:_get_resources, xds}, _from, state), do:
