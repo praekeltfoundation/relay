@@ -55,14 +55,12 @@ defmodule Relay.ServerTest do
       status: GRPC.Status.unimplemented(), message: "not implemented"}
   end
 
-  test "stream_listeners streams DiscoveryResponses", %{channel: channel, store: store} do
-    stream = channel |> LDSStub.stream_listeners()
-    type_url = LDS.type_url
+  defp assert_streams_responses(stream, store, server, example_resource) do
+    xds = server.xds()
+    type_url = server.type_url()
 
     # Send the first request
-    task1 = Task.async(fn ->
-      GRPC.Stub.stream_send(stream, DiscoveryRequest.new())
-    end)
+    task1 = Task.async(fn -> GRPC.Stub.stream_send(stream, DiscoveryRequest.new()) end)
 
     result_enum = GRPC.Stub.recv(stream)
     Task.await(task1)
@@ -77,8 +75,7 @@ defmodule Relay.ServerTest do
     end)
 
     # Once we update something in the store it should be returned in a response
-    resources = [Listener.new(name: "test")]
-    Store.update(store, LDS.xds(), "1", resources)
+    Store.update(store, xds, "1", [example_resource])
 
     Task.await(task2)
 
@@ -87,111 +84,26 @@ defmodule Relay.ServerTest do
       type_url: ^type_url, version_info: "1", resources: [any_resource]} = response2
 
     assert any_resource.type_url == type_url
-    assert [Listener.decode(any_resource.value)] == resources
+    assert example_resource.__struct__.decode(any_resource.value) == example_resource
+  end
+
+  test "stream_listeners streams DiscoveryResponses", %{channel: channel, store: store} do
+    stream = channel |> LDSStub.stream_listeners()
+    assert_streams_responses(stream, store, LDS, Listener.new(name: "test"))
   end
 
   test "stream_clusters streams DiscoveryResponses", %{channel: channel, store: store} do
     stream = channel |> CDSStub.stream_clusters()
-    type_url = CDS.type_url
-
-    # Send the first request
-    task1 = Task.async(fn ->
-      GRPC.Stub.stream_send(stream, DiscoveryRequest.new())
-    end)
-
-    result_enum = GRPC.Stub.recv(stream)
-    Task.await(task1)
-
-    # We should receive a response right away...
-    assert [response1] = Enum.take(result_enum, 1)
-    assert %DiscoveryResponse{type_url: ^type_url, version_info: "", resources: []} = response1
-
-    # Make the second request, this requires something to be updated in the store
-    task2 = Task.async(fn ->
-      GRPC.Stub.stream_send(stream, DiscoveryRequest.new(), end_stream: true)
-    end)
-
-    # Once we update something in the store it should be returned in a response
-    resources = [Cluster.new(name: "test")]
-    Store.update(store, CDS.xds(), "1", resources)
-
-    Task.await(task2)
-
-    assert [response2] = Enum.to_list(result_enum)
-    assert %DiscoveryResponse{
-      type_url: ^type_url, version_info: "1", resources: [any_resource]} = response2
-
-    assert any_resource.type_url == type_url
-    assert [Cluster.decode(any_resource.value)] == resources
+    assert_streams_responses(stream, store, CDS, Cluster.new(name: "test"))
   end
 
   test "stream_routes streams DiscoveryResponses", %{channel: channel, store: store} do
     stream = channel |> RDSStub.stream_routes()
-    type_url = RDS.type_url
-
-    # Send the first request
-    task1 = Task.async(fn ->
-      GRPC.Stub.stream_send(stream, DiscoveryRequest.new())
-    end)
-
-    result_enum = GRPC.Stub.recv(stream)
-    Task.await(task1)
-
-    # We should receive a response right away...
-    assert [response1] = Enum.take(result_enum, 1)
-    assert %DiscoveryResponse{type_url: ^type_url, version_info: "", resources: []} = response1
-
-    # Make the second request, this requires something to be updated in the store
-    task2 = Task.async(fn ->
-      GRPC.Stub.stream_send(stream, DiscoveryRequest.new(), end_stream: true)
-    end)
-
-    # Once we update something in the store it should be returned in a response
-    resources = [RouteConfiguration.new(name: "test")]
-    Store.update(store, RDS.xds(), "1", resources)
-
-    Task.await(task2)
-
-    assert [response2] = Enum.to_list(result_enum)
-    assert %DiscoveryResponse{
-      type_url: ^type_url, version_info: "1", resources: [any_resource]} = response2
-
-    assert any_resource.type_url == type_url
-    assert [RouteConfiguration.decode(any_resource.value)] == resources
+    assert_streams_responses(stream, store, RDS, RouteConfiguration.new(name: "test"))
   end
 
   test "stream_endpoints streams DiscoveryResponses", %{channel: channel, store: store} do
     stream = channel |> EDSStub.stream_endpoints()
-    type_url = EDS.type_url
-
-    # Send the first request
-    task1 = Task.async(fn ->
-      GRPC.Stub.stream_send(stream, DiscoveryRequest.new())
-    end)
-
-    result_enum = GRPC.Stub.recv(stream)
-    Task.await(task1)
-
-    # We should receive a response right away...
-    assert [response1] = Enum.take(result_enum, 1)
-    assert %DiscoveryResponse{type_url: ^type_url, version_info: "", resources: []} = response1
-
-    # Make the second request, this requires something to be updated in the store
-    task2 = Task.async(fn ->
-      GRPC.Stub.stream_send(stream, DiscoveryRequest.new(), end_stream: true)
-    end)
-
-    # Once we update something in the store it should be returned in a response
-    resources = [ClusterLoadAssignment.new(cluster_name: "test")]
-    Store.update(store, EDS.xds(), "1", resources)
-
-    Task.await(task2)
-
-    assert [response2] = Enum.to_list(result_enum)
-    assert %DiscoveryResponse{
-      type_url: ^type_url, version_info: "1", resources: [any_resource]} = response2
-
-    assert any_resource.type_url == type_url
-    assert [ClusterLoadAssignment.decode(any_resource.value)] == resources
+    assert_streams_responses(stream, store, EDS, ClusterLoadAssignment.new(cluster_name: "test"))
   end
 end
