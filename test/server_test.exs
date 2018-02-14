@@ -1,9 +1,3 @@
-defmodule Relay.ServerTest.Macros do
-  defmacro server_tests do
-    [:listeners, :routers]
-  end
-end
-
 defmodule Relay.ServerTest do
   use ExUnit.Case
 
@@ -61,7 +55,7 @@ defmodule Relay.ServerTest do
       status: GRPC.Status.unimplemented(), message: "not implemented"}
   end
 
-  test "stream_listeners streams a DiscoveryResponse", %{channel: channel, store: store} do
+  test "stream_listeners streams DiscoveryResponses", %{channel: channel, store: store} do
     stream = channel |> LDSStub.stream_listeners()
     type_url = LDS.type_url
 
