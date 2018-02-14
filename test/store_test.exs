@@ -15,7 +15,6 @@ defmodule Relay.StoreTest do
 
   alias Relay.Store
   alias Store.Resources
-  alias Envoy.Api.V2.{Cluster, ClusterLoadAssignment, Listener, RouteConfiguration}
 
   import Relay.StoreTest.Macros
 
