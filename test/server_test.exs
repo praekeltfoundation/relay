@@ -55,7 +55,7 @@ defmodule Relay.ServerTest do
       status: GRPC.Status.unimplemented(), message: "not implemented"}
   end
 
-  defp assert_streams_responses(stream, store, server, example_resource) do
+  defp assert_streams_responses(stream, server, example_resource) do
     xds = server.xds()
     type_url = server.type_url()
 
@@ -75,7 +75,7 @@ defmodule Relay.ServerTest do
     end)
 
     # Once we update something in the store it should be returned in a response
-    Store.update(store, xds, "1", [example_resource])
+    Store.update(Store, xds, "1", [example_resource])
 
     Task.await(task2)
 
@@ -87,23 +87,23 @@ defmodule Relay.ServerTest do
     assert example_resource.__struct__.decode(any_resource.value) == example_resource
   end
 
-  test "stream_listeners streams DiscoveryResponses", %{channel: channel, store: store} do
+  test "stream_listeners streams DiscoveryResponses", %{channel: channel} do
     stream = channel |> LDSStub.stream_listeners()
-    assert_streams_responses(stream, store, LDS, Listener.new(name: "test"))
+    assert_streams_responses(stream, LDS, Listener.new(name: "test"))
   end
 
-  test "stream_clusters streams DiscoveryResponses", %{channel: channel, store: store} do
+  test "stream_clusters streams DiscoveryResponses", %{channel: channel} do
     stream = channel |> CDSStub.stream_clusters()
-    assert_streams_responses(stream, store, CDS, Cluster.new(name: "test"))
+    assert_streams_responses(stream, CDS, Cluster.new(name: "test"))
   end
 
-  test "stream_routes streams DiscoveryResponses", %{channel: channel, store: store} do
+  test "stream_routes streams DiscoveryResponses", %{channel: channel} do
     stream = channel |> RDSStub.stream_routes()
-    assert_streams_responses(stream, store, RDS, RouteConfiguration.new(name: "test"))
+    assert_streams_responses(stream, RDS, RouteConfiguration.new(name: "test"))
   end
 
-  test "stream_endpoints streams DiscoveryResponses", %{channel: channel, store: store} do
+  test "stream_endpoints streams DiscoveryResponses", %{channel: channel} do
     stream = channel |> EDSStub.stream_endpoints()
-    assert_streams_responses(stream, store, EDS, ClusterLoadAssignment.new(cluster_name: "test"))
+    assert_streams_responses(stream, EDS, ClusterLoadAssignment.new(cluster_name: "test"))
   end
 end
