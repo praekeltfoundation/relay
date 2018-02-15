@@ -2,29 +2,7 @@ defmodule Relay.ProtobufUtilTest do
   use ExUnit.Case, async: true
 
   alias Relay.ProtobufUtil
-  alias Google.Protobuf.{Any, ListValue, NullValue, Struct, Value}
-
-  test "null type packed" do
-    defmodule NullType do
-      use Protobuf, syntax: :proto3
-
-      @type t :: %__MODULE__{
-        foo: Struct.t
-      }
-      defstruct [:foo]
-
-      field :foo, 1, type: Struct
-    end
-
-    proto = NullType.new() # Don't provide foo
-    struct = ProtobufUtil.mkstruct(proto)
-
-    assert struct == %Struct{
-      fields: %{
-        "foo" => %Value{kind: {:null_value, NullValue.value(:NULL_VALUE)}},
-      }
-    }
-  end
+  alias Google.Protobuf.{Any, ListValue, Struct, Value}
 
   test "basic types packed" do
     defmodule BasicTypes do
@@ -162,7 +140,6 @@ defmodule Relay.ProtobufUtilTest do
 
     assert struct == %Struct{
       fields: %{
-        "foo" => %Value{kind: {:null_value, NullValue.value(:NULL_VALUE)}},
         "bar" => %Value{kind: {:bool_value, true}},
         "baz" => %Value{kind: {:string_value, "def"}},
       }
@@ -186,6 +163,49 @@ defmodule Relay.ProtobufUtilTest do
     assert_raise Protobuf.InvalidError, "Relay.ProtobufUtilTest.ValidatedType#foo is invalid!", fn ->
       ProtobufUtil.mkstruct(proto)
     end
+  end
+
+  test "structs serialize and deserialize to the same thing" do
+    defmodule SerializedType do
+      use Protobuf, syntax: :proto3
+
+      @type t :: %__MODULE__{
+        foo: String.t,
+        bar: String.t
+      }
+      defstruct [:foo, :bar]
+
+      field :foo, 1, type: :string
+      field :bar, 2, type: :string
+    end
+
+    proto = SerializedType.new(foo: "baz")
+    struct = ProtobufUtil.mkstruct(proto)
+
+    serialized = Struct.encode(struct)
+    assert Struct.decode(serialized) == struct
+  end
+
+  test "oneof structs serialize and deserialize to the same thing" do
+    defmodule OneofSerializedType do
+      use Protobuf, syntax: :proto3
+
+      @type t :: %__MODULE__{
+        foobar: {atom, any},
+        baz: String.t
+      }
+      defstruct [:foobar, :baz]
+
+      oneof :foobar, 0
+      field :foo, 1, type: :uint32, oneof: 0
+      field :bar, 2, type: :bool, oneof: 0
+      field :baz, 3, type: :string
+    end
+
+    proto = OneofSerializedType.new(foobar: {:bar, true}, baz: "def")
+    struct = ProtobufUtil.mkstruct(proto)
+    serialized = Struct.encode(struct)
+    assert Struct.decode(serialized) == struct
   end
 
   test "Any encodes a type" do
