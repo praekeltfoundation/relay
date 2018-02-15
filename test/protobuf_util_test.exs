@@ -188,6 +188,27 @@ defmodule Relay.ProtobufUtilTest do
     end
   end
 
+  test "structs serialize and deserialize to the same thing" do
+    defmodule SerializedType do
+      use Protobuf, syntax: :proto3
+
+      @type t :: %__MODULE__{
+        foo: String.t,
+        bar: String.t
+      }
+      defstruct [:foo, :bar]
+
+      field :foo, 1, type: :string
+      field :bar, 2, type: :string
+    end
+
+    proto = SerializedType.new(foo: "baz")
+    struct = ProtobufUtil.mkstruct(proto)
+
+    serialized = Struct.encode(struct)
+    assert Struct.decode(serialized) == struct
+  end
+
   test "Any encodes a type" do
     proto = Value.new(kind: {:string_value, "abcdef"})
     any = ProtobufUtil.mkany("example.com/mytype", proto)
