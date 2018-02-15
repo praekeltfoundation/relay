@@ -4,15 +4,14 @@ defmodule Relay.ProtobufUtil do
   Google.Protobuf types.
   """
 
-  alias Google.Protobuf.{Any, Struct, NullValue, ListValue, Value}
+  alias Google.Protobuf.{Any, Struct, ListValue, Value}
 
-  defp oneof_actual_vals(props, struct) do
+  defp oneof_actual_vals(message_props, struct) do
     # Copy/pasta-ed from:
     # https://github.com/tony612/protobuf-elixir/blob/a4389fe18edc70430563d8591aa05bd3dba60adc/lib/protobuf/encoder.ex#L153-L160
-    # TODO: Make this more readable
-    Enum.reduce(props.oneof, %{}, fn {field, _}, acc ->
-      case Map.get(struct, field) do
-        {f, val} -> Map.put(acc, f, val)
+    Enum.reduce(message_props.oneof, %{}, fn {oneof_field, _}, acc ->
+      case Map.get(struct, oneof_field) do
+        {field, value} -> Map.put(acc, field, value)
         nil -> acc
       end
     end)
@@ -21,27 +20,32 @@ defmodule Relay.ProtobufUtil do
   @doc """
   Pack a Protobuf struct into a Google.Protobuf.Struct type.
 
+  This packing assumes that the Struct will be unpacked into a Protobuf type on
+  the "other side of the wire", rather than a language-specific type. Because of
+  this, Protobuf fields with default or null values will not be included in the
+  produced Struct.
+
   The Protobuf struct will be validated before packing.
   """
   def mkstruct(%mod{} = struct) do
     Protobuf.Validator.validate!(struct)
 
-    props = mod.__message_props__()
-    oneofs = oneof_actual_vals(props, struct)
+    message_props = mod.__message_props__()
+    oneofs = oneof_actual_vals(message_props, struct)
 
-    fields = props.field_props |> Enum.into(%{}, fn {_, prop} ->
-      val = if prop.oneof do
-        oneofs[prop.name_atom]
-      else
-        Map.get(struct, prop.name_atom)
+    fields = message_props.field_props |> Enum.reduce(%{}, fn {_, field_prop}, acc ->
+      source = if field_prop.oneof, do: oneofs, else: struct
+      value = Map.get(source, field_prop.name_atom)
+
+      default = Protobuf.Builder.field_default(message_props.syntax, field_prop)
+      case value do
+        nil      -> acc
+        ^default -> acc
+        _        -> Map.put(acc, field_prop.name, struct_value(value))
       end
-
-      {prop.name, struct_value(val)}
     end)
     Struct.new(fields: fields)
   end
-
-  defp struct_value(nil), do: value(:null_value, NullValue.value(:NULL_VALUE))
 
   defp struct_value(number) when is_number(number), do: value(:number_value, number)
 
