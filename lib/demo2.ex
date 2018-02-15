@@ -27,27 +27,22 @@ defmodule Relay.Demo2 do
   end
 
   def handle_call(:clusters, _from, state) do
-    Process.send_after(self(), {:clusters, :cds}, 1000)
+    Store.update(Store, :cds, "1", Relay.Demo.clusters())
     {:reply, :ok, state}
   end
 
   def handle_call(:listeners, _from, state) do
-    Process.send_after(self(), {:listeners, :lds}, 2000)
+    Store.update(Store, :lds, "1", Relay.Demo.listeners())
     {:reply, :ok, state}
   end
 
   def handle_call(:routes, _from, state) do
-    Process.send_after(self(), {:routes, :rds}, 1000)
+    Store.update(Store, :rds, "1", Relay.Demo.routes())
     {:reply, :ok, state}
   end
 
   def handle_call(:endpoints, _from, state) do
-    Process.send_after(self(), {:endpoints, :eds}, 2000)
+    Store.update(Store, :eds, "1", Relay.Demo.endpoints())
     {:reply, :ok, state}
-  end
-
-  def handle_info({name, xds}, state) do
-    Store.update(Store, xds, "1", apply(Relay.Demo, name, []))
-    {:noreply, state}
   end
 end
