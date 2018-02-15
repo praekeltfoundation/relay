@@ -7,7 +7,17 @@ defmodule FakeMarathon do
   alias SSETestServer.SSEServer
 
   defmodule State do
-    defstruct sse: nil, listener: nil
+    defstruct sse: nil, listener: nil, apps: []
+  end
+
+  defmodule AppsHandler do
+    @behaviour :cowboy_handler
+
+    def init(req, fm) do
+      headers = %{"content-type" => "application/json"}
+      {:ok, apps} = JSX.encode(%{"apps" => FakeMarathon.get_apps(fm)})
+      {:ok, :cowboy_req.reply(200, headers, apps, req), fm}
+    end
   end
 
   ## Client
@@ -33,6 +43,11 @@ defmodule FakeMarathon do
 
   def end_stream(fm \\ :fake_marathon), do: GenServer.call(fm, :end_stream)
 
+  def get_apps(fm \\ :fake_marathon), do: GenServer.call(fm, :get_apps)
+
+  def set_apps(fm \\ :fake_marathon, apps),
+    do: GenServer.call(fm, {:set_apps, apps})
+
   ## Callbacks
 
   def init(opts) do
@@ -40,8 +55,11 @@ defmodule FakeMarathon do
     Process.flag(:trap_exit, true)
     {:ok, sse} = SSEServer.start_link(opts, name: nil)
     listener = make_ref()
-    handler = SSEServer.configure_endpoint_handler(sse, "/v2/events", opts)
-    dispatch = :cowboy_router.compile([{:_, [handler]}])
+    handlers = [
+      {"/v2/apps", AppsHandler, self()},
+      SSEServer.configure_endpoint_handler(sse, "/v2/events", opts),
+    ]
+    dispatch = :cowboy_router.compile([{:_, handlers}])
     {:ok, _} = :cowboy.start_clear(listener, [], %{env: %{dispatch: dispatch}})
     {:ok, %State{sse: sse, listener: listener}}
   end
@@ -62,4 +80,9 @@ defmodule FakeMarathon do
 
   def handle_call(:end_stream, _from, state),
     do: {:reply, SSEServer.end_stream(state.sse, "/v2/events"), state}
+
+  def handle_call(:get_apps, _from, state), do: {:reply, state.apps, state}
+
+  def handle_call({:set_apps, apps}, _from, state),
+    do: {:reply, :ok, %{state | apps: apps}}
 end

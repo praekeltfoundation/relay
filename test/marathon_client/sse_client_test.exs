@@ -7,6 +7,7 @@ defmodule Relay.MarathonClient.SSEClientTest do
   import MarathonTestHelpers, only: [marathon_event: 2]
 
   setup_all do
+    TestHelpers.override_log_level(:info)
     TestHelpers.setup_apps([:cowboy, :hackney])
   end
 
