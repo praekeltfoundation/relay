@@ -54,7 +54,7 @@ defmodule Relay.MixProject do
       {:exjsx, "~> 4.0", only: :test},
       {:sse_test_server,
        git: "https://github.com/praekeltfoundation/sse_test_server.git",
-       ref: "d4afd19a7ce7aae2f3828eb07f3cfd73a00fa2a1",
+       ref: "d8917d260685a306834a476a7457469be590c4d4",
        only: :test,
        # We need this installed, but we don't want to run its app.
        app: false},
