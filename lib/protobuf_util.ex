@@ -4,7 +4,7 @@ defmodule Relay.ProtobufUtil do
   Google.Protobuf types.
   """
 
-  alias Google.Protobuf.{Any, Struct, NullValue, ListValue, Value}
+  alias Google.Protobuf.{Any, Struct, ListValue, Value}
 
   defp oneof_actual_vals(props, struct) do
     # Copy/pasta-ed from:
@@ -21,6 +21,11 @@ defmodule Relay.ProtobufUtil do
   @doc """
   Pack a Protobuf struct into a Google.Protobuf.Struct type.
 
+  This packing assumes that the Struct will be unpacked into a Protobuf type on
+  the "other side of the wire", rather than a language-specific type. Because of
+  this, Protobuf fields with default or null values will not be included in the
+  produced Struct.
+
   The Protobuf struct will be validated before packing.
   """
   def mkstruct(%mod{} = struct) do
@@ -29,19 +34,22 @@ defmodule Relay.ProtobufUtil do
     props = mod.__message_props__()
     oneofs = oneof_actual_vals(props, struct)
 
-    fields = props.field_props |> Enum.into(%{}, fn {_, prop} ->
+    fields = props.field_props |> Enum.reduce(%{}, fn {_, prop}, acc ->
       val = if prop.oneof do
         oneofs[prop.name_atom]
       else
         Map.get(struct, prop.name_atom)
       end
 
-      {prop.name, struct_value(val)}
+      default = Protobuf.Builder.field_default(:proto3, prop)
+      case val do
+        nil      -> acc
+        ^default -> acc
+        _        -> Map.put(acc, prop.name, struct_value(val))
+      end
     end)
     Struct.new(fields: fields)
   end
-
-  defp struct_value(nil), do: value(:null_value, NullValue.value(:NULL_VALUE))
 
   defp struct_value(number) when is_number(number), do: value(:number_value, number)
 
