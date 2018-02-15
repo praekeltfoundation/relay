@@ -9,10 +9,9 @@ defmodule Relay.ProtobufUtil do
   defp oneof_actual_vals(message_props, struct) do
     # Copy/pasta-ed from:
     # https://github.com/tony612/protobuf-elixir/blob/a4389fe18edc70430563d8591aa05bd3dba60adc/lib/protobuf/encoder.ex#L153-L160
-    # TODO: Make this more readable
-    Enum.reduce(message_props.oneof, %{}, fn {field, _}, acc ->
-      case Map.get(struct, field) do
-        {f, val} -> Map.put(acc, f, val)
+    Enum.reduce(message_props.oneof, %{}, fn {oneof_field, _}, acc ->
+      case Map.get(struct, oneof_field) do
+        {field, value} -> Map.put(acc, field, value)
         nil -> acc
       end
     end)
