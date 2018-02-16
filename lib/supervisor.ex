@@ -16,7 +16,7 @@ defmodule Relay.Supervisor do
 
   defmodule FrontendSupervisor do
     @moduledoc """
-    A Supervisor to manage the `Demo2` and `GRPC.Server`s which do not have
+    A Supervisor to manage the `Demo` and `GRPC.Server`s which do not have
     any dependent processes and so can be restarted independently.
     """
     use Supervisor
@@ -33,7 +33,7 @@ defmodule Relay.Supervisor do
         Relay.Server.EndpointDiscoveryService,
       ]
       children = [
-        {Relay.Demo2, []},
+        {Relay.Demo, []},
         supervisor(GRPC.Server.Supervisor, [{services, port}])
       ]
 

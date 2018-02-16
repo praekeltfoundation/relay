@@ -1,7 +1,7 @@
 defmodule Relay.SupervisorTest do
   use ExUnit.Case
 
-  alias Relay.{Supervisor, Demo, Demo2, Store}
+  alias Relay.{Supervisor, Demo, Store}
 
   alias Envoy.Api.V2.{DiscoveryRequest, DiscoveryResponse}
   alias Envoy.Api.V2.ListenerDiscoveryService.Stub, as: LDSStub
@@ -45,7 +45,7 @@ defmodule Relay.SupervisorTest do
 
     # Monitor the server and demo
     server_ref = Process.whereis(GRPC.Server.Supervisor) |> Process.monitor()
-    demo_ref = Process.whereis(Demo2) |> Process.monitor()
+    demo_ref = Process.whereis(Demo) |> Process.monitor()
 
     # Exit the Store process
     Process.whereis(Store) |> Process.exit(:kill)
@@ -65,7 +65,7 @@ defmodule Relay.SupervisorTest do
     Process.flag(:trap_exit, true)
 
     store_pid = Process.whereis(Store)
-    demo_pid = Process.whereis(Demo2)
+    demo_pid = Process.whereis(Demo)
 
     grpc_pid = Process.whereis(GRPC.Server.Supervisor)
     grpc_ref = Process.monitor(grpc_pid)
@@ -96,7 +96,7 @@ defmodule Relay.SupervisorTest do
     store_pid = Process.whereis(Store)
     grpc_pid = Process.whereis(GRPC.Server.Supervisor)
 
-    demo_pid = Process.whereis(Demo2)
+    demo_pid = Process.whereis(Demo)
     demo_ref = Process.monitor(demo_pid)
 
     # Exit the demo process

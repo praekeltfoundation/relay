@@ -1,4 +1,53 @@
 defmodule Relay.Demo do
+  alias Relay.Store
+
+  use GenServer
+
+  def start_link(_opts) do
+    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
+  end
+
+  defp call_async(func_name) do
+    Task.async(fn ->
+      :ok = GenServer.call(__MODULE__, func_name)
+      receive do
+        {:ok, resp} -> resp
+      end
+    end)
+  end
+
+  # Callbacks
+
+  def init(_args) do
+    call_async(:clusters)
+    call_async(:listeners)
+    call_async(:routes)
+    call_async(:endpoints)
+    {:ok, %{}}
+  end
+
+  def handle_call(:clusters, _from, state) do
+    Store.update(Store, :cds, "1", clusters())
+    {:reply, :ok, state}
+  end
+
+  def handle_call(:listeners, _from, state) do
+    Store.update(Store, :lds, "1", listeners())
+    {:reply, :ok, state}
+  end
+
+  def handle_call(:routes, _from, state) do
+    Store.update(Store, :rds, "1", routes())
+    {:reply, :ok, state}
+  end
+
+  def handle_call(:endpoints, _from, state) do
+    Store.update(Store, :eds, "1", endpoints())
+    {:reply, :ok, state}
+  end
+
+  # Internals
+
   defp socket_address(address, port) do
     alias Envoy.Api.V2.Core.{Address, SocketAddress}
     sock = SocketAddress.new(address: address, port_specifier: {:port_value, port})
