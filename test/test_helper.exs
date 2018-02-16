@@ -35,6 +35,7 @@ defmodule TestHelpers do
     import ExUnit.CaptureLog
     capture_log(fn() -> apps |> Enum.each(&Application.stop/1) end)
   end
+
 end
 
 ExUnit.start()
