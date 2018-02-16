@@ -7,6 +7,8 @@ defmodule Relay.SupervisorTest do
   alias Envoy.Api.V2.ListenerDiscoveryService.Stub, as: LDSStub
   alias Envoy.Api.V2.Listener
 
+  import ExUnit.CaptureLog
+
   @port 12345
 
   setup do
@@ -68,18 +70,21 @@ defmodule Relay.SupervisorTest do
     grpc_pid = Process.whereis(GRPC.Server.Supervisor)
     grpc_ref = Process.monitor(grpc_pid)
 
-    # Exit the GRPC process
-    grpc_pid |> Process.exit(:kill)
+    # Capture the error logged when we kill the supervisor
+    assert capture_log(fn() ->
+      # Exit the GRPC process
+      grpc_pid |> Process.exit(:kill)
 
-    # Check the GRPC supervisor quit
-    assert_receive {:DOWN, ^grpc_ref, :process, _, :killed}, 1_000
+      # Check the GRPC supervisor quit
+      assert_receive {:DOWN, ^grpc_ref, :process, _, :killed}, 1_000
 
-    # Other things still happily running
-    assert Process.alive?(store_pid)
-    assert Process.alive?(demo_pid)
+      # Other things still happily running
+      assert Process.alive?(store_pid)
+      assert Process.alive?(demo_pid)
 
-    # Wait for the processes to restart :-/
-    Process.sleep(50)
+      # Wait for the processes to restart :-/
+      Process.sleep(50)
+    end) =~ ~r/\[error\] GenServer #PID<\S*> terminating\n\*\* \(stop\) killed/
 
     # Everything else still works because it's all running again
     assert_example_response()
