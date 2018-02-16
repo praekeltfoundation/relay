@@ -32,6 +32,26 @@ defmodule Relay.ProtobufUtilTest do
     }
   end
 
+  test "unset fields not packed" do
+    defmodule UnsetTypes do
+      use Protobuf, syntax: :proto3
+
+      @type t :: %__MODULE__{
+        bar: boolean,
+        baz: Struct.t
+      }
+      defstruct [:bar, :baz]
+
+      field :bar, 1, type: :bool
+      field :baz, 2, type: Struct
+    end
+
+    proto = UnsetTypes.new()
+    struct = ProtobufUtil.mkstruct(proto)
+
+    assert struct == %Struct{fields: %{}}
+  end
+
   test "nested proto packed as struct" do
     defmodule NestedType do
       use Protobuf, syntax: :proto3
@@ -125,21 +145,16 @@ defmodule Relay.ProtobufUtilTest do
 
       @type t :: %__MODULE__{
         foobar: {atom, any},
-        baz: String.t,
-        alicebob: {atom, any}
+        baz: String.t
       }
-      defstruct [:foobar, :baz, :alicebob]
+      defstruct [:foobar, :baz]
 
       oneof :foobar, 0
-      oneof :alicebob, 1
       field :foo, 1, type: :uint32, oneof: 0
       field :bar, 2, type: :bool, oneof: 0
       field :baz, 3, type: :string
-      field :alice, 4, type: :string, oneof: 1
-      field :bob, 5, type: :bytes, oneof: 1
     end
 
-    # Set one of the oneofs so that all code paths are exercised
     proto = OneofType.new(foobar: {:bar, true}, baz: "def")
     struct = ProtobufUtil.mkstruct(proto)
 
@@ -148,6 +163,30 @@ defmodule Relay.ProtobufUtilTest do
         "bar" => %Value{kind: {:bool_value, true}},
         "baz" => %Value{kind: {:string_value, "def"}},
       }
+    }
+  end
+
+  test "unset oneof values not packed" do
+    defmodule UnsetOneofType do
+      use Protobuf, syntax: :proto3
+
+      @type t :: %__MODULE__{
+        foobar: {atom, any},
+        baz: String.t
+      }
+      defstruct [:foobar, :baz]
+
+      oneof :foobar, 0
+      field :foo, 1, type: :uint32, oneof: 0
+      field :bar, 2, type: :bool, oneof: 0
+      field :baz, 3, type: :string
+    end
+
+    proto = UnsetOneofType.new(baz: "def")
+    struct = ProtobufUtil.mkstruct(proto)
+
+    assert struct == %Struct{
+      fields: %{"baz" => %Value{kind: {:string_value, "def"}}}
     }
   end
 
