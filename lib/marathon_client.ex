@@ -10,4 +10,15 @@ defmodule MarathonClient do
     {:ok, %{status_code: 200, body: body}} = HTTPoison.get(url)
     JSX.decode(body)
   end
+
+  def get_app_tasks(base_url, app_id) do
+    url = "#{base_url}/v2/apps#{app_id}/tasks"
+    {:ok, response} = HTTPoison.get(url)
+    case response do
+      %{status_code: 200, body: body} -> JSX.decode(body)
+      %{status_code: 404, body: body} ->
+        {:ok, message} = JSX.decode(body)
+        {:err, Map.get(message, "message")}
+    end
+  end
 end

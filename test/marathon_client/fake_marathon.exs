@@ -7,7 +7,7 @@ defmodule FakeMarathon do
   alias SSETestServer.SSEServer
 
   defmodule State do
-    defstruct sse: nil, listener: nil, apps: []
+    defstruct sse: nil, listener: nil, apps: [], app_tasks: %{}
   end
 
   defmodule AppsHandler do
@@ -17,6 +17,23 @@ defmodule FakeMarathon do
       headers = %{"content-type" => "application/json"}
       {:ok, apps} = JSX.encode(%{"apps" => FakeMarathon.get_apps(fm)})
       {:ok, :cowboy_req.reply(200, headers, apps, req), fm}
+    end
+  end
+
+  defmodule AppTasksHandler do
+    @behaviour :cowboy_handler
+
+    def init(req, fm) do
+      headers = %{"content-type" => "application/json"}
+      app_id = "/" <> :cowboy_req.binding(:app_id, req)
+      case FakeMarathon.get_app_tasks(fm, app_id) do
+        nil ->
+          {:ok, message} = JSX.encode(%{"message" => "App '#{app_id}' does not exist"})
+          {:ok, :cowboy_req.reply(404, headers, message, req), fm}
+        app_tasks ->
+          {:ok, tasks} = JSX.encode(%{"tasks" => app_tasks})
+          {:ok, :cowboy_req.reply(200, headers, tasks, req), fm}
+      end
     end
   end
 
@@ -45,8 +62,14 @@ defmodule FakeMarathon do
 
   def get_apps(fm \\ :fake_marathon), do: GenServer.call(fm, :get_apps)
 
+  def get_app_tasks(fm \\ :fake_marathon, app_id),
+    do: GenServer.call(fm, {:get_app_tasks, app_id})
+
   def set_apps(fm \\ :fake_marathon, apps),
     do: GenServer.call(fm, {:set_apps, apps})
+
+  def set_app_tasks(fm \\ :fake_marathon, app_id, tasks),
+    do: GenServer.call(fm, {:set_app_tasks, app_id, tasks})
 
   ## Callbacks
 
@@ -57,6 +80,8 @@ defmodule FakeMarathon do
     listener = make_ref()
     handlers = [
       {"/v2/apps", AppsHandler, self()},
+      # FIXME: Support app IDs with `/` in them
+      {"/v2/apps/:app_id/tasks", AppTasksHandler, self()},
       SSEServer.configure_endpoint_handler(sse, "/v2/events", opts),
     ]
     dispatch = :cowboy_router.compile([{:_, handlers}])
@@ -83,6 +108,13 @@ defmodule FakeMarathon do
 
   def handle_call(:get_apps, _from, state), do: {:reply, state.apps, state}
 
+  def handle_call({:get_app_tasks, app_id}, _from, state),
+    do: {:reply, Map.get(state.app_tasks, app_id), state}
+
   def handle_call({:set_apps, apps}, _from, state),
     do: {:reply, :ok, %{state | apps: apps}}
+
+  def handle_call({:set_app_tasks, app_id, tasks}, _from, %{app_tasks: app_tasks} = state) do
+    {:reply, :ok, %{state | app_tasks: Map.put(app_tasks, app_id, tasks)}}
+  end
 end
