@@ -14,6 +14,7 @@ root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 echo "Expecting protoc version >= 3.5.0:"
 protoc=$(which protoc)
 $protoc --version
+echo
 
 echo "Fetching/updating submodules..."
 git submodule init
@@ -21,12 +22,14 @@ git submodule sync
 git submodule update --checkout
 echo "Checking submodules..."
 git submodule status
+echo
 
 echo "Fetching data-plane-api dependencies..."
 pushd data-plane-api
 bazel fetch //envoy/...
 output_base="$(bazel info output_base)"
 popd
+echo
 
 elixirarg="plugins=grpc"
 
@@ -51,10 +54,13 @@ for module in "${data_plane_modules}"; do
 	find data-plane-api/envoy/"$module" -name '*.proto' | \
 		xargs $protoc ${protocargs[@]} --plugin=elixir --elixir_out="${elixirarg}":"${root}/lib/"
 done
+echo
 
+echo "The following Google protos are used:"
+grep -REho '\bGoogle.[A-Z]\w+.[A-Z]\w*' lib/envoy | sort -u
+echo
 
-# :-/
-# grep -REho '\bGoogle.Protobuf.[A-Z]\w*' lib/envoy | sort -u
+# These are the protos under 'Google.Protobuf'
 protobuf_protos=(
 	any
 	duration
@@ -69,4 +75,19 @@ protobuf_src="$output_base/external/com_google_protobuf/src"
 for proto in "${protobuf_protos[@]}"; do
 	$protoc -I="$protobuf_src" --plugin=elixir --elixir_out="${elixirarg}":"${root}/lib/" \
 		"$protobuf_src"/google/protobuf/"$proto".proto
+done
+echo
+
+
+# These are the protos *not* under 'Google.Protobuf'
+googleapis_protos=(
+	rpc/status
+)
+
+echo "Generating googleapis protos..."
+googleapis_src="$output_base/external/googleapis"
+# These *implicitly* depend on the Google.Protobuf APIs
+for proto in "${googleapis_protos[@]}"; do
+	$protoc -I="$googleapis_src" --plugin=elixir --elixir_out="${elixirarg}":"${root}/lib/" \
+		"$googleapis_src"/google/"$proto".proto
 done
