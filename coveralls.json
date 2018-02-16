@@ -3,5 +3,8 @@
     "data-plane-api",
     "lib/envoy",
     "lib/google"
+  ],
+  "custom_stop_words": [
+    "#\s*noqa"
   ]
 }
