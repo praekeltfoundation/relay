@@ -3,7 +3,7 @@ Code.require_file(Path.join([__DIR__, "marathon_client_helper.exs"]))
 defmodule Relay.MarathonClient.SSEClientTest do
   use ExUnit.Case
 
-  alias Relay.MarathonClient.SSEClient
+  alias MarathonClient.SSEClient
   import MarathonTestHelpers, only: [marathon_event: 2]
 
   setup_all do
