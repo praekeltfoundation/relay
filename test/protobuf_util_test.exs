@@ -125,16 +125,21 @@ defmodule Relay.ProtobufUtilTest do
 
       @type t :: %__MODULE__{
         foobar: {atom, any},
-        baz: String.t
+        baz: String.t,
+        alicebob: {atom, any}
       }
-      defstruct [:foobar, :baz]
+      defstruct [:foobar, :baz, :alicebob]
 
       oneof :foobar, 0
+      oneof :alicebob, 1
       field :foo, 1, type: :uint32, oneof: 0
       field :bar, 2, type: :bool, oneof: 0
       field :baz, 3, type: :string
+      field :alice, 4, type: :string, oneof: 1
+      field :bob, 5, type: :bytes, oneof: 1
     end
 
+    # Set one of the oneofs so that all code paths are exercised
     proto = OneofType.new(foobar: {:bar, true}, baz: "def")
     struct = ProtobufUtil.mkstruct(proto)
 
