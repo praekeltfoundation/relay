@@ -22,14 +22,10 @@ defmodule RelayTest do
   defp assert_lds_response(version_info, listeners) do
     {:ok, channel} = GRPC.Stub.connect("127.0.0.1:#{@port}")
     stream = channel |> LDSStub.stream_listeners()
-    task = Task.async(fn ->
-      GRPC.Stub.stream_send(stream, DiscoveryRequest.new(), end_stream: true)
-    end)
+    result_stream = GRPC.Stub.recv(stream)
+    GRPC.Stub.stream_send(stream, DiscoveryRequest.new())
 
-    result_enum = GRPC.Stub.recv(stream)
-    Task.await(task)
-
-    assert [response] = Enum.to_list(result_enum)
+    assert [response] = Enum.take(result_stream, 1)
     assert %DiscoveryResponse{version_info: ^version_info, resources: resources} = response
 
     assert resources |> Enum.map(fn any_res -> Listener.decode(any_res.value) end) == listeners
