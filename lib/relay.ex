@@ -8,7 +8,8 @@ defmodule Relay do
   alias Relay.Supervisor
 
   def start(_type, _args) do
-    Supervisor.start_link({5000}, name: Supervisor)
+    port = Application.get_env(:relay, :port, 5000)
+    Supervisor.start_link({port}, name: Supervisor)
   end
 
 end
