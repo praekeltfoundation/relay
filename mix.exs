@@ -10,6 +10,7 @@ defmodule Relay.MixProject do
       deps: deps(),
       aliases: aliases(),
       test_coverage: [tool: ExCoveralls],
+      aliases: aliases(),
       preferred_cli_env: [
         "coveralls": :test,
         "coveralls.json": :test,
@@ -50,8 +51,9 @@ defmodule Relay.MixProject do
       {:hackney, "~> 1.9.0"},
       {:httpoison, "~> 0.13"},
 
+      {:exjsx, "~> 4.0"},
+
       # Test deps.
-      {:exjsx, "~> 4.0", only: :test},
       {:sse_test_server,
        git: "https://github.com/praekeltfoundation/sse_test_server.git",
        ref: "d8917d260685a306834a476a7457469be590c4d4",
