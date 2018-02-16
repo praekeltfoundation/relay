@@ -10,6 +10,7 @@ defmodule Relay.MixProject do
       deps: deps(),
       aliases: aliases(),
       test_coverage: [tool: ExCoveralls],
+      aliases: aliases(),
       preferred_cli_env: [
         "coveralls": :test,
         "coveralls.json": :test,

@@ -1,3 +1,5 @@
+Code.require_file(Path.join([__DIR__, "marathon_client_helper.exs"]))
+
 defmodule Relay.MarathonClient.SSEParserTest do
   use ExUnit.Case, async: true
 

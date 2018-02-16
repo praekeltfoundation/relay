@@ -1,32 +1,44 @@
 defmodule Relay.Server do
-  alias Relay.{Demo2, ProtobufUtil}
+  alias Relay.{ProtobufUtil, Store}
   alias Envoy.Api.V2.{DiscoveryRequest, DiscoveryResponse}
 
-  defp mkresponse(type_url, resources, opts \\ []) do
+  defp mkresponse(type_url, version_info, resources, opts \\ []) do
     typed_resources = resources |> Enum.map(fn res -> ProtobufUtil.mkany(type_url, res) end)
-    DiscoveryResponse.new([type_url: type_url, resources: typed_resources] ++ opts)
+    DiscoveryResponse.new(
+      [type_url: type_url, version_info: version_info, resources: typed_resources] ++ opts)
   end
 
-  def stream_send_response(stream, type_url, resources, opts \\ []) do
-    GRPC.Server.stream_send(stream, mkresponse(type_url, resources, opts))
+  defp stream_send_response(stream, type_url, version_info, resources, opts \\ []) do
+    GRPC.Server.stream_send(stream, mkresponse(type_url, version_info, resources, opts))
+  end
+
+  def serve_stream_response(req_enum, stream, xds, type_url) do
+    # For the first request we respond immediately...
+    [_request] = Enum.take(req_enum, 1)
+    {:ok, version_info, resources} = Store.subscribe(Store, xds, self())
+    stream_send_response(stream, type_url, version_info, resources)
+
+    #...subsequent responses sent when we receive changes
+    req_enum |> Enum.each(fn _request ->
+      # TODO: How to handle errors?
+      receive do
+        {^xds, version_info, resources} ->
+          stream_send_response(stream, type_url, version_info, resources)
+      end
+    end)
   end
 
   defmodule ListenerDiscoveryService do
     use GRPC.Server, service: Envoy.Api.V2.ListenerDiscoveryService.Service
 
+    def xds, do: :lds
     def type_url, do: "type.googleapis.com/envoy.api.v2.Listener"
 
     # rpc StreamListeners(stream DiscoveryRequest) returns (stream DiscoveryResponse)
     @spec stream_listeners(Enumerable.t, GRPC.Server.Stream.t) :: any
     def stream_listeners(req_enum, stream) do
-      Enum.each(req_enum, fn(request) ->
-        IO.inspect {:stream_listeners, self()}
-        Relay.Server.stream_send_response(stream, type_url(), listeners())
-      end)
-    end
-
-    defp listeners do
-      Demo2.listeners()
+      IO.inspect {:stream_listeners, self()}
+      Relay.Server.serve_stream_response(req_enum, stream, xds(), type_url())
     end
 
     # rpc FetchListeners(DiscoveryRequest) returns (DiscoveryResponse)
@@ -39,19 +51,14 @@ defmodule Relay.Server do
   defmodule RouteDiscoveryService do
     use GRPC.Server, service: Envoy.Api.V2.RouteDiscoveryService.Service
 
+    def xds, do: :rds
     def type_url, do: "type.googleapis.com/envoy.api.v2.RouteConfiguration"
 
     # rpc StreamRoutes(stream DiscoveryRequest) returns (stream DiscoveryResponse)
     @spec stream_routes(Enumerable.t, GRPC.Server.Stream.t) :: any
     def stream_routes(req_enum, stream) do
-      Enum.each(req_enum, fn(request) ->
-        IO.inspect {:stream_routes, self()}
-        Relay.Server.stream_send_response(stream, type_url(), routes())
-      end)
-    end
-
-    defp routes do
-      []
+      IO.inspect {:stream_routes, self()}
+      Relay.Server.serve_stream_response(req_enum, stream, xds(), type_url())
     end
 
     # rpc FetchRoutes(DiscoveryRequest) returns (DiscoveryResponse)
@@ -64,19 +71,14 @@ defmodule Relay.Server do
   defmodule ClusterDiscoveryService do
     use GRPC.Server, service: Envoy.Api.V2.ClusterDiscoveryService.Service
 
+    def xds, do: :cds
     def type_url, do: "type.googleapis.com/envoy.api.v2.Cluster"
 
     # rpc StreamClusters(stream DiscoveryRequest) returns (stream DiscoveryResponse)
     @spec stream_clusters(Enumerable.t, GRPC.Server.Stream.t) :: any
     def stream_clusters(req_enum, stream) do
-      Enum.each(req_enum, fn(request) ->
-        IO.inspect {:stream_clusters, self()}
-        Relay.Server.stream_send_response(stream, type_url(), clusters())
-      end)
-    end
-
-    defp clusters do
-      Demo2.clusters()
+      IO.inspect {:stream_clusters, self()}
+      Relay.Server.serve_stream_response(req_enum, stream, xds(), type_url())
     end
 
     # rpc FetchClusters(DiscoveryRequest) returns (DiscoveryResponse)
@@ -89,19 +91,14 @@ defmodule Relay.Server do
   defmodule EndpointDiscoveryService do
     use GRPC.Server, service: Envoy.Api.V2.EndpointDiscoveryService.Service
 
+    def xds, do: :eds
     def type_url, do: "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment"
 
     # rpc StreamEndpoints(stream DiscoveryRequest) returns (stream DiscoveryResponse)
     @spec stream_endpoints(Enumerable.t, GRPC.Server.Stream.t) :: any
     def stream_endpoints(req_enum, stream) do
-      Enum.each(req_enum, fn(request) ->
-        IO.inspect {:stream_endpoints, self()}
-        Relay.Server.stream_send_response(stream, type_url(), endpoints())
-      end)
-    end
-
-    defp endpoints do
-      []
+      IO.inspect {:stream_endpoints, self()}
+      Relay.Server.serve_stream_response(req_enum, stream, xds(), type_url())
     end
 
     # rpc FetchEndpoints(DiscoveryRequest) returns (DiscoveryResponse)
