@@ -4,6 +4,7 @@ defmodule Envoy.Api.V2.Cluster do
   @type t :: %__MODULE__{
     lb_config:                         {atom, any},
     name:                              String.t,
+    alt_stat_name:                     String.t,
     type:                              integer,
     eds_cluster_config:                Envoy.Api.V2.Cluster.EdsClusterConfig.t,
     connect_timeout:                   Google.Protobuf.Duration.t,
@@ -28,10 +29,11 @@ defmodule Envoy.Api.V2.Cluster do
     metadata:                          Envoy.Api.V2.Core.Metadata.t,
     protocol_selection:                integer
   }
-  defstruct [:lb_config, :name, :type, :eds_cluster_config, :connect_timeout, :per_connection_buffer_limit_bytes, :lb_policy, :hosts, :health_checks, :max_requests_per_connection, :circuit_breakers, :tls_context, :http_protocol_options, :http2_protocol_options, :dns_refresh_rate, :dns_lookup_family, :dns_resolvers, :outlier_detection, :cleanup_interval, :upstream_bind_config, :lb_subset_config, :common_lb_config, :transport_socket, :metadata, :protocol_selection]
+  defstruct [:lb_config, :name, :alt_stat_name, :type, :eds_cluster_config, :connect_timeout, :per_connection_buffer_limit_bytes, :lb_policy, :hosts, :health_checks, :max_requests_per_connection, :circuit_breakers, :tls_context, :http_protocol_options, :http2_protocol_options, :dns_refresh_rate, :dns_lookup_family, :dns_resolvers, :outlier_detection, :cleanup_interval, :upstream_bind_config, :lb_subset_config, :common_lb_config, :transport_socket, :metadata, :protocol_selection]
 
   oneof :lb_config, 0
   field :name, 1, type: :string
+  field :alt_stat_name, 28, type: :string
   field :type, 2, type: Envoy.Api.V2.Cluster.DiscoveryType, enum: true
   field :eds_cluster_config, 3, type: Envoy.Api.V2.Cluster.EdsClusterConfig
   field :connect_timeout, 4, type: Google.Protobuf.Duration
@@ -140,6 +142,19 @@ defmodule Envoy.Api.V2.Cluster.CommonLbConfig do
   field :healthy_panic_threshold, 1, type: Envoy.Api.V2.Core.Percent
 end
 
+defmodule Envoy.Api.V2.Cluster.CommonLbConfig.ZoneAwareLbConfig do
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+    routing_enabled:  Envoy.Api.V2.Core.Percent.t,
+    min_cluster_size: Google.Protobuf.UInt64Value.t
+  }
+  defstruct [:routing_enabled, :min_cluster_size]
+
+  field :routing_enabled, 1, type: Envoy.Api.V2.Core.Percent
+  field :min_cluster_size, 2, type: Google.Protobuf.UInt64Value
+end
+
 defmodule Envoy.Api.V2.Cluster.DiscoveryType do
   use Protobuf, enum: true, syntax: :proto3
 
@@ -158,6 +173,7 @@ defmodule Envoy.Api.V2.Cluster.LbPolicy do
   field :RING_HASH, 2
   field :RANDOM, 3
   field :ORIGINAL_DST_LB, 4
+  field :MAGLEV, 5
 end
 
 defmodule Envoy.Api.V2.Cluster.DnsLookupFamily do
