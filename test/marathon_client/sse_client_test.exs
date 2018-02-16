@@ -1,6 +1,6 @@
 Code.require_file(Path.join([__DIR__, "marathon_client_helper.exs"]))
 
-defmodule Relay.MarathonClient.SSEClientTest do
+defmodule MarathonClient.SSEClientTest do
   use ExUnit.Case
 
   alias MarathonClient.SSEClient
