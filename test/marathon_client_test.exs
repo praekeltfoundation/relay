@@ -1,9 +1,9 @@
-Code.require_file(Path.join([__DIR__, "marathon_client_helper.exs"]))
+Code.require_file(Path.join([__DIR__, "marathon_client", "marathon_client_helper.exs"]))
 
-defmodule Relay.MarathonClientTest do
+defmodule MarathonClientTest do
   use ExUnit.Case
 
-  alias Relay.MarathonClient
+  alias MarathonClient
   import MarathonTestHelpers, only: [marathon_event: 2]
 
   setup_all do
