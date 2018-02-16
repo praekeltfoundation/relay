@@ -276,17 +276,21 @@ defmodule Envoy.Api.V2.Route.RedirectAction do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
+    path_rewrite_specifier: {atom, any},
     host_redirect:  String.t,
-    path_redirect:  String.t,
     response_code:  integer,
-    https_redirect: boolean
+    https_redirect: boolean,
+    strip_query:    boolean
   }
-  defstruct [:host_redirect, :path_redirect, :response_code, :https_redirect]
+  defstruct [:path_rewrite_specifier, :host_redirect, :response_code, :https_redirect, :strip_query]
 
+  oneof :path_rewrite_specifier, 0
   field :host_redirect, 1, type: :string
-  field :path_redirect, 2, type: :string
+  field :path_redirect, 2, type: :string, oneof: 0
+  field :prefix_rewrite, 5, type: :string, oneof: 0
   field :response_code, 3, type: Envoy.Api.V2.Route.RedirectAction.RedirectResponseCode, enum: true
   field :https_redirect, 4, type: :bool
+  field :strip_query, 6, type: :bool
 end
 
 defmodule Envoy.Api.V2.Route.RedirectAction.RedirectResponseCode do

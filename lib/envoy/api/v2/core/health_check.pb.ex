@@ -75,8 +75,12 @@ end
 defmodule Envoy.Api.V2.Core.HealthCheck.RedisHealthCheck do
   use Protobuf, syntax: :proto3
 
-  defstruct []
+  @type t :: %__MODULE__{
+    key: String.t
+  }
+  defstruct [:key]
 
+  field :key, 1, type: :string
 end
 
 defmodule Envoy.Api.V2.Core.HealthCheck.GrpcHealthCheck do

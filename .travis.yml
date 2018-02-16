@@ -16,7 +16,7 @@ jobs:
     - group: trusty_latest
       jdk: openjdk8
       env:
-        - BAZEL_VERSION=0.10.0
+        - BAZEL_VERSION=0.10.1
         - PROTOC_VERSION=3.5.1
         - PROTOBUF_ELIXIR_VERSION=0.5.0
 

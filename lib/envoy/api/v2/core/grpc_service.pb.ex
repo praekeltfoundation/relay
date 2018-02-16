@@ -32,13 +32,15 @@ defmodule Envoy.Api.V2.Core.GrpcService.GoogleGrpc do
   @type t :: %__MODULE__{
     target_uri:      String.t,
     ssl_credentials: Envoy.Api.V2.Core.GrpcService.GoogleGrpc.SslCredentials.t,
-    stat_prefix:     String.t
+    stat_prefix:     String.t,
+    config:          Google.Protobuf.Struct.t
   }
-  defstruct [:target_uri, :ssl_credentials, :stat_prefix]
+  defstruct [:target_uri, :ssl_credentials, :stat_prefix, :config]
 
   field :target_uri, 1, type: :string
   field :ssl_credentials, 2, type: Envoy.Api.V2.Core.GrpcService.GoogleGrpc.SslCredentials
   field :stat_prefix, 3, type: :string
+  field :config, 4, type: Google.Protobuf.Struct
 end
 
 defmodule Envoy.Api.V2.Core.GrpcService.GoogleGrpc.SslCredentials do
