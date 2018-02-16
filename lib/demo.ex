@@ -10,9 +10,6 @@ defmodule Relay.Demo do
   defp call_async(func_name) do
     Task.async(fn ->
       :ok = GenServer.call(__MODULE__, func_name)
-      receive do
-        {:ok, resp} -> resp
-      end
     end)
   end
 
