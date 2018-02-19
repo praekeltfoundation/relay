@@ -22,7 +22,7 @@ defmodule MarathonClient do
   defp marathon_response(%HTTPoison.Response{status_code: 200, body: body}), do: JSX.decode(body)
 
   defp marathon_response(%HTTPoison.Response{status_code: status_code, body: body})
-       when status_code >= 400 and status_code < 500 do
+       when status_code in 400..499 do
     {:ok, message} = JSX.decode(body)
     {:error, ClientError.new(status_code, message)}
   end
