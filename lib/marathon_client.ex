@@ -12,7 +12,7 @@ defmodule MarathonClient do
   end
 
   def get_app_tasks(base_url, app_id) do
-    url = "#{base_url}/v2/apps#{app_id}/tasks"
+    url = "#{base_url}/v2/apps/#{String.trim(app_id, "/")}/tasks"
     {:ok, response} = HTTPoison.get(url)
     case response do
       %{status_code: 200, body: body} -> JSX.decode(body)
