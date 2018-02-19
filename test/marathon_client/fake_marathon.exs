@@ -10,29 +10,30 @@ defmodule FakeMarathon do
     defstruct sse: nil, listener: nil, apps: [], app_tasks: %{}
   end
 
+  def response(req, fm, status_code, json) do
+    headers = %{"content-type" => "application/json"}
+    {:ok, body} = JSX.encode(json)
+    {:ok, :cowboy_req.reply(status_code, headers, body, req), fm}
+  end
+
   defmodule AppsHandler do
     @behaviour :cowboy_handler
 
-    def init(req, fm) do
-      headers = %{"content-type" => "application/json"}
-      {:ok, apps} = JSX.encode(%{"apps" => FakeMarathon.get_apps(fm)})
-      {:ok, :cowboy_req.reply(200, headers, apps, req), fm}
-    end
+    def init(req, fm),
+      do: FakeMarathon.response(req, fm, 200, %{"apps" => FakeMarathon.get_apps(fm)})
   end
 
   defmodule AppTasksHandler do
     @behaviour :cowboy_handler
 
     def init(req, fm) do
-      headers = %{"content-type" => "application/json"}
       app_id = "/" <> :cowboy_req.binding(:app_id, req)
+
       case FakeMarathon.get_app_tasks(fm, app_id) do
         nil ->
-          {:ok, message} = JSX.encode(%{"message" => "App '#{app_id}' does not exist"})
-          {:ok, :cowboy_req.reply(404, headers, message, req), fm}
+          FakeMarathon.response(req, fm, 404, %{"message" => "App '#{app_id}' does not exist"})
         app_tasks ->
-          {:ok, tasks} = JSX.encode(%{"tasks" => app_tasks})
-          {:ok, :cowboy_req.reply(200, headers, tasks, req), fm}
+          FakeMarathon.response(req, fm, 200, %{"tasks" => app_tasks})
       end
     end
   end
