@@ -57,7 +57,7 @@ defmodule MarathonClientTest do
   describe "get app tasks" do
     test "get tasks" do
       task = %{
-        "appId" => "/minecraft/survival-world",
+        "appId" => "/minecraft",
         "host" => "srv7.hw.ca1.mesosphere.com",
         "id" => "minecraft_survival-world.564bd685-4c30-11e5-98c1-be5b2935a987",
         "ports" => [
@@ -72,7 +72,6 @@ defmodule MarathonClientTest do
       {:ok, fm} = start_supervised(FakeMarathon)
       base_url = FakeMarathon.base_url(fm)
 
-      # FIXME: Use the actual app ID for this example
       :ok = FakeMarathon.set_app_tasks(fm, "/minecraft", [task])
 
       assert {:ok, %{"tasks" => [task]}} == MarathonClient.get_app_tasks(base_url, "/minecraft")
@@ -88,7 +87,7 @@ defmodule MarathonClientTest do
 
     test "app_ids with and without leading/trailing /'s supported" do
       task = %{
-        "appId" => "/minecraft/survival-world",
+        "appId" => "/minecraft",
         "host" => "srv7.hw.ca1.mesosphere.com",
         "id" => "minecraft_survival-world.564bd685-4c30-11e5-98c1-be5b2935a987",
         "ports" => [
@@ -103,7 +102,6 @@ defmodule MarathonClientTest do
       {:ok, fm} = start_supervised(FakeMarathon)
       base_url = FakeMarathon.base_url(fm)
 
-      # FIXME: Use the actual app ID for this example
       :ok = FakeMarathon.set_app_tasks(fm, "/minecraft", [task])
 
       assert {:ok, %{"tasks" => [task]}} == MarathonClient.get_app_tasks(base_url, "/minecraft")
