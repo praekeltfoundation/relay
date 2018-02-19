@@ -3,7 +3,7 @@ Code.require_file(Path.join([__DIR__, "marathon_client", "marathon_client_helper
 defmodule MarathonClientTest do
   use ExUnit.Case
 
-  alias MarathonClient
+  alias MarathonClient.ClientError
   import MarathonTestHelpers, only: [marathon_event: 2]
 
   setup_all do
@@ -81,8 +81,9 @@ defmodule MarathonClientTest do
       {:ok, fm} = start_supervised(FakeMarathon)
       base_url = FakeMarathon.base_url(fm)
 
-      assert {:error, "App '/minecraft' does not exist"} ==
-        MarathonClient.get_app_tasks(base_url, "/minecraft")
+      assert {:error,
+              %ClientError{reason: :not_found, message: "App '/minecraft' does not exist"}} ==
+               MarathonClient.get_app_tasks(base_url, "/minecraft")
     end
 
     test "app_ids with and without leading/trailing /'s supported" do
