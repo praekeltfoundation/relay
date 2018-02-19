@@ -81,8 +81,7 @@ defmodule MarathonClientTest do
       {:ok, fm} = start_supervised(FakeMarathon)
       base_url = FakeMarathon.base_url(fm)
 
-      assert {:error,
-              %ClientError{reason: :not_found, message: "App '/minecraft' does not exist"}} ==
+      assert {:error, {404, %{"message" => "App '/minecraft' does not exist"}}} ==
                MarathonClient.get_app_tasks(base_url, "/minecraft")
     end
 
