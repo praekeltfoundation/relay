@@ -3,47 +3,43 @@ defmodule Relay.Demo do
 
   use GenServer
 
+  defmodule State do
+    defstruct delay: 1_000, version: 1
+  end
+
   def start_link(_opts) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
-  defp call_async(func_name) do
-    Task.start_link(fn ->
-      :ok = GenServer.call(__MODULE__, func_name)
-    end)
-  end
+  def update_state(), do: GenServer.call(__MODULE__, :update_state)
 
   # Callbacks
 
   def init(_args) do
-    call_async(:clusters)
-    call_async(:listeners)
-    call_async(:routes)
-    call_async(:endpoints)
-    {:ok, %{}}
+    # TODO: Make delay configurable.
+    send(self(), :scheduled_update)
+    {:ok, %State{}}
   end
 
-  def handle_call(:clusters, _from, state) do
-    Store.update(Store, :cds, "1", clusters())
-    {:reply, :ok, state}
+  def handle_call(:update_state, _from, state) do
+    {:reply, :ok, update_state(state)}
   end
 
-  def handle_call(:listeners, _from, state) do
-    Store.update(Store, :lds, "1", listeners())
-    {:reply, :ok, state}
-  end
-
-  def handle_call(:routes, _from, state) do
-    Store.update(Store, :rds, "1", routes())
-    {:reply, :ok, state}
-  end
-
-  def handle_call(:endpoints, _from, state) do
-    Store.update(Store, :eds, "1", endpoints())
-    {:reply, :ok, state}
+  def handle_info(:scheduled_update, state) do
+    Process.send_after(self(), :scheduled_update, state.delay)
+    {:noreply, update_state(state)}
   end
 
   # Internals
+
+  defp update_state(state) do
+    v = "#{state.version}"
+    Store.update(Store, :cds, v, clusters())
+    Store.update(Store, :lds, v, listeners())
+    Store.update(Store, :rds, v, routes())
+    Store.update(Store, :eds, v, endpoints())
+    %{state | version: state.version + 1}
+  end
 
   defp socket_address(address, port) do
     alias Envoy.Api.V2.Core.{Address, SocketAddress}

@@ -15,13 +15,12 @@ defmodule RelayTest do
     Application.put_env(:relay, :port, @port)
   end
 
-  defp assert_example_response do
-    assert_lds_response("1", Demo.listeners())
+  defp stream_lds() do
+    {:ok, channel} = GRPC.Stub.connect("127.0.0.1:#{@port}")
+    channel |> LDSStub.stream_listeners()
   end
 
-  defp assert_lds_response(version_info, listeners) do
-    {:ok, channel} = GRPC.Stub.connect("127.0.0.1:#{@port}")
-    stream = channel |> LDSStub.stream_listeners()
+  defp assert_lds_response(stream, version_info, listeners) do
     result_stream = GRPC.Stub.recv(stream)
     GRPC.Stub.stream_send(stream, DiscoveryRequest.new())
 
@@ -46,6 +45,27 @@ defmodule RelayTest do
       assert Process.alive?(Process.whereis(id))
     end)
 
-    assert_example_response()
+    stream = stream_lds()
+    assert_lds_response(stream, "1", Demo.listeners())
+  end
+
+  test "demo app sends multiple updates" do
+    :ok = TestHelpers.setup_apps([:relay])
+
+    # The Demo app sends scheduled updates every second, with ad-hoc updates in
+    # between if desired
+    t0 = Time.utc_now()
+    # Initial update
+    stream = stream_lds()
+    assert_lds_response(stream, "1", Demo.listeners())
+    # Ad-hoc update
+    Demo.update_state()
+    assert_lds_response(stream, "2", Demo.listeners())
+    t1 = Time.utc_now()
+    assert Time.diff(t1, t0, :milliseconds) < 1_000
+    # Scheduled update
+    assert_lds_response(stream, "3", Demo.listeners())
+    t2 = Time.utc_now()
+    assert Time.diff(t2, t0, :milliseconds) < 1_500
   end
 end
