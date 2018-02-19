@@ -82,7 +82,7 @@ defmodule MarathonClientTest do
       {:ok, fm} = start_supervised(FakeMarathon)
       base_url = FakeMarathon.base_url(fm)
 
-      assert {:err, "App '/minecraft' does not exist"} ==
+      assert {:error, "App '/minecraft' does not exist"} ==
         MarathonClient.get_app_tasks(base_url, "/minecraft")
     end
   end

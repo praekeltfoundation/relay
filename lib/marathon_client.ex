@@ -18,7 +18,7 @@ defmodule MarathonClient do
       %{status_code: 200, body: body} -> JSX.decode(body)
       %{status_code: 404, body: body} ->
         {:ok, message} = JSX.decode(body)
-        {:err, Map.get(message, "message")}
+        {:error, Map.get(message, "message")}
     end
   end
 end
