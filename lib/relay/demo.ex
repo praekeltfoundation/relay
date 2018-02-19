@@ -47,6 +47,22 @@ defmodule Relay.Demo do
     Address.new(address: {:socket_address, sock})
   end
 
+  defp own_api_config_source do
+    alias Envoy.Api.V2.Core.{ApiConfigSource, ConfigSource, GrpcService}
+    ConfigSource.new(config_source_specifier: {:api_config_source, ApiConfigSource.new(
+      api_type: ApiConfigSource.ApiType.value(:GRPC),
+      # TODO: Make our cluster name configurable--this must match the cluster
+      # name in bootstrap.yaml
+      # TODO: I don't understand what grpc_services is for when there is a
+      # `cluster_names`. `cluster_names` is required.
+      cluster_names: ["xds_cluster"],
+      grpc_services: [
+        GrpcService.new(target_specifier:
+          {:envoy_grpc, GrpcService.EnvoyGrpc.new(cluster_name: "xds_cluster")})
+      ]
+    )})
+  end
+
   def clusters do
     alias Envoy.Api.V2.Cluster
     alias Envoy.Api.V2.Core.Http1ProtocolOptions
@@ -55,8 +71,8 @@ defmodule Relay.Demo do
     [
       Cluster.new(
         name: "demo",
-        type: Cluster.DiscoveryType.value(:STATIC),
-        hosts: [socket_address("127.0.0.1", 8081)],
+        type: Cluster.DiscoveryType.value(:EDS),
+        eds_cluster_config: Cluster.EdsClusterConfig.new(eds_config: own_api_config_source()),
         connect_timeout: Duration.new(seconds: 30),
         lb_policy: Cluster.LbPolicy.value(:ROUND_ROBIN),
         health_checks: [],
@@ -133,6 +149,20 @@ defmodule Relay.Demo do
   end
 
   def endpoints do
-    []
+    alias Envoy.Api.V2.ClusterLoadAssignment
+    alias Envoy.Api.V2.Endpoint.{Endpoint, LbEndpoint, LocalityLbEndpoints}
+    alias Envoy.Api.V2.Core.Locality
+    [
+      ClusterLoadAssignment.new(
+        cluster_name: "demo",
+        endpoints: [
+          LocalityLbEndpoints.new(
+            locality: Locality.new(region: "local"),
+            lb_endpoints: [
+              LbEndpoint.new(endpoint: Endpoint.new(address: socket_address("127.0.0.1", 8081)))
+            ])
+        ]
+      )
+    ]
   end
 end
