@@ -47,6 +47,22 @@ defmodule Relay.Demo do
     Address.new(address: {:socket_address, sock})
   end
 
+  defp own_api_config_source do
+    alias Envoy.Api.V2.Core.{ApiConfigSource, ConfigSource, GrpcService}
+    ConfigSource.new(config_source_specifier: {:api_config_source, ApiConfigSource.new(
+      api_type: ApiConfigSource.ApiType.value(:GRPC),
+      # TODO: Make our cluster name configurable--this must match the cluster
+      # name in bootstrap.yaml
+      # TODO: I don't understand what grpc_services is for when there is a
+      # `cluster_names`. `cluster_names` is required.
+      cluster_names: ["xds_cluster"],
+      grpc_services: [
+        GrpcService.new(target_specifier:
+          {:envoy_grpc, GrpcService.EnvoyGrpc.new(cluster_name: "xds_cluster")})
+      ]
+    )})
+  end
+
   def clusters do
     alias Envoy.Api.V2.Cluster
     alias Envoy.Api.V2.Core.Http1ProtocolOptions
@@ -55,31 +71,14 @@ defmodule Relay.Demo do
     [
       Cluster.new(
         name: "demo",
-        type: Cluster.DiscoveryType.value(:STATIC),
-        hosts: [socket_address("127.0.0.1", 8081)],
+        type: Cluster.DiscoveryType.value(:EDS),
+        eds_cluster_config: Cluster.EdsClusterConfig.new(eds_config: own_api_config_source()),
         connect_timeout: Duration.new(seconds: 30),
         lb_policy: Cluster.LbPolicy.value(:ROUND_ROBIN),
         health_checks: [],
         http_protocol_options: Http1ProtocolOptions.new()
       )
     ]
-  end
-
-  defp route_config do
-    alias Envoy.Api.V2.RouteConfiguration
-    alias Envoy.Api.V2.Route.{Route, RouteAction, RouteMatch, VirtualHost}
-    RouteConfiguration.new(
-      name: "demo",
-      virtual_hosts: [
-        VirtualHost.new(
-          name: "demo",
-          domains: ["example.com"],
-          routes: [
-            Route.new(
-              match: RouteMatch.new(path_specifier: {:prefix, "/"}),
-              action: {:route, RouteAction.new(cluster_specifier: {:cluster, "demo"})})
-          ])
-      ])
   end
 
   defp router_filter do
@@ -99,13 +98,14 @@ defmodule Relay.Demo do
 
   defp default_http_conn_manager_filter(name) do
     alias Envoy.Api.V2.Listener.Filter
-    alias Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionManager
+    alias Envoy.Config.Filter.Network.HttpConnectionManager.V2.{HttpConnectionManager, Rds}
     import Relay.ProtobufUtil
     Filter.new(
       name: "envoy.http_connection_manager",
       config: mkstruct(HttpConnectionManager.new(
         codec_type: HttpConnectionManager.CodecType.value(:AUTO),
-        route_specifier: {:route_config, route_config()},
+        route_specifier: {:rds, Rds.new(
+          config_source: own_api_config_source(), route_config_name: "http")},
         stat_prefix: name,
         http_filters: [router_filter()]))
       )
@@ -129,10 +129,39 @@ defmodule Relay.Demo do
   end
 
   def routes do
-    []
+    alias Envoy.Api.V2.RouteConfiguration
+    alias Envoy.Api.V2.Route.{Route, RouteAction, RouteMatch, VirtualHost}
+    [
+      RouteConfiguration.new(
+        name: "http",
+        virtual_hosts: [
+          VirtualHost.new(
+            name: "demo",
+            domains: ["example.com"],
+            routes: [
+              Route.new(
+                match: RouteMatch.new(path_specifier: {:prefix, "/"}),
+                action: {:route, RouteAction.new(cluster_specifier: {:cluster, "demo"})})
+            ])
+        ])
+    ]
   end
 
   def endpoints do
-    []
+    alias Envoy.Api.V2.ClusterLoadAssignment
+    alias Envoy.Api.V2.Endpoint.{Endpoint, LbEndpoint, LocalityLbEndpoints}
+    alias Envoy.Api.V2.Core.Locality
+    [
+      ClusterLoadAssignment.new(
+        cluster_name: "demo",
+        endpoints: [
+          LocalityLbEndpoints.new(
+            locality: Locality.new(region: "local"),
+            lb_endpoints: [
+              LbEndpoint.new(endpoint: Endpoint.new(address: socket_address("127.0.0.1", 8081)))
+            ])
+        ]
+      )
+    ]
   end
 end
