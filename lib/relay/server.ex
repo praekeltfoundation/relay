@@ -2,30 +2,35 @@ defmodule Relay.Server do
   alias Relay.{ProtobufUtil, Store}
   alias Envoy.Api.V2.{DiscoveryRequest, DiscoveryResponse}
 
-  defp mkresponse(type_url, version_info, resources, opts \\ []) do
+  defp mkresponse(type_url, version_info, resources) do
     typed_resources = resources |> Enum.map(fn res -> ProtobufUtil.mkany(type_url, res) end)
     DiscoveryResponse.new(
-      [type_url: type_url, version_info: version_info, resources: typed_resources] ++ opts)
+      type_url: type_url, version_info: version_info, resources: typed_resources)
   end
 
-  defp stream_send_response(stream, type_url, version_info, resources, opts \\ []) do
-    GRPC.Server.stream_send(stream, mkresponse(type_url, version_info, resources, opts))
+  defp stream_send_response(stream, type_url, version_info, resources) do
+    GRPC.Server.stream_send(stream, mkresponse(type_url, version_info, resources))
   end
 
-  def serve_stream_response(req_enum, stream, xds, type_url) do
-    # For the first request we respond immediately...
-    [_request] = Enum.take(req_enum, 1)
+  def stream_updates(req_stream, stream, xds, type_url) do
+    # TODO: Have Store send us the initial state as an update
     {:ok, version_info, resources} = Store.subscribe(Store, xds, self())
-    stream_send_response(stream, type_url, version_info, resources)
+    send(self(), {xds, version_info, resources})
+    handle_requests(req_stream, stream, xds, type_url)
+  end
 
+  def handle_requests(req_stream, stream, xds, type_url) do
     #...subsequent responses sent when we receive changes
-    req_enum |> Enum.each(fn _request ->
-      # TODO: How to handle errors?
-      receive do
-        {^xds, version_info, resources} ->
-          stream_send_response(stream, type_url, version_info, resources)
-      end
-    end)
+    req_stream |> Enum.each(&handle_request(&1, stream, xds, type_url))
+  end
+
+  def handle_request(_request, stream, xds, type_url) do
+    # TODO: How to handle errors?
+    # FIXME: What if we get multiple updates between requests?
+    receive do
+      {^xds, version_info, resources} ->
+        stream_send_response(stream, type_url, version_info, resources)
+    end
   end
 
   defmodule ListenerDiscoveryService do
@@ -36,9 +41,9 @@ defmodule Relay.Server do
 
     # rpc StreamListeners(stream DiscoveryRequest) returns (stream DiscoveryResponse)
     @spec stream_listeners(Enumerable.t, GRPC.Server.Stream.t) :: any
-    def stream_listeners(req_enum, stream) do
+    def stream_listeners(req_stream, stream) do
       IO.inspect {:stream_listeners, self()}
-      Relay.Server.serve_stream_response(req_enum, stream, xds(), type_url())
+      Relay.Server.stream_updates(req_stream, stream, xds(), type_url())
     end
 
     # rpc FetchListeners(DiscoveryRequest) returns (DiscoveryResponse)
@@ -56,9 +61,9 @@ defmodule Relay.Server do
 
     # rpc StreamRoutes(stream DiscoveryRequest) returns (stream DiscoveryResponse)
     @spec stream_routes(Enumerable.t, GRPC.Server.Stream.t) :: any
-    def stream_routes(req_enum, stream) do
+    def stream_routes(req_stream, stream) do
       IO.inspect {:stream_routes, self()}
-      Relay.Server.serve_stream_response(req_enum, stream, xds(), type_url())
+      Relay.Server.stream_updates(req_stream, stream, xds(), type_url())
     end
 
     # rpc FetchRoutes(DiscoveryRequest) returns (DiscoveryResponse)
@@ -76,9 +81,9 @@ defmodule Relay.Server do
 
     # rpc StreamClusters(stream DiscoveryRequest) returns (stream DiscoveryResponse)
     @spec stream_clusters(Enumerable.t, GRPC.Server.Stream.t) :: any
-    def stream_clusters(req_enum, stream) do
+    def stream_clusters(req_stream, stream) do
       IO.inspect {:stream_clusters, self()}
-      Relay.Server.serve_stream_response(req_enum, stream, xds(), type_url())
+      Relay.Server.stream_updates(req_stream, stream, xds(), type_url())
     end
 
     # rpc FetchClusters(DiscoveryRequest) returns (DiscoveryResponse)
@@ -96,9 +101,9 @@ defmodule Relay.Server do
 
     # rpc StreamEndpoints(stream DiscoveryRequest) returns (stream DiscoveryResponse)
     @spec stream_endpoints(Enumerable.t, GRPC.Server.Stream.t) :: any
-    def stream_endpoints(req_enum, stream) do
+    def stream_endpoints(req_stream, stream) do
       IO.inspect {:stream_endpoints, self()}
-      Relay.Server.serve_stream_response(req_enum, stream, xds(), type_url())
+      Relay.Server.stream_updates(req_stream, stream, xds(), type_url())
     end
 
     # rpc FetchEndpoints(DiscoveryRequest) returns (DiscoveryResponse)
