@@ -81,23 +81,6 @@ defmodule Relay.Demo do
     ]
   end
 
-  defp route_config do
-    alias Envoy.Api.V2.RouteConfiguration
-    alias Envoy.Api.V2.Route.{Route, RouteAction, RouteMatch, VirtualHost}
-    RouteConfiguration.new(
-      name: "demo",
-      virtual_hosts: [
-        VirtualHost.new(
-          name: "demo",
-          domains: ["example.com"],
-          routes: [
-            Route.new(
-              match: RouteMatch.new(path_specifier: {:prefix, "/"}),
-              action: {:route, RouteAction.new(cluster_specifier: {:cluster, "demo"})})
-          ])
-      ])
-  end
-
   defp router_filter do
     alias Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpFilter
     alias Envoy.Config.Filter.Http.Router.V2.Router
@@ -115,13 +98,14 @@ defmodule Relay.Demo do
 
   defp default_http_conn_manager_filter(name) do
     alias Envoy.Api.V2.Listener.Filter
-    alias Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionManager
+    alias Envoy.Config.Filter.Network.HttpConnectionManager.V2.{HttpConnectionManager, Rds}
     import Relay.ProtobufUtil
     Filter.new(
       name: "envoy.http_connection_manager",
       config: mkstruct(HttpConnectionManager.new(
         codec_type: HttpConnectionManager.CodecType.value(:AUTO),
-        route_specifier: {:route_config, route_config()},
+        route_specifier: {:rds, Rds.new(
+          config_source: own_api_config_source(), route_config_name: "http")},
         stat_prefix: name,
         http_filters: [router_filter()]))
       )
@@ -145,7 +129,22 @@ defmodule Relay.Demo do
   end
 
   def routes do
-    []
+    alias Envoy.Api.V2.RouteConfiguration
+    alias Envoy.Api.V2.Route.{Route, RouteAction, RouteMatch, VirtualHost}
+    [
+      RouteConfiguration.new(
+        name: "http",
+        virtual_hosts: [
+          VirtualHost.new(
+            name: "demo",
+            domains: ["example.com"],
+            routes: [
+              Route.new(
+                match: RouteMatch.new(path_specifier: {:prefix, "/"}),
+                action: {:route, RouteAction.new(cluster_specifier: {:cluster, "demo"})})
+            ])
+        ])
+    ]
   end
 
   def endpoints do
