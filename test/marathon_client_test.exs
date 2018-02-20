@@ -3,7 +3,7 @@ Code.require_file(Path.join([__DIR__, "marathon_client", "marathon_client_helper
 defmodule MarathonClientTest do
   use ExUnit.Case
 
-  alias MarathonClient
+  alias MarathonClient.ClientError
   import MarathonTestHelpers, only: [marathon_event: 2]
 
   setup_all do
@@ -52,5 +52,62 @@ defmodule MarathonClientTest do
 
     :ok = FakeMarathon.set_apps(fm, [app])
     assert {:ok, %{"apps" => [app]}} == MarathonClient.get_apps(base_url)
+  end
+
+  describe "get app tasks" do
+    test "get tasks" do
+      task = %{
+        "appId" => "/minecraft",
+        "host" => "srv7.hw.ca1.mesosphere.com",
+        "id" => "minecraft_survival-world.564bd685-4c30-11e5-98c1-be5b2935a987",
+        "ports" => [
+          31756
+        ],
+        "slaveId" => nil,
+        "stagedAt" => "2015-08-26T20:23:39.463Z",
+        "startedAt" => "2015-08-26T20:23:44.678Z",
+        "version" => "2015-04-17T04:00:14.171Z"
+      }
+
+      {:ok, fm} = start_supervised(FakeMarathon)
+      base_url = FakeMarathon.base_url(fm)
+
+      :ok = FakeMarathon.set_app_tasks(fm, "/minecraft", [task])
+
+      assert {:ok, %{"tasks" => [task]}} == MarathonClient.get_app_tasks(base_url, "/minecraft")
+    end
+
+    test "app not found" do
+      {:ok, fm} = start_supervised(FakeMarathon)
+      base_url = FakeMarathon.base_url(fm)
+
+      assert {:error, {404, %{"message" => "App '/minecraft' does not exist"}}} ==
+               MarathonClient.get_app_tasks(base_url, "/minecraft")
+    end
+
+    test "app_ids with and without leading/trailing /'s supported" do
+      task = %{
+        "appId" => "/minecraft",
+        "host" => "srv7.hw.ca1.mesosphere.com",
+        "id" => "minecraft_survival-world.564bd685-4c30-11e5-98c1-be5b2935a987",
+        "ports" => [
+          31756
+        ],
+        "slaveId" => nil,
+        "stagedAt" => "2015-08-26T20:23:39.463Z",
+        "startedAt" => "2015-08-26T20:23:44.678Z",
+        "version" => "2015-04-17T04:00:14.171Z"
+      }
+
+      {:ok, fm} = start_supervised(FakeMarathon)
+      base_url = FakeMarathon.base_url(fm)
+
+      :ok = FakeMarathon.set_app_tasks(fm, "/minecraft", [task])
+
+      assert {:ok, %{"tasks" => [task]}} == MarathonClient.get_app_tasks(base_url, "/minecraft")
+      assert {:ok, %{"tasks" => [task]}} == MarathonClient.get_app_tasks(base_url, "minecraft")
+      assert {:ok, %{"tasks" => [task]}} == MarathonClient.get_app_tasks(base_url, "minecraft/")
+      assert {:ok, %{"tasks" => [task]}} == MarathonClient.get_app_tasks(base_url, "/minecraft/")
+    end
   end
 end
