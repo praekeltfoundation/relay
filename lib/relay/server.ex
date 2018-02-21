@@ -22,9 +22,7 @@ defmodule Relay.Server.Macros do
         def unquote(stream_func)(req_stream, stream) do
           IO.inspect {unquote(stream_func), self()}
 
-          # TODO: Have Store send us the initial state as an update
-          {:ok, version_info, resources} = Store.subscribe(Store, @xds, self())
-          send(self(), {@xds, version_info, resources})
+          :ok = Store.subscribe(Store, @xds, self())
           handle_requests(req_stream, stream)
         end
 

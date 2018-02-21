@@ -30,23 +30,34 @@ defmodule Relay.StoreTest do
 
   xds_tests "subscribe idempotent", fn(store, xds) ->
     assert get_resources(store, xds) == %Resources{subscribers: MapSet.new()}
-    assert Store.subscribe(store, xds, self()) == {:ok, "", []}
+
+    assert Store.subscribe(store, xds, self()) == :ok
+    assert_receive {^xds, "", []}, 100
     assert get_resources(store, xds) == %Resources{subscribers: MapSet.new([self()])}
-    assert Store.subscribe(store, xds, self()) == {:ok, "", []}
+
+    assert Store.subscribe(store, xds, self()) == :ok
+    assert_receive {^xds, "", []}, 100
     assert get_resources(store, xds) == %Resources{subscribers: MapSet.new([self()])}
   end
 
+  defp assert_subscribe(store, xds, version_info \\ "", resources \\ []) do
+    assert Store.subscribe(store, xds, self()) == :ok
+    assert_receive {^xds, ^version_info, ^resources}, 100
+  end
+
   xds_tests "unsubscribe idempotent", fn(store, xds) ->
-    assert Store.subscribe(store, xds, self()) == {:ok, "", []}
+    assert_subscribe(store, xds)
     assert get_resources(store, xds) == %Resources{subscribers: MapSet.new([self()])}
+
     assert Store.unsubscribe(store, xds, self()) == :ok
     assert get_resources(store, xds) == %Resources{subscribers: MapSet.new()}
+
     assert Store.unsubscribe(store, xds, self()) == :ok
     assert get_resources(store, xds) == %Resources{subscribers: MapSet.new()}
   end
 
   xds_tests "subscribers receive updates", fn(store, xds) ->
-    assert Store.subscribe(store, xds, self()) == {:ok, "", []}
+    assert_subscribe(store, xds)
 
     resources = [:foo, :bar]
     assert Store.update(store, xds, "1", resources) == :ok
@@ -58,7 +69,7 @@ defmodule Relay.StoreTest do
     resources = [:foobar, :baz]
     assert Store.update(store, xds, "2", resources) == :ok
 
-    assert Store.subscribe(store, xds, self()) == {:ok, "2", resources}
+    assert_subscribe(store, xds, "2", resources)
 
     old_resources = [:foo, :bar]
     assert Store.update(store, xds, "1", old_resources) == :ok
