@@ -29,6 +29,17 @@ defmodule Relay.Marathon.LabelsTest do
     assert Labels.marathon_lb_group(app_label, 0, prefix: "MLB", sep: "-") == "internal"
   end
 
+  test "get marathon-lb redirect to HTTPS" do
+    true_label = %{"HAPROXY_0_REDIRECT_TO_HTTPS" => "true"}
+    assert Labels.marathon_lb_redirect_to_https?(true_label, 0)
+
+    false_label = %{"HAPROXY_0_REDIRECT_TO_HTTPS" => "false"}
+    assert not Labels.marathon_lb_redirect_to_https?(false_label, 0)
+
+    no_label = %{"HAPROXY_1_VHOST" => "example.com"}
+    assert not Labels.marathon_lb_redirect_to_https?(no_label, 0)
+  end
+
   test "get marathon-lb vhost" do
     labels = %{"HAPROXY_0_VHOST" => "example.com, www.example.com"}
     assert Labels.marathon_lb_vhost(labels, 0) == ["example.com", "www.example.com"]

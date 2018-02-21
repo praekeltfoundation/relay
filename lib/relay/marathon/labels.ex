@@ -8,6 +8,16 @@ defmodule Relay.Marathon.Labels do
     port_label(app_labels, label, port_index, prefix, Keyword.merge(options, default: default))
   end
 
+  def marathon_lb_redirect_to_https?(app_labels, port_index, options \\ []),
+    do:
+      port_label(
+        app_labels,
+        Keyword.get(options, :label, "REDIRECT_TO_HTTPS"),
+        port_index,
+        Keyword.get(options, :prefix, "HAPROXY"),
+        options
+      ) in Keyword.get(options, :true_values, ["true"])
+
   def marathon_lb_vhost(app_labels, port_index, options \\ []),
     do:
       domains_label(
