@@ -1,110 +1,86 @@
-defmodule Relay.Server do
-  alias Relay.{ProtobufUtil, Store}
-  alias Envoy.Api.V2.{DiscoveryRequest, DiscoveryResponse}
+defmodule Relay.Server.Macros do
+  defmacro discovery_service(name, xds: xds, type_url: type_url, service: service, resources: resources) do
+    stream_func = :"stream_#{resources}" # noqa excoveralls ignores macros
+    fetch_func = :"fetch_#{resources}" # noqa
 
-  defp mkresponse(type_url, version_info, resources, opts \\ []) do
-    typed_resources = resources |> Enum.map(fn res -> ProtobufUtil.mkany(type_url, res) end)
-    DiscoveryResponse.new(
-      [type_url: type_url, version_info: version_info, resources: typed_resources] ++ opts)
-  end
+    quote do
+      defmodule unquote(name) do
+        use GRPC.Server, service: unquote(service)
 
-  defp stream_send_response(stream, type_url, version_info, resources, opts \\ []) do
-    GRPC.Server.stream_send(stream, mkresponse(type_url, version_info, resources, opts))
-  end
+        alias Relay.{ProtobufUtil, Store}
+        alias Envoy.Api.V2.{DiscoveryRequest, DiscoveryResponse}
 
-  def serve_stream_response(req_enum, stream, xds, type_url) do
-    # For the first request we respond immediately...
-    [_request] = Enum.take(req_enum, 1)
-    {:ok, version_info, resources} = Store.subscribe(Store, xds, self())
-    stream_send_response(stream, type_url, version_info, resources)
+        # TODO: Figure out a way to not have these attributes but also not
+        # unquote multiple time?
+        @xds unquote(xds)
+        @type_url unquote(type_url)
 
-    #...subsequent responses sent when we receive changes
-    req_enum |> Enum.each(fn _request ->
-      # TODO: How to handle errors?
-      receive do
-        {^xds, version_info, resources} ->
-          stream_send_response(stream, type_url, version_info, resources)
+        def xds(), do: @xds
+        def type_url(), do: @type_url
+
+        @spec unquote(stream_func)(Enumerable.t, GRPC.Server.Stream.t) :: any
+        def unquote(stream_func)(req_stream, stream) do
+          IO.inspect {unquote(stream_func), self()}
+
+          :ok = Store.subscribe(Store, @xds, self())
+          handle_requests(req_stream, stream)
+        end
+
+        @spec unquote(fetch_func)(DiscoveryRequest.t, GRPC.Server.Stream.t) :: DiscoveryResponse.t
+        def unquote(fetch_func)(_request, _stream) do
+          raise GRPC.RPCError, status: GRPC.Status.unimplemented(), message: "not implemented"
+        end
+
+        defp handle_requests(req_stream, stream),
+          do: req_stream |> Enum.each(&handle_request(&1, stream))
+
+        defp handle_request(_request, stream) do
+          # TODO: How to handle errors?
+          # FIXME: What if we get multiple updates between requests?
+          receive do
+            {@xds, version_info, resources} ->
+              stream_send_response(stream, version_info, resources)
+          end
+        end
+
+        defp stream_send_response(stream, version_info, resources) do
+          GRPC.Server.stream_send(stream, mkresponse(version_info, resources))
+        end
+
+        defp mkresponse(version_info, resources) do
+          typed_resources = resources |> Enum.map(fn res -> ProtobufUtil.mkany(@type_url, res) end)
+          DiscoveryResponse.new(
+            type_url: @type_url, version_info: version_info, resources: typed_resources)
+        end
       end
-    end)
-  end
-
-  defmodule ListenerDiscoveryService do
-    use GRPC.Server, service: Envoy.Api.V2.ListenerDiscoveryService.Service
-
-    def xds, do: :lds
-    def type_url, do: "type.googleapis.com/envoy.api.v2.Listener"
-
-    # rpc StreamListeners(stream DiscoveryRequest) returns (stream DiscoveryResponse)
-    @spec stream_listeners(Enumerable.t, GRPC.Server.Stream.t) :: any
-    def stream_listeners(req_enum, stream) do
-      IO.inspect {:stream_listeners, self()}
-      Relay.Server.serve_stream_response(req_enum, stream, xds(), type_url())
-    end
-
-    # rpc FetchListeners(DiscoveryRequest) returns (DiscoveryResponse)
-    @spec fetch_listeners(DiscoveryRequest.t, GRPC.Server.Stream.t) :: DiscoveryResponse.t
-    def fetch_listeners(_request, _stream) do
-      raise GRPC.RPCError, status: GRPC.Status.unimplemented(), message: "not implemented"
     end
   end
+end
 
-  defmodule RouteDiscoveryService do
-    use GRPC.Server, service: Envoy.Api.V2.RouteDiscoveryService.Service
+defmodule Relay.Server do
+  import Relay.Server.Macros
 
-    def xds, do: :rds
-    def type_url, do: "type.googleapis.com/envoy.api.v2.RouteConfiguration"
+  discovery_service ListenerDiscoveryService,
+    xds: :lds,
+    type_url: "type.googleapis.com/envoy.api.v2.Listener",
+    service: Envoy.Api.V2.ListenerDiscoveryService.Service,
+    resources: :listeners
 
-    # rpc StreamRoutes(stream DiscoveryRequest) returns (stream DiscoveryResponse)
-    @spec stream_routes(Enumerable.t, GRPC.Server.Stream.t) :: any
-    def stream_routes(req_enum, stream) do
-      IO.inspect {:stream_routes, self()}
-      Relay.Server.serve_stream_response(req_enum, stream, xds(), type_url())
-    end
+  discovery_service RouteDiscoveryService,
+    xds: :rds,
+    type_url: "type.googleapis.com/envoy.api.v2.RouteConfiguration",
+    service: Envoy.Api.V2.RouteDiscoveryService.Service,
+    resources: :routes
 
-    # rpc FetchRoutes(DiscoveryRequest) returns (DiscoveryResponse)
-    @spec fetch_routes(DiscoveryRequest.t, GRPC.Server.Stream.t) :: DiscoveryResponse.t
-    def fetch_routes(_request, _stream) do
-      raise GRPC.RPCError, status: GRPC.Status.unimplemented(), message: "not implemented"
-    end
-  end
+  discovery_service ClusterDiscoveryService,
+    xds: :cds,
+    type_url: "type.googleapis.com/envoy.api.v2.Cluster",
+    service: Envoy.Api.V2.ClusterDiscoveryService.Service,
+    resources: :clusters
 
-  defmodule ClusterDiscoveryService do
-    use GRPC.Server, service: Envoy.Api.V2.ClusterDiscoveryService.Service
-
-    def xds, do: :cds
-    def type_url, do: "type.googleapis.com/envoy.api.v2.Cluster"
-
-    # rpc StreamClusters(stream DiscoveryRequest) returns (stream DiscoveryResponse)
-    @spec stream_clusters(Enumerable.t, GRPC.Server.Stream.t) :: any
-    def stream_clusters(req_enum, stream) do
-      IO.inspect {:stream_clusters, self()}
-      Relay.Server.serve_stream_response(req_enum, stream, xds(), type_url())
-    end
-
-    # rpc FetchClusters(DiscoveryRequest) returns (DiscoveryResponse)
-    @spec fetch_clusters(DiscoveryRequest.t, GRPC.Server.Stream.t) :: DiscoveryResponse.t
-    def fetch_clusters(_request, _stream) do
-      raise GRPC.RPCError, status: GRPC.Status.unimplemented(), message: "not implemented"
-    end
-  end
-
-  defmodule EndpointDiscoveryService do
-    use GRPC.Server, service: Envoy.Api.V2.EndpointDiscoveryService.Service
-
-    def xds, do: :eds
-    def type_url, do: "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment"
-
-    # rpc StreamEndpoints(stream DiscoveryRequest) returns (stream DiscoveryResponse)
-    @spec stream_endpoints(Enumerable.t, GRPC.Server.Stream.t) :: any
-    def stream_endpoints(req_enum, stream) do
-      IO.inspect {:stream_endpoints, self()}
-      Relay.Server.serve_stream_response(req_enum, stream, xds(), type_url())
-    end
-
-    # rpc FetchEndpoints(DiscoveryRequest) returns (DiscoveryResponse)
-    @spec fetch_endpoints(DiscoveryRequest.t, GRPC.Server.Stream.t) :: DiscoveryResponse.t
-    def fetch_endpoints(_request, _stream) do
-      raise GRPC.RPCError, status: GRPC.Status.unimplemented(), message: "not implemented"
-    end
-  end
+  discovery_service EndpointDiscoveryService,
+    xds: :eds,
+    type_url: "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment",
+    service: Envoy.Api.V2.EndpointDiscoveryService.Service,
+    resources: :endpoints
 end

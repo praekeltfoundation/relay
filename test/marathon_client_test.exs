@@ -3,7 +3,6 @@ Code.require_file(Path.join([__DIR__, "marathon_client", "marathon_client_helper
 defmodule MarathonClientTest do
   use ExUnit.Case
 
-  alias MarathonClient.ClientError
   import MarathonTestHelpers, only: [marathon_event: 2]
 
   setup_all do
