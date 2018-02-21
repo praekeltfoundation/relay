@@ -29,6 +29,22 @@ defmodule Relay.Marathon.LabelsTest do
     assert Labels.marathon_lb_group(app_label, 0, prefix: "MLB", sep: "-") == "internal"
   end
 
+  test "get marathon-lb vhost" do
+    labels = %{"HAPROXY_0_VHOST" => "example.com, www.example.com"}
+    assert Labels.marathon_lb_vhost(labels, 0) == ["example.com", "www.example.com"]
+
+    no_label = %{"HAPROXY_1_VHOST" => "example.com"}
+    assert Labels.marathon_lb_vhost(no_label, 0) == []
+  end
+
+  test "get marathon-acme domain" do
+    labels = %{"MARATHON_ACME_0_DOMAIN" => "example.com, www.example.com"}
+    assert Labels.marathon_acme_domain(labels, 0) == ["example.com", "www.example.com"]
+
+    no_label = %{"MARATHON_ACME_1_DOMAIN" => "example.com"}
+    assert Labels.marathon_acme_domain(no_label, 0) == []
+  end
+
   test "parse domains label" do
     assert Labels.parse_domains_label("example.com") == ["example.com"]
     assert Labels.parse_domains_label("foo.com example.com") == ["foo.com", "example.com"]
