@@ -41,5 +41,6 @@ defmodule Relay.Marathon.Labels do
   defp get_label(app_labels, parts, default),
     do: Map.get(app_labels, Enum.join(parts, "_"), default)
 
+  @doc false
   def parse_domains_label(label), do: label |> String.replace(",", " ") |> String.split()
 end
