@@ -1,7 +1,7 @@
 defmodule Relay.Server.Macros do
   defmacro discovery_service(name, xds: xds, type_url: type_url, service: service, resources: resources) do
-    stream_func = :"stream_#{resources}"
-    fetch_func = :"fetch_#{resources}"
+    stream_func = :"stream_#{resources}" # noqa excoveralls ignores macros
+    fetch_func = :"fetch_#{resources}" # noqa
 
     quote do
       defmodule unquote(name) do
