@@ -20,15 +20,6 @@ defmodule Relay.Marathon.LabelsTest do
     assert Labels.marathon_lb_group(no_label, 0) == nil
   end
 
-  test "get marathon-lb group with custom options" do
-    port_label = %{"traefik.0.cluster" => "external"}
-    assert Labels.marathon_lb_group(
-      port_label, 0, prefix: "traefik", label: "cluster", sep: ".") == "external"
-
-    app_label = %{"MLB-GROUP" => "internal"}
-    assert Labels.marathon_lb_group(app_label, 0, prefix: "MLB", sep: "-") == "internal"
-  end
-
   test "get marathon-lb redirect to HTTPS" do
     true_label = %{"HAPROXY_0_REDIRECT_TO_HTTPS" => "true"}
     assert Labels.marathon_lb_redirect_to_https?(true_label, 0)
