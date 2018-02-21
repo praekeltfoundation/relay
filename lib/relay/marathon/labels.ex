@@ -26,9 +26,8 @@ defmodule Relay.Marathon.Labels do
   defp port_label(app_labels, label, port_index, prefix, default \\ nil),
     do: get_label(app_labels, [prefix, port_index, label], default)
 
-  defp get_label(app_labels, parts, default) do
-    Map.get(app_labels, Enum.join(parts, "_"), default)
-  end
+  defp get_label(app_labels, parts, default),
+    do: Map.get(app_labels, Enum.join(parts, "_"), default)
 
   def parse_domains_label(label), do: label |> String.replace(",", " ") |> String.split()
 end
