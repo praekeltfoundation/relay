@@ -41,8 +41,10 @@ defmodule Relay.Store do
     new_subscribers = MapSet.put(resources.subscribers, pid)
     new_state = Map.put(state, xds, %{resources | subscribers: new_subscribers})
 
-    # Return the current state with the subscription request
-    {:reply, {:ok, resources.version_info, resources.resources}, new_state}
+    # Send the current state to the new subscriber
+    notify_subscriber(pid, xds, resources.version_info, resources.resources)
+
+    {:reply, :ok, new_state}
   end
 
   defp unsubscribe_impl(xds, pid, state) do
@@ -67,8 +69,11 @@ defmodule Relay.Store do
     {:reply, :ok, new_state}
   end
 
-  defp notify_subscribers(subscribers, xds, version_info, resources), do:
-    Enum.each(subscribers, fn l -> send(l, {xds, version_info, resources}) end)
+  defp notify_subscribers(subscribers, xds, version_info, resources),
+    do: Enum.each(subscribers, &notify_subscriber(&1, xds, version_info, resources))
+
+  defp notify_subscriber(subscriber, xds, version_info, resources),
+    do: send(subscriber, {xds, version_info, resources})
 
   def handle_call({:subscribe, xds, pid}, _from, state), do:
     subscribe_impl(xds, pid, state)
