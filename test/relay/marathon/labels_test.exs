@@ -1,4 +1,6 @@
-defmodule Relay.Marathon.Labels do
+defmodule Relay.Marathon.LabelsTest do
+  use ExUnit.Case, async: true
+
   alias Relay.Marathon.Labels
 
   test "get app label value" do
