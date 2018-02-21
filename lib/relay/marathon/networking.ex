@@ -1,4 +1,4 @@
-defmodule Relay.MarathonUtil do
+defmodule Relay.Marathon.Networking do
   @moduledoc """
   Utilities for working with Marathon app JSON across different versions of
   Marathon.
