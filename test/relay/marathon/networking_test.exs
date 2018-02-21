@@ -1,7 +1,7 @@
-defmodule Relay.MarathonUtilTest do
+defmodule Relay.Marathon.NetworkingTest do
   use ExUnit.Case, async: true
 
-  alias Relay.MarathonUtil
+  alias Relay.Marathon.Networking
 
   @test_app %{
     "id" => "/foovu1",
@@ -234,7 +234,7 @@ defmodule Relay.MarathonUtilTest do
       |> Map.put("networks", @networks_container_host_marathon15)
       |> Map.put("portDefinitions", @port_definitions_one_port)
 
-      assert MarathonUtil.get_number_of_ports(app) == 1
+      assert Networking.get_number_of_ports(app) == 1
     end
 
     test "bridge networking" do
@@ -242,7 +242,7 @@ defmodule Relay.MarathonUtilTest do
       |> Map.put("container", @container_bridge_networking_marathon15)
       |> Map.put("networks", @networks_container_bridge_marathon15)
 
-      assert MarathonUtil.get_number_of_ports(app) == 1
+      assert Networking.get_number_of_ports(app) == 1
     end
 
     test "bridge networking Mesos containerizer" do
@@ -250,7 +250,7 @@ defmodule Relay.MarathonUtilTest do
       |> Map.put("container", @container_mesos_bridge_networking_marathon15)
       |> Map.put("networks", @networks_container_bridge_marathon15)
 
-      assert MarathonUtil.get_number_of_ports(app) == 3
+      assert Networking.get_number_of_ports(app) == 3
     end
 
     test "user networking" do
@@ -258,7 +258,7 @@ defmodule Relay.MarathonUtilTest do
       |> Map.put("container", @container_user_networking_marathon15)
       |> Map.put("networks", @networks_container_user_marathon15)
 
-      assert MarathonUtil.get_number_of_ports(app) == 1
+      assert Networking.get_number_of_ports(app) == 1
     end
   end
 
@@ -268,7 +268,7 @@ defmodule Relay.MarathonUtilTest do
       |> Map.put("container", @container_host_networking)
       |> Map.put("portDefinitions", @port_definitions_one_port)
 
-      assert MarathonUtil.get_number_of_ports(app) == 1
+      assert Networking.get_number_of_ports(app) == 1
     end
 
     test "user networking" do
@@ -276,14 +276,14 @@ defmodule Relay.MarathonUtilTest do
       |> Map.put("container", @container_user_networking)
       |> Map.put("ipAddress", @ip_address_no_ports)
 
-      assert MarathonUtil.get_number_of_ports(app) == 1
+      assert Networking.get_number_of_ports(app) == 1
     end
 
     test "IP-per-task no container" do
       app = @test_app
       |> Map.put("ipAddress", @ip_address_two_ports)
 
-      assert MarathonUtil.get_number_of_ports(app) == 2
+      assert Networking.get_number_of_ports(app) == 2
     end
 
     test "IP-per-task Mesos containerizer" do
@@ -291,7 +291,7 @@ defmodule Relay.MarathonUtilTest do
       |> Map.put("container", @container_mesos)
       |> Map.put("ipAddress", @ip_address_two_ports)
 
-      assert MarathonUtil.get_number_of_ports(app) == 2
+      assert Networking.get_number_of_ports(app) == 2
     end
 
     test "bridge networking" do
@@ -299,7 +299,7 @@ defmodule Relay.MarathonUtilTest do
       |> Map.put("container", @container_bridge_networking)
       |> Map.put("portDefinitions", @port_definitions_one_port)
 
-      assert MarathonUtil.get_number_of_ports(app) == 1
+      assert Networking.get_number_of_ports(app) == 1
     end
 
     test "bridge networking no port definitions" do
@@ -307,7 +307,7 @@ defmodule Relay.MarathonUtilTest do
       |> Map.put("container", @container_bridge_networking)
       |> Map.put("ports", [10008, 10009])
 
-      assert MarathonUtil.get_number_of_ports(app) == 2
+      assert Networking.get_number_of_ports(app) == 2
     end
   end
 end
