@@ -1,24 +1,26 @@
 defmodule Relay.Marathon.Labels do
-  def app_label(app_labels, label, options \\ []),
-    do: get_label(app_labels, [label], options)
+  def marathon_lb_group(app_labels, port_index, options \\ []) do
+    prefix = Keyword.get(options, :prefix, "HAPROXY")
+    label = Keyword.get(options, :label, "GROUP")
 
-  def port_label(app_labels, label, port_index, options \\ []),
-    do: get_label(app_labels, [port_index, label], options)
+    default = app_label(app_labels, label, prefix, options)
+
+    port_label(app_labels, label, port_index, prefix, Keyword.merge(options, default: default))
+  end
+
+  defp app_label(app_labels, label, prefix, options),
+    do: get_label(app_labels, [prefix, label], options)
+
+  defp port_label(app_labels, label, port_index, prefix, options),
+    do: get_label(app_labels, [prefix, port_index, label], options)
 
   defp get_label(app_labels, parts, options) do
-    prefix = Keyword.get(options, :prefix, "HAPROXY")
     sep = Keyword.get(options, :sep, "_")
     default = Keyword.get(options, :default)
 
-    Map.get(app_labels, Enum.join([prefix | parts], sep), default)
+    Map.get(app_labels, Enum.join(parts, sep), default)
   end
 
-  def port_in_group?(app_labels, port_index, group, options \\ []) do
-    label = Keyword.get(options, :label, "GROUP")
-    default = app_label(app_labels, label, options)
-
-    port_label(app_labels, label, port_index, Keyword.merge(options, default: default)) == group
-  end
 
   def parse_domains_label(label), do: label |> String.replace(",", " ") |> String.split()
 end

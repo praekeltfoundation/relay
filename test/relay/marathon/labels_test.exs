@@ -3,59 +3,30 @@ defmodule Relay.Marathon.LabelsTest do
 
   alias Relay.Marathon.Labels
 
-  test "get app label value" do
-    labels = %{"HAPROXY_GROUP" => "external"}
+  test "get marathon-lb group" do
+    port_label = %{"HAPROXY_0_GROUP" => "external"}
+    assert Labels.marathon_lb_group(port_label, 0) == "external"
 
-    assert Labels.app_label(labels, "GROUP") == "external"
-  end
+    app_label = %{"HAPROXY_GROUP" => "internal"}
+    assert Labels.marathon_lb_group(app_label, 0) == "internal"
 
-  test "get app label value with custom options" do
-    labels = %{"traefik.group" => "external"}
-
-    assert Labels.app_label(labels, "group", prefix: "traefik", sep: ".") == "external"
-  end
-
-  test "get app label default value" do
-    labels = %{"HAPROXY_GROUP" => "external"}
-
-    assert Labels.app_label(labels, "GROUP", default: "internal") == "external"
-    assert Labels.app_label(labels, "ENABLED", default: "true") == "true"
-  end
-
-  test "get port label value" do
-    labels = %{
+    port_and_app_label = %{
       "HAPROXY_GROUP" => "internal",
       "HAPROXY_0_GROUP" => "external"
     }
-
-    assert Labels.port_label(labels, "GROUP", 0) == "external"
-  end
-
-  test "get port label value with custom options" do
-    labels = %{"traefik.1.group" => "front-end"}
-
-    assert Labels.port_label(labels, "group", 1, prefix: "traefik", sep: ".") == "front-end"
-  end
-
-  test "get port label default value" do
-    labels = %{"HAPROXY_1_GROUP" => "external"}
-
-    assert Labels.port_label(labels, "GROUP", 1, default: "internal") == "external"
-    assert Labels.port_label(labels, "ENABLED", 2, default: "true") == "true"
-  end
-
-  test "port in group" do
-    port_label = %{"HAPROXY_0_GROUP" => "external"}
-    assert Labels.port_in_group?(port_label, 0, "external")
-
-    app_label = %{"HAPROXY_GROUP" => "external"}
-    assert Labels.port_in_group?(app_label, 0, "external")
-
-    mismatch_label = %{"HAPROXY_0_GROUP" => "internal"}
-    assert not Labels.port_in_group?(mismatch_label, 0, "external")
+    assert Labels.marathon_lb_group(port_and_app_label, 0) == "external"
 
     no_label = %{"HAPROXY_1_GROUP" => "external"}
-    assert not Labels.port_in_group?(no_label, 0, "external")
+    assert Labels.marathon_lb_group(no_label, 0) == nil
+  end
+
+  test "get marathon-lb group with custom options" do
+    port_label = %{"traefik.0.cluster" => "external"}
+    assert Labels.marathon_lb_group(
+      port_label, 0, prefix: "traefik", label: "cluster", sep: ".") == "external"
+
+    app_label = %{"MLB-GROUP" => "internal"}
+    assert Labels.marathon_lb_group(app_label, 0, prefix: "MLB", sep: "-") == "internal"
   end
 
   test "parse domains label" do
