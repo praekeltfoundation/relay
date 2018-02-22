@@ -11,8 +11,8 @@ defmodule Relay.Marathon.Networking do
 
   def get_task_address(app, task) do
     case networking_mode(app) do
-      :container -> task_ip_addresses(task)
-      _ -> task_host_address(task)
+      :container -> task_ip_address(task)
+      _ -> task_host(task)
     end
   end
 
@@ -33,16 +33,16 @@ defmodule Relay.Marathon.Networking do
   defp ports_list(:container, app),
     do: ip_address_discovery_ports(app) || port_mappings_ports(app)
 
-  defp task_ip_addresses(%{"ipAddresses" => [%{"ipAddress" => ip_address} | _]})
+  defp task_ip_address(%{"ipAddresses" => [%{"ipAddress" => ip_address} | _]})
       when is_binary(ip_address),
     do: ip_address
 
   # No address allocated yet
-  defp task_ip_addresses(_task), do: nil
+  defp task_ip_address(_task), do: nil
 
-  defp task_host_address(%{"host" => host}), do: host
+  defp task_host(%{"host" => host}), do: host
 
-  defp task_host_address(_task), do: nil
+  defp task_host(_task), do: nil
 
   # Marathon 1.5+: there is a `networks` field
   # Networking modes can't be mixed so using the first one is fine
