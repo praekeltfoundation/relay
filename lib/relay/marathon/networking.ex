@@ -41,9 +41,9 @@ defmodule Relay.Marathon.Networking do
     end
   end
 
-  defp task_ip_addresses(%{"ipAddresses" => [%{"ipAddress" => ipAddress} | _]})
-      when is_binary(ipAddress),
-    do: ipAddress
+  defp task_ip_addresses(%{"ipAddresses" => [%{"ipAddress" => ip_address} | _]})
+      when is_binary(ip_address),
+    do: ip_address
 
   # No address allocated yet
   defp task_ip_addresses(_task), do: nil
