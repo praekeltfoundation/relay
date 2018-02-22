@@ -18,8 +18,9 @@ defmodule Relay.Marathon.Networking do
 
   def get_task_ports(app, task), do: networking_mode(app) |> ports_list(app, task)
 
-  defp ports_list(networking_mode, _app, %{"ports" => ports} = _task)
-      when networking_mode in [:host, :"container/bridge"], do: ports
+  defp ports_list(:host, _app, %{"ports" => ports} = _task), do: ports
+
+  defp ports_list(:"container/bridge", _app, %{"ports" => ports}), do: ports
 
   defp ports_list(:container, app, _task), do: ports_list(:container, app)
 
@@ -40,7 +41,7 @@ defmodule Relay.Marathon.Networking do
     end
   end
 
-  defp task_ip_addresses(%{"ipAddresses" => [%{"ipAddress" => ipAddress} | _ipAddresses]})
+  defp task_ip_addresses(%{"ipAddresses" => [%{"ipAddress" => ipAddress} | _]})
       when is_binary(ipAddress),
     do: ipAddress
 
@@ -56,7 +57,7 @@ defmodule Relay.Marathon.Networking do
     # very well)
     # This is fine if hostname is an IP: it just returns the same IP
     case :inet.gethostbyname(String.to_charlist(hostname)) do
-      {:ok, {:hostent, _hostname, _, :inet, 4, [address | _addresses]}} ->
+      {:ok, {:hostent, _hostname, _, :inet, 4, [address | _}} ->
         Tuple.to_list(address) |> Enum.join(".")
       # TODO: Support IPv6
 
@@ -65,7 +66,8 @@ defmodule Relay.Marathon.Networking do
   end
 
   # Marathon 1.5+: there is a `networks` field
-  defp networking_mode(%{"networks" => [network | _networks]}),
+  # Networking modes can't be mixed so using the first one is fine
+  defp networking_mode(%{"networks" => [network | _]}),
     do: network |> Map.get("mode", "container") |> String.to_atom()
 
   # Pre-Marathon 1.5 Docker container networking mode
