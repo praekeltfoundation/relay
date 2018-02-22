@@ -57,7 +57,7 @@ defmodule Relay.Marathon.Networking do
     # very well)
     # This is fine if hostname is an IP: it just returns the same IP
     case :inet.gethostbyname(String.to_charlist(hostname)) do
-      {:ok, {:hostent, _hostname, _, :inet, 4, [address | _}} ->
+      {:ok, {:hostent, _hostname, _, :inet, 4, [address | _]}} ->
         Tuple.to_list(address) |> Enum.join(".")
       # TODO: Support IPv6
 
