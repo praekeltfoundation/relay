@@ -314,8 +314,7 @@ defmodule Relay.Marathon.NetworkingTest do
     ]
   }
 
-  @task_host_ip "10.0.91.103"
-  @task_host_hostname "localhost"
+  @task_host "10.0.91.103"
   @task_ports [
     31791
   ]
@@ -327,44 +326,24 @@ defmodule Relay.Marathon.NetworkingTest do
   ]
 
   describe "get_task_ip/2" do
-    test "host networking with host IP" do
+    test "host networking" do
       app = @test_app
       |> Map.put("networks", @networks_container_host_marathon15)
 
       task = @test_task
-      |> Map.put("host", @task_host_ip)
+      |> Map.put("host", @task_host)
 
-      assert Networking.get_task_ip(app, task) == @task_host_ip
+      assert Networking.get_task_ip(app, task) == @task_host
     end
 
-    test "host networking with host name" do
-      app = @test_app
-      |> Map.put("networks", @networks_container_host_marathon15)
-
-      task = @test_task
-      |> Map.put("host", @task_host_hostname)
-
-      assert Networking.get_task_ip(app, task) == "127.0.0.1"
-    end
-
-    test "bridge networking with host IP" do
+    test "bridge networking" do
       app = @test_app
       |> Map.put("networks", @networks_container_bridge_marathon15)
 
       task = @test_task
-      |> Map.put("host", @task_host_ip)
+      |> Map.put("host", @task_host)
 
-      assert Networking.get_task_ip(app, task) == @task_host_ip
-    end
-
-    test "bridge networking with host name" do
-      app = @test_app
-      |> Map.put("networks", @networks_container_bridge_marathon15)
-
-      task = @test_task
-      |> Map.put("host", @task_host_hostname)
-
-      assert Networking.get_task_ip(app, task) == "127.0.0.1"
+      assert Networking.get_task_ip(app, task) == @task_host
     end
 
     test "container networking" do

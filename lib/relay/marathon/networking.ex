@@ -40,22 +40,9 @@ defmodule Relay.Marathon.Networking do
   # No address allocated yet
   defp task_ip_addresses(_task), do: nil
 
-  defp task_host_address(%{"host" => host}), do: gethostbyname(host)
+  defp task_host_address(%{"host" => host}), do: host
 
   defp task_host_address(_task), do: nil
-
-  defp gethostbyname(hostname) do
-    # TODO: Do we need to cache these results somehow? marathon-lb does (but not
-    # very well)
-    # This is fine if hostname is an IP: it just returns the same IP
-    case :inet.gethostbyname(String.to_charlist(hostname)) do
-      {:ok, {:hostent, _hostname, _, :inet, 4, [address | _]}} ->
-        Tuple.to_list(address) |> Enum.join(".")
-      # TODO: Support IPv6
-
-      {:error, _reason} -> nil
-    end
-  end
 
   # Marathon 1.5+: there is a `networks` field
   # Networking modes can't be mixed so using the first one is fine
