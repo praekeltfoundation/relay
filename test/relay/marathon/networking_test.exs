@@ -325,7 +325,7 @@ defmodule Relay.Marathon.NetworkingTest do
     }
   ]
 
-  describe "get_task_ip/2" do
+  describe "get_task_address/2" do
     test "host networking" do
       app = @test_app
       |> Map.put("networks", @networks_container_host_marathon15)
@@ -333,7 +333,7 @@ defmodule Relay.Marathon.NetworkingTest do
       task = @test_task
       |> Map.put("host", @task_host)
 
-      assert Networking.get_task_ip(app, task) == @task_host
+      assert Networking.get_task_address(app, task) == @task_host
     end
 
     test "bridge networking" do
@@ -343,7 +343,7 @@ defmodule Relay.Marathon.NetworkingTest do
       task = @test_task
       |> Map.put("host", @task_host)
 
-      assert Networking.get_task_ip(app, task) == @task_host
+      assert Networking.get_task_address(app, task) == @task_host
     end
 
     test "container networking" do
@@ -353,7 +353,7 @@ defmodule Relay.Marathon.NetworkingTest do
       task = @test_task
       |> Map.put("ipAddresses", @task_ip_addresses)
 
-      assert Networking.get_task_ip(app, task) == "9.0.4.130"
+      assert Networking.get_task_address(app, task) == "9.0.4.130"
     end
   end
 
