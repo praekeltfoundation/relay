@@ -27,19 +27,11 @@ defmodule Relay.Marathon.Networking do
   defp ports_list(:host, app),
     do: port_definitions_ports(app)
 
-  defp ports_list(:"container/bridge", app) do
-    case port_definitions_ports(app) do
-      nil -> port_mappings_ports(app)
-      definitions -> definitions
-    end
-  end
+  defp ports_list(:"container/bridge", app),
+    do: port_definitions_ports(app) || port_mappings_ports(app)
 
-  defp ports_list(:container, app) do
-    case ip_address_discovery_ports(app) do
-      nil -> port_mappings_ports(app)
-      ports -> ports
-    end
-  end
+  defp ports_list(:container, app),
+    do: ip_address_discovery_ports(app) || port_mappings_ports(app)
 
   defp task_ip_addresses(%{"ipAddresses" => [%{"ipAddress" => ip_address} | _]})
       when is_binary(ip_address),
