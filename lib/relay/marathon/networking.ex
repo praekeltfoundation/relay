@@ -7,29 +7,45 @@ defmodule Relay.Marathon.Networking do
   @doc """
   Get the number of ports that this app exposes.
   """
-  def get_number_of_ports(app) do
-    ports_list = case networking_mode(app) do
-      :host -> port_definitions(app)
+  def get_number_of_ports(app), do: networking_mode(app) |> ports_list(app) |> length()
 
-      :"container/bridge" ->
-        case port_definitions(app) do
-          nil -> container_port_mappings(app)
-          definitions -> definitions
-        end
+  def get_task_address(app, task), do: networking_mode(app) |> task_address(task)
 
-      :container ->
-        case ip_address_discovery_ports(app) do
-          nil -> container_port_mappings(app)
-          ports -> ports
-        end
-    end
+  def get_task_ports(app, task), do: networking_mode(app) |> task_ports(app, task)
 
-    length(ports_list)
-  end
+  defp task_address(:container, task), do: task_ip_address(task)
+
+  defp task_address(_networking_mode, task), do: task_host(task)
+
+  defp task_ip_address(%{"ipAddresses" => [%{"ipAddress" => ip_address} | _]})
+      when is_binary(ip_address),
+    do: ip_address
+
+  # No address allocated yet
+  defp task_ip_address(_task), do: nil
+
+  defp task_host(%{"host" => host}), do: host
+
+  defp task_host(_task), do: nil
+
+  defp task_ports(:host, _app, %{"ports" => ports} = _task), do: ports
+
+  defp task_ports(:"container/bridge", _app, %{"ports" => ports}), do: ports
+
+  defp task_ports(:container, app, _task), do: ports_list(:container, app)
+
+  defp ports_list(:host, app), do: port_definitions_ports(app)
+
+  defp ports_list(:"container/bridge", app),
+    do: port_definitions_ports(app) || port_mappings_ports(app)
+
+  defp ports_list(:container, app),
+    do: ip_address_discovery_ports(app) || port_mappings_ports(app)
 
   # Marathon 1.5+: there is a `networks` field
-  defp networking_mode(%{"networks" => networks}), do:
-    hd(networks) |> Map.get("mode", "container") |> String.to_atom()
+  # Networking modes can't be mixed so using the first one is fine
+  defp networking_mode(%{"networks" => [network | _]}),
+    do: network |> Map.get("mode", "container") |> String.to_atom()
 
   # Pre-Marathon 1.5 Docker container networking mode
   defp networking_mode(%{"container" => %{"docker" => %{"network" => network}}}) do
@@ -47,12 +63,23 @@ defmodule Relay.Marathon.Networking do
   # Default to host networking mode
   defp networking_mode(_app), do: :host
 
+  defp port_definitions_ports(app) do
+    case port_definitions(app) do
+      nil -> nil
+      definitions -> Enum.map(definitions, fn %{"port" => port} -> port end)
+    end
+  end
+
   defp port_definitions(%{"portDefinitions" => port_definitions}), do: port_definitions
 
-  # Very old Marathon without portDefinitions
-  defp port_definitions(%{"ports" => ports}), do: ports
-
   defp port_definitions(_app), do: nil
+
+  defp port_mappings_ports(app) do
+    case container_port_mappings(app) do
+      nil -> nil
+      mappings -> Enum.map(mappings, fn %{"containerPort" => port} -> port end)
+    end
+  end
 
   # Marathon 1.5+: container.portMappings field
   defp container_port_mappings(%{"container" => %{"portMappings" => port_mappings}}), do:
@@ -62,6 +89,8 @@ defmodule Relay.Marathon.Networking do
   defp container_port_mappings(
       %{"container" => %{"docker" => %{"portMappings" => port_mappings}}}), do:
     port_mappings
+
+  defp container_port_mappings(_app), do: nil
 
   # Marathon 1.5+: the ipAddress field is missing
   # Marathon <1.5: the ipAddress field can be present, but can still have an

@@ -227,8 +227,8 @@ defmodule Relay.Marathon.NetworkingTest do
     },
   ]
 
-  describe "on Marathon 1.5+" do
-    test "host networking Mesos containerizer" do
+  describe "get_number_of_ports/1" do
+    test "host networking Mesos containerizer - Marathon 1.5+" do
       app = @test_app
       |> Map.put("container", @container_mesos_host_networking_marathon15)
       |> Map.put("networks", @networks_container_host_marathon15)
@@ -237,7 +237,7 @@ defmodule Relay.Marathon.NetworkingTest do
       assert Networking.get_number_of_ports(app) == 1
     end
 
-    test "bridge networking" do
+    test "bridge networking - Marathon 1.5+" do
       app = @test_app
       |> Map.put("container", @container_bridge_networking_marathon15)
       |> Map.put("networks", @networks_container_bridge_marathon15)
@@ -245,7 +245,7 @@ defmodule Relay.Marathon.NetworkingTest do
       assert Networking.get_number_of_ports(app) == 1
     end
 
-    test "bridge networking Mesos containerizer" do
+    test "bridge networking Mesos containerizer - Marathon 1.5+" do
       app = @test_app
       |> Map.put("container", @container_mesos_bridge_networking_marathon15)
       |> Map.put("networks", @networks_container_bridge_marathon15)
@@ -253,17 +253,15 @@ defmodule Relay.Marathon.NetworkingTest do
       assert Networking.get_number_of_ports(app) == 3
     end
 
-    test "user networking" do
+    test "user networking - Marathon 1.5+" do
       app = @test_app
       |> Map.put("container", @container_user_networking_marathon15)
       |> Map.put("networks", @networks_container_user_marathon15)
 
       assert Networking.get_number_of_ports(app) == 1
     end
-  end
 
-  describe "on Marathon <1.5" do
-    test "host networking" do
+    test "host networking - Marathon < 1.5" do
       app = @test_app
       |> Map.put("container", @container_host_networking)
       |> Map.put("portDefinitions", @port_definitions_one_port)
@@ -271,7 +269,7 @@ defmodule Relay.Marathon.NetworkingTest do
       assert Networking.get_number_of_ports(app) == 1
     end
 
-    test "user networking" do
+    test "user networking - Marathon < 1.5" do
       app = @test_app
       |> Map.put("container", @container_user_networking)
       |> Map.put("ipAddress", @ip_address_no_ports)
@@ -279,14 +277,14 @@ defmodule Relay.Marathon.NetworkingTest do
       assert Networking.get_number_of_ports(app) == 1
     end
 
-    test "IP-per-task no container" do
+    test "IP-per-task no container - Marathon < 1.5" do
       app = @test_app
       |> Map.put("ipAddress", @ip_address_two_ports)
 
       assert Networking.get_number_of_ports(app) == 2
     end
 
-    test "IP-per-task Mesos containerizer" do
+    test "IP-per-task Mesos containerizer - Marathon < 1.5" do
       app = @test_app
       |> Map.put("container", @container_mesos)
       |> Map.put("ipAddress", @ip_address_two_ports)
@@ -294,20 +292,100 @@ defmodule Relay.Marathon.NetworkingTest do
       assert Networking.get_number_of_ports(app) == 2
     end
 
-    test "bridge networking" do
+    test "bridge networking - Marathon < 1.5" do
       app = @test_app
       |> Map.put("container", @container_bridge_networking)
       |> Map.put("portDefinitions", @port_definitions_one_port)
 
       assert Networking.get_number_of_ports(app) == 1
     end
+  end
 
-    test "bridge networking no port definitions" do
+  @test_task %{
+    "stagedAt" => "2018-02-15T00:19:09.174Z",
+    "state" => "TASK_RUNNING",
+    "startedAt" => "2018-02-15T00:19:40.911Z",
+    "version" => "2017-09-29T09:51:28.863Z",
+    "id" => "dcos-ingress.d7470966-11e5-11e8-a2a6-1653cd73b500",
+    "appId" => "/dcos-ingress",
+    "slaveId" => "7e76e0e4-f16c-4d63-a629-dd05d137a223-S4",
+    "servicePorts" => [
+      10008
+    ]
+  }
+
+  @task_host "10.0.91.103"
+  @task_ports [
+    31791
+  ]
+  @task_ip_addresses [
+    %{
+      "ipAddress" => "9.0.4.130",
+      "protocol" => "IPv4"
+    }
+  ]
+
+  describe "get_task_address/2" do
+    test "host networking" do
       app = @test_app
-      |> Map.put("container", @container_bridge_networking)
-      |> Map.put("ports", [10008, 10009])
+      |> Map.put("networks", @networks_container_host_marathon15)
 
-      assert Networking.get_number_of_ports(app) == 2
+      task = @test_task
+      |> Map.put("host", @task_host)
+
+      assert Networking.get_task_address(app, task) == @task_host
+    end
+
+    test "bridge networking" do
+      app = @test_app
+      |> Map.put("networks", @networks_container_bridge_marathon15)
+
+      task = @test_task
+      |> Map.put("host", @task_host)
+
+      assert Networking.get_task_address(app, task) == @task_host
+    end
+
+    test "container networking" do
+      app = @test_app
+      |> Map.put("networks", @networks_container_user_marathon15)
+
+      task = @test_task
+      |> Map.put("ipAddresses", @task_ip_addresses)
+
+      assert Networking.get_task_address(app, task) == "9.0.4.130"
+    end
+  end
+
+  describe "get_task_ports/2" do
+    test "host networking" do
+      app = @test_app
+      |> Map.put("networks", @networks_container_host_marathon15)
+
+      task = @test_task
+      |> Map.put("ports", @task_ports)
+
+      assert Networking.get_task_ports(app, task) == @task_ports
+    end
+
+    test "bridge networking" do
+      app = @test_app
+      |> Map.put("networks", @networks_container_bridge_marathon15)
+
+      task = @test_task
+      |> Map.put("ports", @task_ports)
+
+      assert Networking.get_task_ports(app, task) == @task_ports
+    end
+
+    test "container networking" do
+      app = @test_app
+      |> Map.put("networks", @networks_container_user_marathon15)
+      |> Map.put("container", @container_user_networking_marathon15)
+
+      task = @test_task
+
+      assert Networking.get_task_ports(app, task) == [8080]
     end
   end
 end
