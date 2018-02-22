@@ -9,14 +9,13 @@ defmodule Relay.Marathon.Networking do
   """
   def get_number_of_ports(app), do: networking_mode(app) |> ports_list(app) |> length()
 
-  def get_task_address(app, task) do
-    case networking_mode(app) do
-      :container -> task_ip_address(task)
-      _ -> task_host(task)
-    end
-  end
+  def get_task_address(app, task), do: networking_mode(app) |> task_address(task)
 
   def get_task_ports(app, task), do: networking_mode(app) |> ports_list(app, task)
+
+  defp task_address(:container, task), do: task_ip_address(task)
+
+  defp task_address(_networking_mode, task), do: task_host(task)
 
   defp ports_list(:host, _app, %{"ports" => ports} = _task), do: ports
 
