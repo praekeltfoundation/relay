@@ -7,7 +7,7 @@ defmodule Relay.Marathon.Networking do
   @doc """
   Get the number of ports that this app exposes.
   """
-  def get_number_of_ports(app), do: ports_list(networking_mode(app), app) |> length()
+  def get_number_of_ports(app), do: networking_mode(app) |> ports_list(app) |> length()
 
   def get_task_ip(app, task) do
     case networking_mode(app) do
@@ -16,7 +16,7 @@ defmodule Relay.Marathon.Networking do
     end
   end
 
-  def get_task_ports(app, task), do: ports_list(networking_mode(app), app, task)
+  def get_task_ports(app, task), do: networking_mode(app) |> ports_list(app, task)
 
   defp ports_list(networking_mode, _app, %{"ports" => ports} = _task)
       when networking_mode in [:host, :"container/bridge"], do: ports
