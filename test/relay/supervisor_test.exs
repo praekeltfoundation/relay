@@ -44,6 +44,9 @@ defmodule Relay.SupervisorTest do
     server_ref = Process.whereis(GRPC.Server.Supervisor) |> Process.monitor()
     demo_ref = Process.whereis(Demo) |> Process.monitor()
 
+    # Wait for all the initial interation to finish
+    Process.sleep(50)
+
     # Exit the Store process
     Process.whereis(Store) |> Process.exit(:kill)
 
@@ -66,6 +69,9 @@ defmodule Relay.SupervisorTest do
 
     grpc_pid = Process.whereis(GRPC.Server.Supervisor)
     grpc_ref = Process.monitor(grpc_pid)
+
+    # Wait for all the initial interation to finish
+    Process.sleep(50)
 
     # Capture the error logged when we kill the supervisor
     assert capture_log(fn() ->
@@ -95,6 +101,9 @@ defmodule Relay.SupervisorTest do
 
     demo_pid = Process.whereis(Demo)
     demo_ref = Process.monitor(demo_pid)
+
+    # Wait for all the initial interation to finish
+    Process.sleep(50)
 
     # Exit the demo process
     demo_pid |> Process.exit(:kill)
