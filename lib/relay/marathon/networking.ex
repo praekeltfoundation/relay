@@ -18,13 +18,8 @@ defmodule Relay.Marathon.Networking do
 
   def get_task_ports(app, task), do: ports_list(networking_mode(app), app, task)
 
-  defp ports_list(networking_mode, app, task)
-      when networking_mode in [:host, :"container/bridge"] do
-    case task do
-      %{"ports" => ports} -> ports
-      _ -> ports_list(networking_mode, app)
-    end
-  end
+  defp ports_list(networking_mode, _app, %{"ports" => ports} = _task)
+      when networking_mode in [:host, :"container/bridge"], do: ports
 
   defp ports_list(:container, app, _task), do: ports_list(:container, app)
 
@@ -92,33 +87,18 @@ defmodule Relay.Marathon.Networking do
   defp port_definitions_ports(app) do
     case port_definitions(app) do
       nil -> nil
-      definitions ->
-        Enum.map(definitions, fn definition ->
-          case definition do
-            %{"port" => port} -> port
-            _ -> nil
-          end
-        end)
+      definitions -> Enum.map(definitions, fn %{"port" => port} -> port end)
     end
   end
 
   defp port_definitions(%{"portDefinitions" => port_definitions}), do: port_definitions
-
-  # Very old Marathon without portDefinitions
-  defp port_definitions(%{"ports" => ports}), do: ports
 
   defp port_definitions(_app), do: nil
 
   defp port_mappings_ports(app) do
     case container_port_mappings(app) do
       nil -> nil
-      mappings ->
-        Enum.map(mappings, fn mapping ->
-          case mapping do
-            %{"containerPort" => port} -> port
-            _ -> nil
-          end
-        end)
+      mappings -> Enum.map(mappings, fn %{"containerPort" => port} -> port end)
     end
   end
 

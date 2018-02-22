@@ -299,14 +299,6 @@ defmodule Relay.Marathon.NetworkingTest do
 
       assert Networking.get_number_of_ports(app) == 1
     end
-
-    test "bridge networking no port definitions - Marathon < 1.5" do
-      app = @test_app
-      |> Map.put("container", @container_bridge_networking)
-      |> Map.put("ports", [10008, 10009])
-
-      assert Networking.get_number_of_ports(app) == 2
-    end
   end
 
   @test_task %{
