@@ -11,26 +11,11 @@ defmodule Relay.Marathon.Networking do
 
   def get_task_address(app, task), do: networking_mode(app) |> task_address(task)
 
-  def get_task_ports(app, task), do: networking_mode(app) |> ports_list(app, task)
+  def get_task_ports(app, task), do: networking_mode(app) |> task_ports(app, task)
 
   defp task_address(:container, task), do: task_ip_address(task)
 
   defp task_address(_networking_mode, task), do: task_host(task)
-
-  defp ports_list(:host, _app, %{"ports" => ports} = _task), do: ports
-
-  defp ports_list(:"container/bridge", _app, %{"ports" => ports}), do: ports
-
-  defp ports_list(:container, app, _task), do: ports_list(:container, app)
-
-  defp ports_list(:host, app),
-    do: port_definitions_ports(app)
-
-  defp ports_list(:"container/bridge", app),
-    do: port_definitions_ports(app) || port_mappings_ports(app)
-
-  defp ports_list(:container, app),
-    do: ip_address_discovery_ports(app) || port_mappings_ports(app)
 
   defp task_ip_address(%{"ipAddresses" => [%{"ipAddress" => ip_address} | _]})
       when is_binary(ip_address),
@@ -42,6 +27,20 @@ defmodule Relay.Marathon.Networking do
   defp task_host(%{"host" => host}), do: host
 
   defp task_host(_task), do: nil
+
+  defp task_ports(:host, _app, %{"ports" => ports} = _task), do: ports
+
+  defp task_ports(:"container/bridge", _app, %{"ports" => ports}), do: ports
+
+  defp task_ports(:container, app, _task), do: ports_list(:container, app)
+
+  defp ports_list(:host, app), do: port_definitions_ports(app)
+
+  defp ports_list(:"container/bridge", app),
+    do: port_definitions_ports(app) || port_mappings_ports(app)
+
+  defp ports_list(:container, app),
+    do: ip_address_discovery_ports(app) || port_mappings_ports(app)
 
   # Marathon 1.5+: there is a `networks` field
   # Networking modes can't be mixed so using the first one is fine
