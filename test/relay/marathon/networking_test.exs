@@ -308,4 +308,113 @@ defmodule Relay.Marathon.NetworkingTest do
       assert Networking.get_number_of_ports(app) == 2
     end
   end
+
+  @test_task %{
+    "stagedAt" => "2018-02-15T00:19:09.174Z",
+    "state" => "TASK_RUNNING",
+    "startedAt" => "2018-02-15T00:19:40.911Z",
+    "version" => "2017-09-29T09:51:28.863Z",
+    "id" => "dcos-ingress.d7470966-11e5-11e8-a2a6-1653cd73b500",
+    "appId" => "/dcos-ingress",
+    "slaveId" => "7e76e0e4-f16c-4d63-a629-dd05d137a223-S4",
+    "servicePorts" => [
+      10008
+    ]
+  }
+
+  @task_host_ip "10.0.91.103"
+  @task_host_hostname "localhost"
+  @task_ports [
+    31791
+  ]
+  @task_ip_addresses [
+    %{
+      "ipAddress" => "9.0.4.130",
+      "protocol" => "IPv4"
+    }
+  ]
+
+  describe "get_task_ip/2" do
+    test "host networking with host IP" do
+      app = @test_app
+      |> Map.put("networks", @networks_container_host_marathon15)
+
+      task = @test_task
+      |> Map.put("host", @task_host_ip)
+
+      assert Networking.get_task_ip(app, task) == @task_host_ip
+    end
+
+    test "host networking with host name" do
+      app = @test_app
+      |> Map.put("networks", @networks_container_host_marathon15)
+
+      task = @test_task
+      |> Map.put("host", @task_host_hostname)
+
+      assert Networking.get_task_ip(app, task) == "127.0.0.1"
+    end
+
+    test "bridge networking with host IP" do
+      app = @test_app
+      |> Map.put("networks", @networks_container_bridge_marathon15)
+
+      task = @test_task
+      |> Map.put("host", @task_host_ip)
+
+      assert Networking.get_task_ip(app, task) == @task_host_ip
+    end
+
+    test "bridge networking with host name" do
+      app = @test_app
+      |> Map.put("networks", @networks_container_bridge_marathon15)
+
+      task = @test_task
+      |> Map.put("host", @task_host_hostname)
+
+      assert Networking.get_task_ip(app, task) == "127.0.0.1"
+    end
+
+    test "container networking" do
+      app = @test_app
+      |> Map.put("networks", @networks_container_user_marathon15)
+
+      task = @test_task
+      |> Map.put("ipAddresses", @task_ip_addresses)
+
+      assert Networking.get_task_ip(app, task) == "9.0.4.130"
+    end
+  end
+
+  describe "get_task_ports/2" do
+    test "host networking" do
+      app = @test_app
+      |> Map.put("networks", @networks_container_host_marathon15)
+
+      task = @test_task
+      |> Map.put("ports", @task_ports)
+
+      assert Networking.get_task_ports(app, task) == @task_ports
+    end
+
+    test "bridge networking" do
+      app = @test_app
+      |> Map.put("networks", @networks_container_bridge_marathon15)
+
+      task = @test_task
+      |> Map.put("ports", @task_ports)
+
+      assert Networking.get_task_ports(app, task) == @task_ports
+    end
+
+    test "container networking" do
+      app = @test_app
+      |> Map.put("networks", @networks_container_user_marathon15)
+      |> Map.put("container", @container_user_networking_marathon15)
+
+      task = @test_task
+
+      assert Networking.get_task_ports(app, task) == [8080]
+    end
+  end
 end
