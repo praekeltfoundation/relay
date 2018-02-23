@@ -63,7 +63,7 @@ defmodule Relay.MixProject do
        app: false},
 
       {:excoveralls, "~> 0.8", only: :test},
-      {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 0.5", only: :dev, runtime: false},
     ]
   end
 
