@@ -8,6 +8,7 @@ cache:
 script:
   # This is basically `mix test` with coverage enabled.
   - mix coveralls.json
+  - mix dialyzer --plt
   - mix dialyzer
 
 after_success:
