@@ -13,6 +13,27 @@ jobs:
     - elixir: '1.6'
       otp_release: '20.2'
 
+    - elixir: '1.6'
+      otp_release: '20.2'
+      env:
+        - RUN_DIALYZER=1
+      cache:
+        directories:
+          - $HOME/.mix
+          - $HOME/.pltcache
+
+      before_script:
+        - mix compile
+        # Juggle cached PLTs.
+        - mkdir -p ~/.pltcache
+        - cp ~/.pltcache/*-dev.plt _build/dev/ || true
+        - mix dialyzer --plt
+        - cp _build/dev/*-dev.plt ~/.pltcache/
+        # Now that we've done the PLT dance, we can run dialyzer.
+
+      script:
+        - mix dialyzer --halt-exit-status
+
     - group: trusty_latest
       jdk: openjdk8
       env:

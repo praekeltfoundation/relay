@@ -16,6 +16,7 @@ defmodule Relay.MixProject do
         "coveralls.json": :test,
         "coveralls.detail": :test,
       ],
+      dialyzer: dialyzer(),
     ]
   end
 
@@ -62,6 +63,28 @@ defmodule Relay.MixProject do
        app: false},
 
       {:excoveralls, "~> 0.8", only: :test},
+      {:dialyxir, "~> 0.5", only: :dev, runtime: false},
+    ]
+  end
+
+  defp dialyzer do
+    [
+      # There are some warnings in the generated code that we don't control, so
+      # we put them in the ignore file. The exact details of the warnings may
+      # change when we regenerate the code, so the ignore file should be
+      # updated to match.
+      ignore_warnings: "dialyzer.ignore-warnings",
+      # These are most of the optional warnings in the dialyzer docs. We skip
+      # :error_handling (because we don't care about functions that only raise
+      # exceptions) and two others that are intended for developing dialyzer
+      # itself.
+      flags: [
+        :unmatched_returns,
+        # The dialyzer docs indicate that the race condition check can
+        # sometimes take a whole lot of time.
+        :race_conditions,
+        :underspecs,
+      ],
     ]
   end
 end
