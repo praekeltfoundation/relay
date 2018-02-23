@@ -12,9 +12,9 @@ script:
   # Juggle cached PLTs. (This uses the 'dev' mix env which doesn't exist yet.)
   - mix compile
   - mkdir -p ~/.cache
-  - cp $HOME/.cache/*-dev.plt _build/dev/ || true
+  - cp ~/.cache/*-dev.plt _build/dev/ || true
   - mix dialyzer --plt
-  - cp _build/dev/*-dev.plt $HOME/.cache/
+  - cp _build/dev/*-dev.plt ~/.cache/
   # Now that we've done the PLT dance, we can run dialyzer.
   - mix dialyzer
 
