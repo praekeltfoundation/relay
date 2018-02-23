@@ -74,12 +74,12 @@ defmodule Relay.MixProject do
       # change when we regenerate the code, so the ignore file should be
       # updated to match.
       ignore_warnings: "dialyzer.ignore-warnings",
-      # These are all the optional warnings in the dialyzer docs except the
-      # ones that are intended for developing dailyzer itself.
+      # These are most of the optional warnings in the dialyzer docs. We skip
+      # :error_handling (because we don't care about functions that only raise
+      # exceptions) and two others that are intended for developing dialyzer
+      # itself.
       flags: [
-        # # We have instances of these two warnings in our code.
-        # :unmatched_returns,
-        # :error_handling,
+        :unmatched_returns,
         # The dialyzer docs indicate that the race condition check can
         # sometimes take a whole lot of time.
         :race_conditions,
