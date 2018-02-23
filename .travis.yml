@@ -1,22 +1,9 @@
 language: elixir
 elixir: '1.6'
 
-cache:
-  directories:
-    - $HOME/.mix
-    - $HOME/.cache
-
 script:
   # This is basically `mix test` with coverage enabled.
   - mix coveralls.json
-  # Juggle cached PLTs. (This uses the 'dev' mix env which doesn't exist yet.)
-  - mix compile
-  - mkdir -p ~/.cache
-  - cp ~/.cache/*-dev.plt _build/dev/ || true
-  - mix dialyzer --plt
-  - cp _build/dev/*-dev.plt ~/.cache/
-  # Now that we've done the PLT dance, we can run dialyzer.
-  - mix dialyzer
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
@@ -25,6 +12,25 @@ jobs:
   include:
     - elixir: '1.6'
       otp_release: '20.2'
+
+    - elixir: '1.6'
+      otp_release: '20.2'
+      env:
+        - RUN_DIALYZER=1
+      cache:
+        directories:
+          - $HOME/.mix
+          - $HOME/.pltcache
+
+      script:
+        - mix compile
+        # Juggle cached PLTs.
+        - mkdir -p ~/.pltcache
+        - cp ~/.pltcache/*-dev.plt _build/dev/ || true
+        - mix dialyzer --plt
+        - cp _build/dev/*-dev.plt ~/.pltcache/
+        # Now that we've done the PLT dance, we can run dialyzer.
+        - mix dialyzer
 
     - group: trusty_latest
       jdk: openjdk8
