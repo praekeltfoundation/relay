@@ -41,16 +41,10 @@ defmodule Relay.Marathon.Networking do
   def ports_list(:container, app),
     do: ip_address_discovery_ports(app) || port_mappings_ports(app)
 
-  defp port_definitions_ports(app) do
-    case port_definitions(app) do
-      nil -> nil
-      definitions -> Enum.map(definitions, fn %{"port" => port} -> port end)
-    end
-  end
+  defp port_definitions_ports(%{"portDefinitions" => port_definitions}),
+    do: port_definitions |> Enum.map(fn %{"port" => port} -> port end)
 
-  defp port_definitions(%{"portDefinitions" => port_definitions}), do: port_definitions
-
-  defp port_definitions(_app), do: nil
+  defp port_definitions_ports(_app), do: nil
 
   defp port_mappings_ports(app) do
     case container_port_mappings(app) do
