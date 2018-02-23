@@ -4,51 +4,19 @@ defmodule Relay.Marathon.Networking do
   Marathon.
   """
 
+  # Networking mode
+
   @doc """
-  Get the number of ports that this app exposes.
+  Get the Marathon 1.5-equivalent networking mode for an app across different
+  Marathon versions. Returns one of :container, :"container/bridge", or :host.
   """
-  def get_number_of_ports(app), do: networking_mode(app) |> ports_list(app) |> length()
-
-  def get_task_address(app, task), do: networking_mode(app) |> task_address(task)
-
-  def get_task_ports(app, task), do: networking_mode(app) |> task_ports(app, task)
-
-  defp task_address(:container, task), do: task_ip_address(task)
-
-  defp task_address(_networking_mode, task), do: task_host(task)
-
-  defp task_ip_address(%{"ipAddresses" => [%{"ipAddress" => ip_address} | _]})
-      when is_binary(ip_address),
-    do: ip_address
-
-  # No address allocated yet
-  defp task_ip_address(_task), do: nil
-
-  defp task_host(%{"host" => host}), do: host
-
-  defp task_host(_task), do: nil
-
-  defp task_ports(:host, _app, %{"ports" => ports} = _task), do: ports
-
-  defp task_ports(:"container/bridge", _app, %{"ports" => ports}), do: ports
-
-  defp task_ports(:container, app, _task), do: ports_list(:container, app)
-
-  defp ports_list(:host, app), do: port_definitions_ports(app)
-
-  defp ports_list(:"container/bridge", app),
-    do: port_definitions_ports(app) || port_mappings_ports(app)
-
-  defp ports_list(:container, app),
-    do: ip_address_discovery_ports(app) || port_mappings_ports(app)
-
   # Marathon 1.5+: there is a `networks` field
   # Networking modes can't be mixed so using the first one is fine
-  defp networking_mode(%{"networks" => [network | _]}),
+  def networking_mode(%{"networks" => [network | _]} = _app),
     do: network |> Map.get("mode", "container") |> String.to_atom()
 
   # Pre-Marathon 1.5 Docker container networking mode
-  defp networking_mode(%{"container" => %{"docker" => %{"network" => network}}}) do
+  def networking_mode(%{"container" => %{"docker" => %{"network" => network}}}) do
     case network do
       "USER"   -> :container
       "BRIDGE" -> :"container/bridge"
@@ -57,11 +25,21 @@ defmodule Relay.Marathon.Networking do
   end
 
   # Legacy IP-per-task networking mode
-  defp networking_mode(%{"ipAddress" => ip_address}) when not is_nil(ip_address), do:
+  def networking_mode(%{"ipAddress" => ip_address}) when not is_nil(ip_address), do:
     :container
 
   # Default to host networking mode
-  defp networking_mode(_app), do: :host
+  def networking_mode(_app), do: :host
+
+  # Ports list
+
+  def ports_list(:host, app), do: port_definitions_ports(app)
+
+  def ports_list(:"container/bridge", app),
+    do: port_definitions_ports(app) || port_mappings_ports(app)
+
+  def ports_list(:container, app),
+    do: ip_address_discovery_ports(app) || port_mappings_ports(app)
 
   defp port_definitions_ports(app) do
     case port_definitions(app) do
@@ -97,7 +75,32 @@ defmodule Relay.Marathon.Networking do
   # empty ports list :-/
   defp ip_address_discovery_ports(
       %{"ipAddress" => %{"discovery" => %{"ports" => ports}}}) when length(ports) > 0, do:
-    ports
+    ports |> Enum.map(fn %{"number" => number} -> number end)
 
   defp ip_address_discovery_ports(_app), do: nil
+
+  # Task address
+
+  def task_address(:container, task), do: task_ip_address(task)
+
+  def task_address(_networking_mode, task), do: task_host(task)
+
+  defp task_ip_address(%{"ipAddresses" => [%{"ipAddress" => ip_address} | _]})
+      when is_binary(ip_address),
+    do: ip_address
+
+  # No address allocated yet
+  defp task_ip_address(_task), do: nil
+
+  defp task_host(%{"host" => host}), do: host
+
+  defp task_host(_task), do: nil
+
+  # Task ports
+
+  def task_ports(:host, %{"ports" => ports} = _task, _app_ports_list), do: ports
+
+  def task_ports(:"container/bridge", %{"ports" => ports}, _app_ports_list), do: ports
+
+  def task_ports(:container, _task, app_ports_list), do: app_ports_list
 end
