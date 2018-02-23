@@ -22,7 +22,7 @@ jobs:
           - $HOME/.mix
           - $HOME/.pltcache
 
-      script:
+      before_script:
         - mix compile
         # Juggle cached PLTs.
         - mkdir -p ~/.pltcache
@@ -30,7 +30,9 @@ jobs:
         - mix dialyzer --plt
         - cp _build/dev/*-dev.plt ~/.pltcache/
         # Now that we've done the PLT dance, we can run dialyzer.
-        - mix dialyzer
+
+      script:
+        - mix dialyzer --halt-exit-status
 
     - group: trusty_latest
       jdk: openjdk8
