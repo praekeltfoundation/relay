@@ -5,11 +5,10 @@ defmodule Relay.Marathon do
     defstruct [:id, :networking_mode, :ports_list, :labels, :version]
 
     def from_definition(%{"id" => id, "labels" => labels} = app) do
-      networking_mode = Networking.networking_mode(app)
       %App{
         id: id,
-        networking_mode: networking_mode,
-        ports_list: Networking.ports_list(networking_mode, app),
+        networking_mode: Networking.networking_mode(app),
+        ports_list: Networking.ports_list(app),
         labels: labels,
         version: app_config_version(app)
       }

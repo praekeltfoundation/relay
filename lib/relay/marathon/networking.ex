@@ -33,12 +33,14 @@ defmodule Relay.Marathon.Networking do
 
   # Ports list
 
-  def ports_list(:host, app), do: port_definitions_ports(app)
+  def ports_list(app), do: networking_mode(app) |> ports_list(app)
 
-  def ports_list(:"container/bridge", app),
+  defp ports_list(:host, app), do: port_definitions_ports(app)
+
+  defp ports_list(:"container/bridge", app),
     do: port_definitions_ports(app) || port_mappings_ports(app)
 
-  def ports_list(:container, app),
+  defp ports_list(:container, app),
     do: ip_address_discovery_ports(app) || port_mappings_ports(app)
 
   defp port_definitions_ports(%{"portDefinitions" => port_definitions}),
