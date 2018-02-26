@@ -10,11 +10,11 @@ defmodule Relay.Marathon do
         networking_mode: Networking.networking_mode(app),
         ports_list: Networking.ports_list(app),
         labels: labels,
-        version: app_config_version(app)
+        version: config_version(app)
       }
     end
 
-    defp app_config_version(%{"versionInfo" => %{"lastConfigChangeAt" => version}}), do: version
+    defp config_version(%{"versionInfo" => %{"lastConfigChangeAt" => version}}), do: version
 
     def port_indices_in_group(%App{ports_list: []}, _group), do: []
 
