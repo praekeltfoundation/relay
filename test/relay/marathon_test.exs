@@ -122,4 +122,19 @@ defmodule Relay.MarathonTest do
       version: "2017-11-09T08:43:59.890Z"
     }
   end
+
+  test "task from definition container networking" do
+    app =
+      @test_app
+      |> Map.put("networks", [%{"mode" => "container", "name" => "dcos"}])
+      |> App.from_definition()
+
+    assert Task.from_definition(app, @test_task) == %Task{
+      address: "172.17.0.9",
+      app_id: "/mc2",
+      id: "mc2.be753491-1325-11e8-b5d6-4686525b33db",
+      ports: [80],
+      version: "2017-11-09T08:43:59.890Z"
+    }
+  end
 end

@@ -371,23 +371,23 @@ defmodule Relay.Marathon.NetworkingTest do
     end
   end
 
-  describe "task_ports/3" do
+  describe "task_ports/2" do
     test "host networking" do
       task = @test_task |> Map.put("ports", [31791])
 
-      assert Networking.task_ports(:host, task, nil) == [31791]
+      assert Networking.task_ports(:host, task) == [31791]
     end
 
     test "container/bridge networking" do
       task = @test_task |> Map.put("ports", [31791])
 
-      assert Networking.task_ports(:"container/bridge", task, nil) == [31791]
+      assert Networking.task_ports(:"container/bridge", task) == [31791]
     end
 
     test "container networking" do
       task = @test_task
 
-      assert Networking.task_ports(:container, task, [8080]) == [8080]
+      assert Networking.task_ports(:container, task) == nil
     end
   end
 end

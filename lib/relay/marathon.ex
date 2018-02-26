@@ -28,7 +28,7 @@ defmodule Relay.Marathon do
         id: id,
         app_id: app_id,
         address: Networking.task_address(networking_mode, task),
-        ports: Networking.task_ports(networking_mode, task, app_ports_list),
+        ports: Networking.task_ports(networking_mode, task) || app_ports_list,
         version: version
       }
     end

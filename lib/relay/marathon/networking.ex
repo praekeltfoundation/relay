@@ -94,9 +94,9 @@ defmodule Relay.Marathon.Networking do
 
   # Task ports
 
-  def task_ports(:host, %{"ports" => ports} = _task, _app_ports_list), do: ports
+  def task_ports(:host = _networking_mode, %{"ports" => ports} = _task), do: ports
 
-  def task_ports(:"container/bridge", %{"ports" => ports}, _app_ports_list), do: ports
+  def task_ports(:"container/bridge", %{"ports" => ports}), do: ports
 
-  def task_ports(:container, _task, app_ports_list), do: app_ports_list
+  def task_ports(:container, _task), do: nil
 end
