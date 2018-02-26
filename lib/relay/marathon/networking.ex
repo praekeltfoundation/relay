@@ -4,8 +4,6 @@ defmodule Relay.Marathon.Networking do
   Marathon.
   """
 
-  # Networking mode
-
   @doc """
   Get the Marathon 1.5-equivalent networking mode for an app across different
   Marathon versions. Returns one of :container, :"container/bridge", or :host.
@@ -75,8 +73,10 @@ defmodule Relay.Marathon.Networking do
 
   defp ip_address_discovery_ports(_app), do: nil
 
-  # Task address
-
+  @doc """
+  Get the address (IP or hostname) for a task given the app's networking mode
+  and a task definition.
+  """
   def task_address(:container, task), do: task_ip_address(task)
 
   def task_address(_networking_mode, task), do: task_host(task)
@@ -92,8 +92,10 @@ defmodule Relay.Marathon.Networking do
 
   defp task_host(_task), do: nil
 
-  # Task ports
-
+  @doc """
+  Get the ports for a task given the app's networking mode and a task
+  definition.
+  """
   def task_ports(:host = _networking_mode, %{"ports" => ports} = _task), do: ports
 
   def task_ports(:"container/bridge", %{"ports" => ports}), do: ports
