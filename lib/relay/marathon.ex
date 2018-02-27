@@ -37,14 +37,14 @@ defmodule Relay.Marathon do
     defstruct [:id, :app_id, :address, :ports, :version]
 
     def from_definition(
-          %App{id: app_id, networking_mode: networking_mode, ports_list: app_ports_list},
+          %App{id: app_id} = app,
           %{"id" => id, "appId" => app_id, "version" => version} = task
         ) do
       %Task{
         id: id,
         app_id: app_id,
-        address: Networking.task_address(networking_mode, task),
-        ports: Networking.task_ports(networking_mode, task) || app_ports_list,
+        address: Networking.task_address(app.networking_mode, task),
+        ports: Networking.task_ports(app.networking_mode, task) || app.ports_list,
         version: version
       }
     end
