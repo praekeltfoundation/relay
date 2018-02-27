@@ -46,6 +46,7 @@ done
 data_plane_modules=(
 	api
 	config
+	type
 )
 
 # TODO: Only generate the files we need.
