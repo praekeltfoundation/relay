@@ -31,6 +31,16 @@ output_base="$(bazel info output_base)"
 popd
 echo
 
+generated_paths=(
+	lib/envoy
+	lib/google
+)
+echo "Deleting existing generated code..."
+for path in "${generated_paths[@]}"; do
+	rm_cmd="rm -rf $root/$path" && echo "$rm_cmd" && $rm_cmd
+done
+echo
+
 elixirarg="plugins=grpc"
 
 deps=(
@@ -66,7 +76,9 @@ protobuf_protos=(
 	any
 	duration
 	struct
-	timestamp
+	# Google.Protobuf.Timestamp was added to elixir-protobuf (0.5.2+)
+	# https://github.com/tony612/protobuf-elixir/pull/25
+	# timestamp
 	wrappers
 )
 
