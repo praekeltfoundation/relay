@@ -438,15 +438,20 @@ defmodule Envoy.Api.V2.Route.HeaderMatcher do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    name:  String.t,
-    value: String.t,
-    regex: Google.Protobuf.BoolValue.t
+    header_match_specifier: {atom, any},
+    name:        String.t,
+    value:       String.t,
+    regex:       Google.Protobuf.BoolValue.t
   }
-  defstruct [:name, :value, :regex]
+  defstruct [:header_match_specifier, :name, :value, :regex]
 
+  oneof :header_match_specifier, 0
   field :name, 1, type: :string
   field :value, 2, type: :string
   field :regex, 3, type: Google.Protobuf.BoolValue
+  field :exact_match, 4, type: :string, oneof: 0
+  field :regex_match, 5, type: :string, oneof: 0
+  field :range_match, 6, type: Envoy.Type.Int64Range, oneof: 0
 end
 
 defmodule Envoy.Api.V2.Route.QueryParameterMatcher do

@@ -3,16 +3,18 @@ defmodule Envoy.Api.V2.Core.GrpcService do
 
   @type t :: %__MODULE__{
     target_specifier: {atom, any},
-    timeout:     Google.Protobuf.Duration.t,
-    credentials: [Envoy.Api.V2.Core.GrpcService.Credentials.t]
+    timeout:          Google.Protobuf.Duration.t,
+    credentials:      [Envoy.Api.V2.Core.GrpcService.Credentials.t],
+    initial_metadata: [Envoy.Api.V2.Core.HeaderValue.t]
   }
-  defstruct [:target_specifier, :timeout, :credentials]
+  defstruct [:target_specifier, :timeout, :credentials, :initial_metadata]
 
   oneof :target_specifier, 0
   field :envoy_grpc, 1, type: Envoy.Api.V2.Core.GrpcService.EnvoyGrpc, oneof: 0
   field :google_grpc, 2, type: Envoy.Api.V2.Core.GrpcService.GoogleGrpc, oneof: 0
   field :timeout, 3, type: Google.Protobuf.Duration
   field :credentials, 4, repeated: true, type: Envoy.Api.V2.Core.GrpcService.Credentials
+  field :initial_metadata, 5, repeated: true, type: Envoy.Api.V2.Core.HeaderValue
 end
 
 defmodule Envoy.Api.V2.Core.GrpcService.EnvoyGrpc do
