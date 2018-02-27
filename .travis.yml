@@ -56,5 +56,5 @@ jobs:
       script:
         - ./generate_protos.sh
         - if [[ -n "$(git status -s lib/)" ]]; then
-            git status lib/; git diff -- lib/ | head -n 500; exit 1;
+            git status lib/; git diff -- lib/ | head -n 500; false;
           fi
