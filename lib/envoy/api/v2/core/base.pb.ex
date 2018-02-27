@@ -1,11 +1,12 @@
 defmodule Envoy.Api.V2.Core.Locality do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    region:   String.t,
-    zone:     String.t,
-    sub_zone: String.t
-  }
+          region: String.t(),
+          zone: String.t(),
+          sub_zone: String.t()
+        }
   defstruct [:region, :zone, :sub_zone]
 
   field :region, 1, type: :string
@@ -14,26 +15,28 @@ defmodule Envoy.Api.V2.Core.Locality do
 end
 
 defmodule Envoy.Api.V2.Core.Percent do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    value: float
-  }
+          value: float
+        }
   defstruct [:value]
 
   field :value, 1, type: :double
 end
 
 defmodule Envoy.Api.V2.Core.Node do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    id:            String.t,
-    cluster:       String.t,
-    metadata:      Google.Protobuf.Struct.t,
-    locality:      Envoy.Api.V2.Core.Locality.t,
-    build_version: String.t
-  }
+          id: String.t(),
+          cluster: String.t(),
+          metadata: Google.Protobuf.Struct.t(),
+          locality: Envoy.Api.V2.Core.Locality.t(),
+          build_version: String.t()
+        }
   defstruct [:id, :cluster, :metadata, :locality, :build_version]
 
   field :id, 1, type: :string
@@ -44,23 +47,28 @@ defmodule Envoy.Api.V2.Core.Node do
 end
 
 defmodule Envoy.Api.V2.Core.Metadata do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    filter_metadata: %{String.t => Google.Protobuf.Struct.t}
-  }
+          filter_metadata: %{String.t() => Google.Protobuf.Struct.t()}
+        }
   defstruct [:filter_metadata]
 
-  field :filter_metadata, 1, repeated: true, type: Envoy.Api.V2.Core.Metadata.FilterMetadataEntry, map: true
+  field :filter_metadata, 1,
+    repeated: true,
+    type: Envoy.Api.V2.Core.Metadata.FilterMetadataEntry,
+    map: true
 end
 
 defmodule Envoy.Api.V2.Core.Metadata.FilterMetadataEntry do
+  @moduledoc false
   use Protobuf, map: true, syntax: :proto3
 
   @type t :: %__MODULE__{
-    key:   String.t,
-    value: Google.Protobuf.Struct.t
-  }
+          key: String.t(),
+          value: Google.Protobuf.Struct.t()
+        }
   defstruct [:key, :value]
 
   field :key, 1, type: :string
@@ -68,12 +76,13 @@ defmodule Envoy.Api.V2.Core.Metadata.FilterMetadataEntry do
 end
 
 defmodule Envoy.Api.V2.Core.RuntimeUInt32 do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    default_value: non_neg_integer,
-    runtime_key:   String.t
-  }
+          default_value: non_neg_integer,
+          runtime_key: String.t()
+        }
   defstruct [:default_value, :runtime_key]
 
   field :default_value, 2, type: :uint32
@@ -81,12 +90,13 @@ defmodule Envoy.Api.V2.Core.RuntimeUInt32 do
 end
 
 defmodule Envoy.Api.V2.Core.HeaderValue do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    key:   String.t,
-    value: String.t
-  }
+          key: String.t(),
+          value: String.t()
+        }
   defstruct [:key, :value]
 
   field :key, 1, type: :string
@@ -94,12 +104,13 @@ defmodule Envoy.Api.V2.Core.HeaderValue do
 end
 
 defmodule Envoy.Api.V2.Core.HeaderValueOption do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    header: Envoy.Api.V2.Core.HeaderValue.t,
-    append: Google.Protobuf.BoolValue.t
-  }
+          header: Envoy.Api.V2.Core.HeaderValue.t(),
+          append: Google.Protobuf.BoolValue.t()
+        }
   defstruct [:header, :append]
 
   field :header, 1, type: Envoy.Api.V2.Core.HeaderValue
@@ -107,11 +118,12 @@ defmodule Envoy.Api.V2.Core.HeaderValueOption do
 end
 
 defmodule Envoy.Api.V2.Core.DataSource do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    specifier:     {atom, any}
-  }
+          specifier: {atom, any}
+        }
   defstruct [:specifier]
 
   oneof :specifier, 0
@@ -121,12 +133,13 @@ defmodule Envoy.Api.V2.Core.DataSource do
 end
 
 defmodule Envoy.Api.V2.Core.TransportSocket do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    name:   String.t,
-    config: Google.Protobuf.Struct.t
-  }
+          name: String.t(),
+          config: Google.Protobuf.Struct.t()
+        }
   defstruct [:name, :config]
 
   field :name, 1, type: :string
@@ -134,6 +147,7 @@ defmodule Envoy.Api.V2.Core.TransportSocket do
 end
 
 defmodule Envoy.Api.V2.Core.RoutingPriority do
+  @moduledoc false
   use Protobuf, enum: true, syntax: :proto3
 
   field :DEFAULT, 0
@@ -141,6 +155,7 @@ defmodule Envoy.Api.V2.Core.RoutingPriority do
 end
 
 defmodule Envoy.Api.V2.Core.RequestMethod do
+  @moduledoc false
   use Protobuf, enum: true, syntax: :proto3
 
   field :METHOD_UNSPECIFIED, 0

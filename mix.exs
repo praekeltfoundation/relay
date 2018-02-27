@@ -37,8 +37,6 @@ defmodule Relay.MixProject do
   defp deps do
     [
       {:grpc, github: "tony612/grpc-elixir"},
-      # https://github.com/tony612/protobuf-elixir/pull/18
-      {:protobuf, github: "tony612/protobuf-elixir", override: true},
       # lager_logger stops the Eternal Logging System War.
       {:lager_logger, "~> 1.0"},
       # chatterbox (through grpc) specifies lager from github, which conflicts

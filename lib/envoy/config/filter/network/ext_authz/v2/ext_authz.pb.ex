@@ -1,11 +1,12 @@
 defmodule Envoy.Config.Filter.Network.ExtAuthz.V2.ExtAuthz do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    stat_prefix:        String.t,
-    grpc_service:       Envoy.Api.V2.Core.GrpcService.t,
-    failure_mode_allow: boolean
-  }
+          stat_prefix: String.t(),
+          grpc_service: Envoy.Api.V2.Core.GrpcService.t(),
+          failure_mode_allow: boolean
+        }
   defstruct [:stat_prefix, :grpc_service, :failure_mode_allow]
 
   field :stat_prefix, 1, type: :string

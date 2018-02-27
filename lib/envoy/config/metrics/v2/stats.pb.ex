@@ -1,10 +1,11 @@
 defmodule Envoy.Config.Metrics.V2.StatsSink do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    name:   String.t,
-    config: Google.Protobuf.Struct.t
-  }
+          name: String.t(),
+          config: Google.Protobuf.Struct.t()
+        }
   defstruct [:name, :config]
 
   field :name, 1, type: :string
@@ -12,12 +13,13 @@ defmodule Envoy.Config.Metrics.V2.StatsSink do
 end
 
 defmodule Envoy.Config.Metrics.V2.StatsConfig do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    stats_tags:           [Envoy.Config.Metrics.V2.TagSpecifier.t],
-    use_all_default_tags: Google.Protobuf.BoolValue.t
-  }
+          stats_tags: [Envoy.Config.Metrics.V2.TagSpecifier.t()],
+          use_all_default_tags: Google.Protobuf.BoolValue.t()
+        }
   defstruct [:stats_tags, :use_all_default_tags]
 
   field :stats_tags, 1, repeated: true, type: Envoy.Config.Metrics.V2.TagSpecifier
@@ -25,12 +27,13 @@ defmodule Envoy.Config.Metrics.V2.StatsConfig do
 end
 
 defmodule Envoy.Config.Metrics.V2.TagSpecifier do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    tag_value:   {atom, any},
-    tag_name:    String.t
-  }
+          tag_value: {atom, any},
+          tag_name: String.t()
+        }
   defstruct [:tag_value, :tag_name]
 
   oneof :tag_value, 0
@@ -40,11 +43,12 @@ defmodule Envoy.Config.Metrics.V2.TagSpecifier do
 end
 
 defmodule Envoy.Config.Metrics.V2.StatsdSink do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    statsd_specifier: {atom, any}
-  }
+          statsd_specifier: {atom, any}
+        }
   defstruct [:statsd_specifier]
 
   oneof :statsd_specifier, 0
@@ -53,11 +57,12 @@ defmodule Envoy.Config.Metrics.V2.StatsdSink do
 end
 
 defmodule Envoy.Config.Metrics.V2.DogStatsdSink do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    dog_statsd_specifier: {atom, any}
-  }
+          dog_statsd_specifier: {atom, any}
+        }
   defstruct [:dog_statsd_specifier]
 
   oneof :dog_statsd_specifier, 0

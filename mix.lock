@@ -20,7 +20,7 @@
   "metrics": {:hex, :metrics, "1.0.1", "25f094dea2cda98213cecc3aeff09e940299d950904393b2a29d191c346a8486", [:rebar3], [], "hexpm"},
   "mimerl": {:hex, :mimerl, "1.0.2", "993f9b0e084083405ed8252b99460c4f0563e41729ab42d9074fd5e52439be88", [:rebar3], [], "hexpm"},
   "neotoma": {:hex, :neotoma, "1.7.3", "d8bd5404b73273989946e4f4f6d529e5c2088f5fa1ca790b4dbe81f4be408e61", [:rebar], [], "hexpm"},
-  "protobuf": {:git, "https://github.com/tony612/protobuf-elixir.git", "ef9b6efe2474aad7cee6d9b0e1e82742c36c108a", []},
+  "protobuf": {:hex, :protobuf, "0.5.2", "c1338db827614cbe03a479ac9ef22bd8f3d0ff8a6bb44db5f63037688cd7806c", [:mix], [], "hexpm"},
   "ranch": {:hex, :ranch, "1.4.0", "10272f95da79340fa7e8774ba7930b901713d272905d0012b06ca6d994f8826b", [:rebar3], [], "hexpm"},
   "sse_test_server": {:git, "https://github.com/praekeltfoundation/sse_test_server.git", "d8917d260685a306834a476a7457469be590c4d4", [ref: "d8917d260685a306834a476a7457469be590c4d4"]},
   "ssl_verify_fun": {:hex, :ssl_verify_fun, "1.1.1", "28a4d65b7f59893bc2c7de786dec1e1555bd742d336043fe644ae956c3497fbe", [:make, :rebar], [], "hexpm"},

@@ -1,10 +1,11 @@
 defmodule Envoy.Config.Filter.Http.Fault.V2.FaultAbort do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    error_type:  {atom, any},
-    percent:     non_neg_integer
-  }
+          error_type: {atom, any},
+          percent: non_neg_integer
+        }
   defstruct [:error_type, :percent]
 
   oneof :error_type, 0
@@ -13,15 +14,16 @@ defmodule Envoy.Config.Filter.Http.Fault.V2.FaultAbort do
 end
 
 defmodule Envoy.Config.Filter.Http.Fault.V2.HTTPFault do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    delay:            Envoy.Config.Filter.Fault.V2.FaultDelay.t,
-    abort:            Envoy.Config.Filter.Http.Fault.V2.FaultAbort.t,
-    upstream_cluster: String.t,
-    headers:          [Envoy.Api.V2.Route.HeaderMatcher.t],
-    downstream_nodes: [String.t]
-  }
+          delay: Envoy.Config.Filter.Fault.V2.FaultDelay.t(),
+          abort: Envoy.Config.Filter.Http.Fault.V2.FaultAbort.t(),
+          upstream_cluster: String.t(),
+          headers: [Envoy.Api.V2.Route.HeaderMatcher.t()],
+          downstream_nodes: [String.t()]
+        }
   defstruct [:delay, :abort, :upstream_cluster, :headers, :downstream_nodes]
 
   field :delay, 1, type: Envoy.Config.Filter.Fault.V2.FaultDelay

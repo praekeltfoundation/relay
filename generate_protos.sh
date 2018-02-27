@@ -31,6 +31,16 @@ output_base="$(bazel info output_base)"
 popd
 echo
 
+generated_paths=(
+	lib/envoy
+	lib/google
+)
+echo "Deleting existing generated code..."
+for path in "${generated_paths[@]}"; do
+	rm_cmd="rm -rf $root/$path" && echo "$rm_cmd" && $rm_cmd
+done
+echo
+
 elixirarg="plugins=grpc"
 
 deps=(
@@ -46,11 +56,12 @@ done
 data_plane_modules=(
 	api
 	config
+	type
 )
 
 # TODO: Only generate the files we need.
 echo "Generating data-plane-api protos..."
-for module in "${data_plane_modules}"; do
+for module in "${data_plane_modules[@]}"; do
 	find data-plane-api/envoy/"$module" -name '*.proto' | \
 		xargs $protoc ${protocargs[@]} --plugin=elixir --elixir_out="${elixirarg}":"${root}/lib/"
 done

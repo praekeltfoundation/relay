@@ -1,24 +1,26 @@
 defmodule Envoy.Api.V2.Core.Pipe do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    path: String.t
-  }
+          path: String.t()
+        }
   defstruct [:path]
 
   field :path, 1, type: :string
 end
 
 defmodule Envoy.Api.V2.Core.SocketAddress do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    port_specifier: {atom, any},
-    protocol:      integer,
-    address:       String.t,
-    resolver_name: String.t,
-    ipv4_compat:   boolean
-  }
+          port_specifier: {atom, any},
+          protocol: integer,
+          address: String.t(),
+          resolver_name: String.t(),
+          ipv4_compat: boolean
+        }
   defstruct [:port_specifier, :protocol, :address, :resolver_name, :ipv4_compat]
 
   oneof :port_specifier, 0
@@ -31,6 +33,7 @@ defmodule Envoy.Api.V2.Core.SocketAddress do
 end
 
 defmodule Envoy.Api.V2.Core.SocketAddress.Protocol do
+  @moduledoc false
   use Protobuf, enum: true, syntax: :proto3
 
   field :TCP, 0
@@ -38,22 +41,24 @@ defmodule Envoy.Api.V2.Core.SocketAddress.Protocol do
 end
 
 defmodule Envoy.Api.V2.Core.BindConfig do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    source_address: Envoy.Api.V2.Core.SocketAddress.t
-  }
+          source_address: Envoy.Api.V2.Core.SocketAddress.t()
+        }
   defstruct [:source_address]
 
   field :source_address, 1, type: Envoy.Api.V2.Core.SocketAddress
 end
 
 defmodule Envoy.Api.V2.Core.Address do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    address:        {atom, any}
-  }
+          address: {atom, any}
+        }
   defstruct [:address]
 
   oneof :address, 0
@@ -62,12 +67,13 @@ defmodule Envoy.Api.V2.Core.Address do
 end
 
 defmodule Envoy.Api.V2.Core.CidrRange do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    address_prefix: String.t,
-    prefix_len:     Google.Protobuf.UInt32Value.t
-  }
+          address_prefix: String.t(),
+          prefix_len: Google.Protobuf.UInt32Value.t()
+        }
   defstruct [:address_prefix, :prefix_len]
 
   field :address_prefix, 1, type: :string

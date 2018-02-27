@@ -1,11 +1,12 @@
 defmodule Envoy.Config.Filter.Fault.V2.FaultDelay do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    fault_delay_type: {atom, any},
-    type:        integer,
-    percent:     non_neg_integer
-  }
+          fault_delay_type: {atom, any},
+          type: integer,
+          percent: non_neg_integer
+        }
   defstruct [:fault_delay_type, :type, :percent]
 
   oneof :fault_delay_type, 0
@@ -15,6 +16,7 @@ defmodule Envoy.Config.Filter.Fault.V2.FaultDelay do
 end
 
 defmodule Envoy.Config.Filter.Fault.V2.FaultDelay.FaultDelayType do
+  @moduledoc false
   use Protobuf, enum: true, syntax: :proto3
 
   field :FIXED, 0

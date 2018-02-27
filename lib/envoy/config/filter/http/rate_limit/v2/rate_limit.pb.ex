@@ -1,12 +1,13 @@
 defmodule Envoy.Config.Filter.Http.RateLimit.V2.RateLimit do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    domain:       String.t,
-    stage:        non_neg_integer,
-    request_type: String.t,
-    timeout:      Google.Protobuf.Duration.t
-  }
+          domain: String.t(),
+          stage: non_neg_integer,
+          request_type: String.t(),
+          timeout: Google.Protobuf.Duration.t()
+        }
   defstruct [:domain, :stage, :request_type, :timeout]
 
   field :domain, 1, type: :string

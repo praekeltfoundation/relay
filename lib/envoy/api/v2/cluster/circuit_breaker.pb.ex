@@ -1,24 +1,26 @@
 defmodule Envoy.Api.V2.Cluster.CircuitBreakers do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    thresholds: [Envoy.Api.V2.Cluster.CircuitBreakers.Thresholds.t]
-  }
+          thresholds: [Envoy.Api.V2.Cluster.CircuitBreakers.Thresholds.t()]
+        }
   defstruct [:thresholds]
 
   field :thresholds, 1, repeated: true, type: Envoy.Api.V2.Cluster.CircuitBreakers.Thresholds
 end
 
 defmodule Envoy.Api.V2.Cluster.CircuitBreakers.Thresholds do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    priority:             integer,
-    max_connections:      Google.Protobuf.UInt32Value.t,
-    max_pending_requests: Google.Protobuf.UInt32Value.t,
-    max_requests:         Google.Protobuf.UInt32Value.t,
-    max_retries:          Google.Protobuf.UInt32Value.t
-  }
+          priority: integer,
+          max_connections: Google.Protobuf.UInt32Value.t(),
+          max_pending_requests: Google.Protobuf.UInt32Value.t(),
+          max_requests: Google.Protobuf.UInt32Value.t(),
+          max_retries: Google.Protobuf.UInt32Value.t()
+        }
   defstruct [:priority, :max_connections, :max_pending_requests, :max_requests, :max_retries]
 
   field :priority, 1, type: Envoy.Api.V2.Core.RoutingPriority, enum: true
