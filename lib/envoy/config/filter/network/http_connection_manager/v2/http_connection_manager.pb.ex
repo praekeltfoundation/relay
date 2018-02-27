@@ -2,25 +2,27 @@ defmodule Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionMan
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    route_specifier:                 {atom, any},
-    codec_type:                      integer,
-    stat_prefix:                     String.t,
-    http_filters:                    [Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpFilter.t],
-    add_user_agent:                  Google.Protobuf.BoolValue.t,
-    tracing:                         Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionManager.Tracing.t,
-    http_protocol_options:           Envoy.Api.V2.Core.Http1ProtocolOptions.t,
-    http2_protocol_options:          Envoy.Api.V2.Core.Http2ProtocolOptions.t,
-    server_name:                     String.t,
-    idle_timeout:                    Google.Protobuf.Duration.t,
-    drain_timeout:                   Google.Protobuf.Duration.t,
-    access_log:                      [Envoy.Config.Filter.Accesslog.V2.AccessLog.t],
-    use_remote_address:              Google.Protobuf.BoolValue.t,
-    generate_request_id:             Google.Protobuf.BoolValue.t,
-    forward_client_cert_details:     integer,
-    set_current_client_cert_details: Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionManager.SetCurrentClientCertDetails.t,
-    proxy_100_continue:              boolean
+    route_specifier:                                   {atom, any},
+    codec_type:                                        integer,
+    stat_prefix:                                       String.t,
+    http_filters:                                      [Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpFilter.t],
+    add_user_agent:                                    Google.Protobuf.BoolValue.t,
+    tracing:                                           Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionManager.Tracing.t,
+    http_protocol_options:                             Envoy.Api.V2.Core.Http1ProtocolOptions.t,
+    http2_protocol_options:                            Envoy.Api.V2.Core.Http2ProtocolOptions.t,
+    server_name:                                       String.t,
+    idle_timeout:                                      Google.Protobuf.Duration.t,
+    drain_timeout:                                     Google.Protobuf.Duration.t,
+    access_log:                                        [Envoy.Config.Filter.Accesslog.V2.AccessLog.t],
+    use_remote_address:                                Google.Protobuf.BoolValue.t,
+    xff_num_trusted_hops:                              non_neg_integer,
+    generate_request_id:                               Google.Protobuf.BoolValue.t,
+    forward_client_cert_details:                       integer,
+    set_current_client_cert_details:                   Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionManager.SetCurrentClientCertDetails.t,
+    proxy_100_continue:                                boolean,
+    represent_ipv4_remote_address_as_ipv4_mapped_ipv6: boolean
   }
-  defstruct [:route_specifier, :codec_type, :stat_prefix, :http_filters, :add_user_agent, :tracing, :http_protocol_options, :http2_protocol_options, :server_name, :idle_timeout, :drain_timeout, :access_log, :use_remote_address, :generate_request_id, :forward_client_cert_details, :set_current_client_cert_details, :proxy_100_continue]
+  defstruct [:route_specifier, :codec_type, :stat_prefix, :http_filters, :add_user_agent, :tracing, :http_protocol_options, :http2_protocol_options, :server_name, :idle_timeout, :drain_timeout, :access_log, :use_remote_address, :xff_num_trusted_hops, :generate_request_id, :forward_client_cert_details, :set_current_client_cert_details, :proxy_100_continue, :represent_ipv4_remote_address_as_ipv4_mapped_ipv6]
 
   oneof :route_specifier, 0
   field :codec_type, 1, type: Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionManager.CodecType, enum: true
@@ -37,10 +39,12 @@ defmodule Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionMan
   field :drain_timeout, 12, type: Google.Protobuf.Duration
   field :access_log, 13, repeated: true, type: Envoy.Config.Filter.Accesslog.V2.AccessLog
   field :use_remote_address, 14, type: Google.Protobuf.BoolValue
+  field :xff_num_trusted_hops, 19, type: :uint32
   field :generate_request_id, 15, type: Google.Protobuf.BoolValue
   field :forward_client_cert_details, 16, type: Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionManager.ForwardClientCertDetails, enum: true
   field :set_current_client_cert_details, 17, type: Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionManager.SetCurrentClientCertDetails
   field :proxy_100_continue, 18, type: :bool
+  field :represent_ipv4_remote_address_as_ipv4_mapped_ipv6, 20, type: :bool
 end
 
 defmodule Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionManager.Tracing do

@@ -8,7 +8,7 @@ defmodule Envoy.Config.Filter.Http.IpTagging.V2.IPTagging do
   defstruct [:request_type, :ip_tags]
 
   field :request_type, 1, type: Envoy.Config.Filter.Http.IpTagging.V2.IPTagging.RequestType, enum: true
-  field :ip_tags, 2, repeated: true, type: Envoy.Config.Filter.Http.IpTagging.V2.IPTagging.IPTag
+  field :ip_tags, 4, repeated: true, type: Envoy.Config.Filter.Http.IpTagging.V2.IPTagging.IPTag
 end
 
 defmodule Envoy.Config.Filter.Http.IpTagging.V2.IPTagging.IPTag do

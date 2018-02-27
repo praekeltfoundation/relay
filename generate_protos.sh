@@ -50,7 +50,7 @@ data_plane_modules=(
 
 # TODO: Only generate the files we need.
 echo "Generating data-plane-api protos..."
-for module in "${data_plane_modules}"; do
+for module in "${data_plane_modules[@]}"; do
 	find data-plane-api/envoy/"$module" -name '*.proto' | \
 		xargs $protoc ${protocargs[@]} --plugin=elixir --elixir_out="${elixirarg}":"${root}/lib/"
 done

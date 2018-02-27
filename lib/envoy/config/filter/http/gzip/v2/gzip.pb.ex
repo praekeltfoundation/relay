@@ -2,16 +2,16 @@ defmodule Envoy.Config.Filter.Http.Gzip.V2.Gzip do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    memory_level:                    Google.Protobuf.UInt32Value.t,
-    content_length:                  Google.Protobuf.UInt32Value.t,
-    compression_level:               integer,
-    compression_strategy:            integer,
-    content_type:                    [String.t],
-    disable_on_etag_header:          boolean,
-    disable_on_last_modified_header: boolean,
-    window_bits:                     Google.Protobuf.UInt32Value.t
+    memory_level:                  Google.Protobuf.UInt32Value.t,
+    content_length:                Google.Protobuf.UInt32Value.t,
+    compression_level:             integer,
+    compression_strategy:          integer,
+    content_type:                  [String.t],
+    disable_on_etag_header:        boolean,
+    remove_accept_encoding_header: boolean,
+    window_bits:                   Google.Protobuf.UInt32Value.t
   }
-  defstruct [:memory_level, :content_length, :compression_level, :compression_strategy, :content_type, :disable_on_etag_header, :disable_on_last_modified_header, :window_bits]
+  defstruct [:memory_level, :content_length, :compression_level, :compression_strategy, :content_type, :disable_on_etag_header, :remove_accept_encoding_header, :window_bits]
 
   field :memory_level, 1, type: Google.Protobuf.UInt32Value
   field :content_length, 2, type: Google.Protobuf.UInt32Value
@@ -19,7 +19,7 @@ defmodule Envoy.Config.Filter.Http.Gzip.V2.Gzip do
   field :compression_strategy, 4, type: Envoy.Config.Filter.Http.Gzip.V2.Gzip.CompressionStrategy, enum: true
   field :content_type, 6, repeated: true, type: :string
   field :disable_on_etag_header, 7, type: :bool
-  field :disable_on_last_modified_header, 8, type: :bool
+  field :remove_accept_encoding_header, 8, type: :bool
   field :window_bits, 9, type: Google.Protobuf.UInt32Value
 end
 
