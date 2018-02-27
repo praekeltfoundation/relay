@@ -76,41 +76,6 @@ defmodule Relay.MarathonTest do
     "deployments" => []
   }
 
-  test "app from definition" do
-    assert App.from_definition(@test_app) == %App{
-      id: "/mc2",
-      labels: %{
-        "HAPROXY_0_REDIRECT_TO_HTTPS" => "true",
-        "HAPROXY_0_VHOST" => "mc2.example.org",
-        "HAPROXY_GROUP" => "external",
-        "MARATHON_ACME_0_DOMAIN" => "mc2.example.org"
-      },
-      networking_mode: :"container/bridge",
-      ports_list: [80],
-      version: "2017-11-08T15:06:31.066Z"
-    }
-  end
-
-  test "app port indices in group" do
-    app = App.from_definition(@test_app)
-
-    assert App.port_indices_in_group(app, "internal") == []
-    assert App.port_indices_in_group(app, "external") == [0]
-  end
-
-  test "app label getters" do
-    app = App.from_definition(@test_app)
-
-    assert App.marathon_lb_vhost(app, 0) == ["mc2.example.org"]
-    assert App.marathon_lb_vhost(app, 1) == []
-
-    assert App.marathon_lb_redirect_to_https?(app, 0)
-    assert not App.marathon_lb_redirect_to_https?(app, 1)
-
-    assert App.marathon_acme_domain(app, 0) == ["mc2.example.org"]
-    assert App.marathon_acme_domain(app, 1) == []
-  end
-
   @test_task %{
     "ipAddresses" => [
       %{
@@ -131,36 +96,75 @@ defmodule Relay.MarathonTest do
     "host" => "10.70.4.100"
   }
 
-  test "task from definition" do
-    app = App.from_definition(@test_app)
+  describe "Marathon.App" do
+    test "app from definition" do
+      assert App.from_definition(@test_app) == %App{
+        id: "/mc2",
+        labels: %{
+          "HAPROXY_0_REDIRECT_TO_HTTPS" => "true",
+          "HAPROXY_0_VHOST" => "mc2.example.org",
+          "HAPROXY_GROUP" => "external",
+          "MARATHON_ACME_0_DOMAIN" => "mc2.example.org"
+        },
+        networking_mode: :"container/bridge",
+        ports_list: [80],
+        version: "2017-11-08T15:06:31.066Z"
+      }
+    end
 
-    assert Task.from_definition(app, @test_task) == %Task{
-      address: "10.70.4.100",
-      app_id: "/mc2",
-      id: "mc2.be753491-1325-11e8-b5d6-4686525b33db",
-      ports: [15979],
-      version: "2017-11-09T08:43:59.890Z"
-    }
+    test "app port indices in group" do
+      app = App.from_definition(@test_app)
+
+      assert App.port_indices_in_group(app, "internal") == []
+      assert App.port_indices_in_group(app, "external") == [0]
+    end
+
+    test "app label getters" do
+      app = App.from_definition(@test_app)
+
+      assert App.marathon_lb_vhost(app, 0) == ["mc2.example.org"]
+      assert App.marathon_lb_vhost(app, 1) == []
+
+      assert App.marathon_lb_redirect_to_https?(app, 0)
+      assert not App.marathon_lb_redirect_to_https?(app, 1)
+
+      assert App.marathon_acme_domain(app, 0) == ["mc2.example.org"]
+      assert App.marathon_acme_domain(app, 1) == []
+    end
   end
 
-  test "task from definition container networking" do
-    app =
-      @test_app
-      |> Map.put("networks", [%{"mode" => "container", "name" => "dcos"}])
-      |> App.from_definition()
+  describe "Marathon.Task" do
+    test "task from definition" do
+      app = App.from_definition(@test_app)
 
-    assert Task.from_definition(app, @test_task) == %Task{
-      address: "172.17.0.9",
-      app_id: "/mc2",
-      id: "mc2.be753491-1325-11e8-b5d6-4686525b33db",
-      ports: [80],
-      version: "2017-11-09T08:43:59.890Z"
-    }
-  end
+      assert Task.from_definition(app, @test_task) == %Task{
+        address: "10.70.4.100",
+        app_id: "/mc2",
+        id: "mc2.be753491-1325-11e8-b5d6-4686525b33db",
+        ports: [15979],
+        version: "2017-11-09T08:43:59.890Z"
+      }
+    end
 
-  test "task port" do
-    task = Task.from_definition(App.from_definition(@test_app), @test_task)
+    test "task from definition container networking" do
+      app =
+        @test_app
+        |> Map.put("networks", [%{"mode" => "container", "name" => "dcos"}])
+        |> App.from_definition()
 
-    assert Task.endpoint(task, 0) == {"10.70.4.100", 15979}
+      assert Task.from_definition(app, @test_task) == %Task{
+        address: "172.17.0.9",
+        app_id: "/mc2",
+        id: "mc2.be753491-1325-11e8-b5d6-4686525b33db",
+        ports: [80],
+        version: "2017-11-09T08:43:59.890Z"
+      }
+    end
+
+    test "task port" do
+      task = Task.from_definition(App.from_definition(@test_app), @test_task)
+
+      assert Task.endpoint(task, 0) == {"10.70.4.100", 15979}
+    end
   end
 end
