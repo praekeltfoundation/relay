@@ -6,8 +6,8 @@ defmodule Relay.Marathon.NetworkingTest do
   @test_app %{
     "id" => "/foovu1",
     "cmd" => "python -m http.server 8080",
-    "args" => None,
-    "user" => None,
+    "args" => nil,
+    "user" => nil,
     "env" => %{},
     "instances" => 1,
     "cpus" => 0.1,
@@ -22,7 +22,7 @@ defmodule Relay.Marathon.NetworkingTest do
     "backoffSeconds" => 1,
     "backoffFactor" => 1.15,
     "maxLaunchDelaySeconds" => 3600,
-    "container" => None,
+    "container" => nil,
     "healthChecks" => [],
     "readinessChecks" => [],
     "dependencies" => [],
@@ -31,11 +31,11 @@ defmodule Relay.Marathon.NetworkingTest do
       "maximumOverCapacity" => 1,
     },
     "labels" => %{},
-    "ipAddress" => None,
+    "ipAddress" => nil,
     "version" => "2017-05-22T08:53:15.476Z",
-    "residency" => None,
+    "residency" => nil,
     "secrets" => %{},
-    "taskKillGracePeriodSeconds" => None,
+    "taskKillGracePeriodSeconds" => nil,
     "unreachableStrategy" => %{
       "inactiveAfterSeconds" => 300,
       "expungeAfterSeconds" => 600,
@@ -52,252 +52,284 @@ defmodule Relay.Marathon.NetworkingTest do
     "deployments" => [],
   }
 
-  @container_host_networking %{
-    "type" => "DOCKER",
-    "volumes" => [],
-    "docker" => %{
-      "image" => "praekeltfoundation/marathon-lb:1.6.0",
-      "network" => "HOST",
-      "portMappings" => [],
-      "privileged" => true,
-      "parameters" => [],
-      "forcePullImage" => false
-    }
-  }
+  describe "networking_mode/1" do
+    test "host networking mode (Marathon 1.5+)" do
+      app = @test_app |> Map.put("networks", [%{"mode" => "host"}])
 
-  @container_user_networking %{
-    "type" => "DOCKER",
-    "volumes" => [],
-    "docker" => %{
-      "image" => "python:3-alpine",
-      "network" => "USER",
-      "portMappings" => [
-        %{
-          "containerPort" => 8080,
-          "servicePort" => 10004,
-          "protocol" => "tcp",
-          "name" => "foovu1http",
-          "labels" => %{
-            "VIP_0" => "/foovu1:8080",
-          },
+      assert Networking.networking_mode(app) == :host
+    end
+
+    test "container networking mode (Marathon 1.5+)" do
+      app = @test_app |> Map.put("networks", [%{"mode" => "container", "name" => "dcos"}])
+
+      assert Networking.networking_mode(app) == :container
+    end
+
+    test "container/bridge networking mode (Marathon 1.5+)" do
+      app = @test_app |> Map.put("networks", [%{"mode" => "container/bridge"}])
+
+      assert Networking.networking_mode(app) == :"container/bridge"
+    end
+
+    test "host networking with Docker container (Marathon < 1.5)" do
+      app = @test_app |> Map.put("container", %{
+        "type" => "DOCKER",
+        "volumes" => [],
+        "docker" => %{
+          "image" => "praekeltfoundation/marathon-lb:1.6.0",
+          "network" => "HOST",
+          "portMappings" => [],
+          "privileged" => true,
+          "parameters" => [],
+          "forcePullImage" => false
+        }
+      })
+
+      assert Networking.networking_mode(app) == :host
+    end
+
+    test "container/bridge networking with Docker container (Marathon < 1.5)" do
+      app = @test_app |> Map.put("container", %{
+        "type" => "DOCKER",
+        "volumes" => [],
+        "docker" => %{
+          "image" => "index.docker.io/jerithorg/testapp:0.0.12",
+          "network" => "BRIDGE",
+          "portMappings" => [
+            %{
+              "containerPort" => 5858,
+              "hostPort" => 0,
+              "servicePort" => 10008,
+              "protocol" => "tcp",
+              "labels" => %{},
+            },
+          ],
+          "privileged" => false,
+          "parameters" => [],
+          "forcePullImage" => true,
         },
-      ],
-      "privileged" => false,
-      "parameters" => [],
-      "forcePullImage" => false,
-    },
-  }
+      })
 
-  @container_bridge_networking %{
-    "type" => "DOCKER",
-    "volumes" => [],
-    "docker" => %{
-      "image" => "index.docker.io/jerithorg/testapp:0.0.12",
-      "network" => "BRIDGE",
-      "portMappings" => [
+      assert Networking.networking_mode(app) == :"container/bridge"
+    end
+
+    test "container networking with Docker container (Marathon < 1.5)" do
+      app = @test_app |> Map.put("container", %{
+        "type" => "DOCKER",
+        "volumes" => [],
+        "docker" => %{
+          "image" => "python:3-alpine",
+          "network" => "USER",
+          "portMappings" => [
+            %{
+              "containerPort" => 8080,
+              "servicePort" => 10004,
+              "protocol" => "tcp",
+              "name" => "foovu1http",
+              "labels" => %{
+                "VIP_0" => "/foovu1:8080",
+              },
+            },
+          ],
+          "privileged" => false,
+          "parameters" => [],
+          "forcePullImage" => false,
+        },
+      })
+
+      assert Networking.networking_mode(app) == :container
+    end
+
+    test "legacy IP-per-task (Marathon < 1.5)" do
+      app = @test_app |> Map.put("ipAddress", %{
+        "groups" => [],
+        "labels" => %{},
+        "discovery" => %{
+          "ports" => [
+            %{"number" => 80, "name" => "http", "protocol" => "tcp"},
+            %{"number" => 443, "name" => "http", "protocol" => "tcp"},
+          ],
+        },
+      })
+
+      assert Networking.networking_mode(app) == :container
+    end
+
+    test "host networking (Marathon < 1.5)" do
+      app = @test_app |> Map.put("portDefinitions", [
         %{
-          "containerPort" => 5858,
-          "hostPort" => 0,
-          "servicePort" => 10008,
+          "port" => 10008,
           "protocol" => "tcp",
+          "name" => "default",
           "labels" => %{},
         },
-      ],
-      "privileged" => false,
-      "parameters" => [],
-      "forcePullImage" => true,
-    },
-  }
+      ])
 
-  # We've never run a container with the Mesos containerizer before. This is from
-  # https://mesosphere.github.io/marathon/docs/external-volumes.html
-  @container_mesos %{
-    "type" => "MESOS",
-    "volumes" => [
-      %{
-        "containerPath" => 'test-rexray-volume',
-        "external" => %{
-          "size" => 100,
-          "name" => 'my-test-vol',
-          "provider" => "dvdi",
-          "options" => %{"dvdi/driver" => "rexray"},
+      assert Networking.networking_mode(app) == :host
+    end
+  end
+
+  describe "ports_list/1" do
+    test "host networking" do
+      app =
+        @test_app
+        |> Map.put("networks", [%{"mode" => "host"}])
+        |> Map.put("portDefinitions", [
+          %{
+            "port" => 10008,
+            "protocol" => "tcp",
+            "name" => "default",
+            "labels" => %{},
+          },
+        ])
+
+      assert Networking.ports_list(app) == [10008]
+    end
+
+    test "container/bridge networking (Marathon 1.5+)" do
+      app =
+        @test_app
+        |> Map.put("networks", [%{"mode" => "container/bridge"}])
+        |> Map.put("container", %{
+          "type" => "DOCKER",
+          "docker" => %{
+            "forcePullImage" => true,
+            "image" => "praekeltfoundation/mc2:release-3.11.2",
+            "parameters" => [
+              %{
+                "key" => "add-host",
+                "value" => "servicehost:172.17.0.1"
+              }
+            ],
+            "privileged" => false
+          },
+          "volumes" => [],
+          "portMappings" => [
+            %{
+              "containerPort" => 80,
+              "hostPort" => 0,
+              "labels" => %{},
+              "protocol" => "tcp",
+              "servicePort" => 10005
+            }
+          ]
+        })
+
+      assert Networking.ports_list(app) == [80]
+    end
+
+    test "container/bridge networking Mesos containerizer (Marathon 1.5+)" do
+      app = @test_app
+        |> Map.put("networks", [%{"mode" => "container/bridge"}])
+        |> Map.put("container", %{
+          "type" => "MESOS",
+          "docker" => %{
+            "image" => "my-image:1.0"
+          },
+          "portMappings" => [
+            %{"containerPort" => 80, "hostPort" => 0, "name" => "http"},
+            %{"containerPort" => 443, "hostPort" => 0, "name" => "https"},
+            %{"containerPort" => 4000, "hostPort" => 0, "name" => "mon"}
+          ]
+        })
+
+      assert Networking.ports_list(app) == [80, 443, 4000]
+    end
+
+    test "container networking (Marathon 1.5+)" do
+      app =
+        @test_app
+        |> Map.put("networks", [%{"mode" => "container", "name" => "dcos"}])
+        |> Map.put("container", %{
+          "type" => "DOCKER",
+          "docker" => %{
+            "forcePullImage" => false,
+            "image" => "python:3-alpine",
+            "parameters" => [],
+            "privileged" => false
+          },
+          "volumes" => [],
+          "portMappings" => [
+            %{
+              "containerPort" => 8080,
+              "labels" => %{
+                "VIP_0" => "/foovu1:8080"
+              },
+              "name" => "foovu1http",
+              "protocol" => "tcp",
+              "servicePort" => 10004
+            }
+          ],
+        })
+
+      assert Networking.ports_list(app) == [8080]
+    end
+
+    test "container networking (Marathon < 1.5)" do
+      app = @test_app |> Map.put("container", %{
+        "type" => "DOCKER",
+        "volumes" => [],
+        "docker" => %{
+          "image" => "python:3-alpine",
+          "network" => "USER",
+          "portMappings" => [
+            %{
+              "containerPort" => 8080,
+              "servicePort" => 10004,
+              "protocol" => "tcp",
+              "name" => "foovu1http",
+              "labels" => %{
+                "VIP_0" => "/foovu1:8080",
+              },
+            },
+          ],
+          "privileged" => false,
+          "parameters" => [],
+          "forcePullImage" => false,
         },
-        "mode" => "RW",
-      },
-    ],
-  }
+      })
 
-  # https://github.com/mesosphere/marathon/blob/v1.5.1/docs/docs/networking.md#host-mode
-  @networks_container_host_marathon15 [%{"mode" => "host"}]
-  @container_mesos_host_networking_marathon15 %{
-    "type" => "MESOS",
-    "docker" => %{
-      "image" => 'my-image:1.0'
-    },
-  }
+      assert Networking.ports_list(app) == [8080]
+    end
 
-  # https://github.com/mesosphere/marathon/blob/v1.5.1/docs/docs/networking.md#specifying-ports-1
-  @networks_container_bridge_marathon15 [%{"mode" => "container/bridge"}]
-  @container_bridge_networking_marathon15 %{
-    "type" => "DOCKER",
-    "docker" => %{
-      "forcePullImage" => true,
-      "image" => 'praekeltfoundation/mc2:release-3.11.2',
-      "parameters" => [
-        %{
-          "key" => 'add-host',
-          "value" => 'servicehost:172.17.0.1'
-        }
-      ],
-      "privileged" => false
-    },
-    "volumes" => [],
-    "portMappings" => [
-      %{
-        "containerPort" => 80,
-        "hostPort" => 0,
+    test "IP-per-task (Marathon < 1.5)" do
+      app = @test_app |> Map.put("ipAddress", %{
+        "groups" => [],
         "labels" => %{},
-        "protocol" => "tcp",
-        "servicePort" => 10005
-      }
-    ]
-  }
-  @container_mesos_bridge_networking_marathon15 %{
-    "type" => "MESOS",
-    "docker" => %{
-      "image" => 'my-image:1.0'
-    },
-    "portMappings" => [
-      %{"containerPort" => 80, "hostPort" => 0, "name" => "http"},
-      %{"containerPort" => 443, "hostPort" => 0, "name" => "https"},
-      %{"containerPort" => 4000, "hostPort" => 0, "name" => "mon"}
-    ]
-  }
-
-  # https://github.com/mesosphere/marathon/blob/v1.5.1/docs/docs/networking.md#enabling-container-mode
-  @networks_container_user_marathon15 [%{"mode" => "container", "name" => "dcos"}]
-  @container_user_networking_marathon15 %{
-    "type" => "DOCKER",
-    "docker" => %{
-      "forcePullImage" => false,
-      "image" => 'python:3-alpine',
-      "parameters" => [],
-      "privileged" => false
-    },
-    "volumes" => [],
-    "portMappings" => [
-      %{
-        "containerPort" => 8080,
-        "labels" => %{
-          "VIP_0" => '/foovu1:8080'
+        "discovery" => %{
+          "ports" => [
+            %{"number" => 80, "name" => "http", "protocol" => "tcp"},
+            %{"number" => 443, "name" => "http", "protocol" => "tcp"},
+          ],
         },
-        "name" => "foovu1http",
-        "protocol" => "tcp",
-        "servicePort" => 10004
-      }
-    ],
-  }
+      })
 
-  @ip_address_no_ports %{
-    "groups" => [],
-    "labels" => %{},
-    "discovery" => %{
-      "ports" => [],
-    },
-    "networkName" => "dcos",
-  }
-
-  @ip_address_two_ports %{
-    "groups" => [],
-    "labels" => %{},
-    "discovery" => %{
-      "ports" => [
-        %{"number" => 80, "name" => "http", "protocol" => "tcp"},
-        %{"number" => 443, "name" => "http", "protocol" => "tcp"},
-      ],
-    },
-  }
-
-  @port_definitions_one_port [
-    %{
-      "port" => 10008,
-      "protocol" => "tcp",
-      "name" => "default",
-      "labels" => %{},
-    },
-  ]
-
-  describe "get_number_of_ports/1" do
-    test "host networking Mesos containerizer - Marathon 1.5+" do
-      app = @test_app
-      |> Map.put("container", @container_mesos_host_networking_marathon15)
-      |> Map.put("networks", @networks_container_host_marathon15)
-      |> Map.put("portDefinitions", @port_definitions_one_port)
-
-      assert Networking.get_number_of_ports(app) == 1
+      assert Networking.ports_list(app) == [80, 443]
     end
 
-    test "bridge networking - Marathon 1.5+" do
-      app = @test_app
-      |> Map.put("container", @container_bridge_networking_marathon15)
-      |> Map.put("networks", @networks_container_bridge_marathon15)
+    test "bridge networking (Marathon < 1.5)" do
+      app = @test_app |> Map.put("container", %{
+        "type" => "DOCKER",
+        "volumes" => [],
+        "docker" => %{
+          "image" => "index.docker.io/jerithorg/testapp:0.0.12",
+          "network" => "BRIDGE",
+          "portMappings" => [
+            %{
+              "containerPort" => 5858,
+              "hostPort" => 0,
+              "servicePort" => 10008,
+              "protocol" => "tcp",
+              "labels" => %{},
+            },
+          ],
+          "privileged" => false,
+          "parameters" => [],
+          "forcePullImage" => true,
+        },
+      })
 
-      assert Networking.get_number_of_ports(app) == 1
-    end
-
-    test "bridge networking Mesos containerizer - Marathon 1.5+" do
-      app = @test_app
-      |> Map.put("container", @container_mesos_bridge_networking_marathon15)
-      |> Map.put("networks", @networks_container_bridge_marathon15)
-
-      assert Networking.get_number_of_ports(app) == 3
-    end
-
-    test "user networking - Marathon 1.5+" do
-      app = @test_app
-      |> Map.put("container", @container_user_networking_marathon15)
-      |> Map.put("networks", @networks_container_user_marathon15)
-
-      assert Networking.get_number_of_ports(app) == 1
-    end
-
-    test "host networking - Marathon < 1.5" do
-      app = @test_app
-      |> Map.put("container", @container_host_networking)
-      |> Map.put("portDefinitions", @port_definitions_one_port)
-
-      assert Networking.get_number_of_ports(app) == 1
-    end
-
-    test "user networking - Marathon < 1.5" do
-      app = @test_app
-      |> Map.put("container", @container_user_networking)
-      |> Map.put("ipAddress", @ip_address_no_ports)
-
-      assert Networking.get_number_of_ports(app) == 1
-    end
-
-    test "IP-per-task no container - Marathon < 1.5" do
-      app = @test_app
-      |> Map.put("ipAddress", @ip_address_two_ports)
-
-      assert Networking.get_number_of_ports(app) == 2
-    end
-
-    test "IP-per-task Mesos containerizer - Marathon < 1.5" do
-      app = @test_app
-      |> Map.put("container", @container_mesos)
-      |> Map.put("ipAddress", @ip_address_two_ports)
-
-      assert Networking.get_number_of_ports(app) == 2
-    end
-
-    test "bridge networking - Marathon < 1.5" do
-      app = @test_app
-      |> Map.put("container", @container_bridge_networking)
-      |> Map.put("portDefinitions", @port_definitions_one_port)
-
-      assert Networking.get_number_of_ports(app) == 1
+      assert Networking.ports_list(app) == [5858]
     end
   end
 
@@ -314,78 +346,48 @@ defmodule Relay.Marathon.NetworkingTest do
     ]
   }
 
-  @task_host "10.0.91.103"
-  @task_ports [
-    31791
-  ]
-  @task_ip_addresses [
-    %{
-      "ipAddress" => "9.0.4.130",
-      "protocol" => "IPv4"
-    }
-  ]
-
-  describe "get_task_address/2" do
+  describe "task_address/2" do
     test "host networking" do
-      app = @test_app
-      |> Map.put("networks", @networks_container_host_marathon15)
+      task = @test_task |> Map.put("host", "10.0.91.103")
 
-      task = @test_task
-      |> Map.put("host", @task_host)
-
-      assert Networking.get_task_address(app, task) == @task_host
+      assert Networking.task_address(:host, task) == "10.0.91.103"
     end
 
-    test "bridge networking" do
-      app = @test_app
-      |> Map.put("networks", @networks_container_bridge_marathon15)
+    test "container/bridge networking" do
+      task = @test_task |> Map.put("host", "10.0.91.103")
 
-      task = @test_task
-      |> Map.put("host", @task_host)
-
-      assert Networking.get_task_address(app, task) == @task_host
+      assert Networking.task_address(:"container/bridge", task) == "10.0.91.103"
     end
 
     test "container networking" do
-      app = @test_app
-      |> Map.put("networks", @networks_container_user_marathon15)
+      task = @test_task |> Map.put("ipAddresses", [
+        %{
+          "ipAddress" => "9.0.4.130",
+          "protocol" => "IPv4"
+        }
+      ])
 
-      task = @test_task
-      |> Map.put("ipAddresses", @task_ip_addresses)
-
-      assert Networking.get_task_address(app, task) == "9.0.4.130"
+      assert Networking.task_address(:container, task) == "9.0.4.130"
     end
   end
 
-  describe "get_task_ports/2" do
+  describe "task_ports/2" do
     test "host networking" do
-      app = @test_app
-      |> Map.put("networks", @networks_container_host_marathon15)
+      task = @test_task |> Map.put("ports", [31791])
 
-      task = @test_task
-      |> Map.put("ports", @task_ports)
-
-      assert Networking.get_task_ports(app, task) == @task_ports
+      assert Networking.task_ports(:host, task) == [31791]
     end
 
-    test "bridge networking" do
-      app = @test_app
-      |> Map.put("networks", @networks_container_bridge_marathon15)
+    test "container/bridge networking" do
+      task = @test_task |> Map.put("ports", [31791])
 
-      task = @test_task
-      |> Map.put("ports", @task_ports)
-
-      assert Networking.get_task_ports(app, task) == @task_ports
+      assert Networking.task_ports(:"container/bridge", task) == [31791]
     end
 
     test "container networking" do
-      app = @test_app
-      |> Map.put("networks", @networks_container_user_marathon15)
-      |> Map.put("container", @container_user_networking_marathon15)
-
       task = @test_task
 
-      assert Networking.get_task_ports(app, task) == [8080]
+      assert Networking.task_ports(:container, task) == nil
     end
   end
 end
