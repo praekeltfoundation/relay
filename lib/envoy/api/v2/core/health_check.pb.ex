@@ -1,17 +1,27 @@
 defmodule Envoy.Api.V2.Core.HealthCheck do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    health_checker:      {atom, any},
-    timeout:             Google.Protobuf.Duration.t,
-    interval:            Google.Protobuf.Duration.t,
-    interval_jitter:     Google.Protobuf.Duration.t,
-    unhealthy_threshold: Google.Protobuf.UInt32Value.t,
-    healthy_threshold:   Google.Protobuf.UInt32Value.t,
-    alt_port:            Google.Protobuf.UInt32Value.t,
-    reuse_connection:    Google.Protobuf.BoolValue.t
-  }
-  defstruct [:health_checker, :timeout, :interval, :interval_jitter, :unhealthy_threshold, :healthy_threshold, :alt_port, :reuse_connection]
+          health_checker: {atom, any},
+          timeout: Google.Protobuf.Duration.t(),
+          interval: Google.Protobuf.Duration.t(),
+          interval_jitter: Google.Protobuf.Duration.t(),
+          unhealthy_threshold: Google.Protobuf.UInt32Value.t(),
+          healthy_threshold: Google.Protobuf.UInt32Value.t(),
+          alt_port: Google.Protobuf.UInt32Value.t(),
+          reuse_connection: Google.Protobuf.BoolValue.t()
+        }
+  defstruct [
+    :health_checker,
+    :timeout,
+    :interval,
+    :interval_jitter,
+    :unhealthy_threshold,
+    :healthy_threshold,
+    :alt_port,
+    :reuse_connection
+  ]
 
   oneof :health_checker, 0
   field :timeout, 1, type: Google.Protobuf.Duration
@@ -28,11 +38,12 @@ defmodule Envoy.Api.V2.Core.HealthCheck do
 end
 
 defmodule Envoy.Api.V2.Core.HealthCheck.Payload do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    payload: {atom, any}
-  }
+          payload: {atom, any}
+        }
   defstruct [:payload]
 
   oneof :payload, 0
@@ -41,15 +52,16 @@ defmodule Envoy.Api.V2.Core.HealthCheck.Payload do
 end
 
 defmodule Envoy.Api.V2.Core.HealthCheck.HttpHealthCheck do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    host:         String.t,
-    path:         String.t,
-    send:         Envoy.Api.V2.Core.HealthCheck.Payload.t,
-    receive:      Envoy.Api.V2.Core.HealthCheck.Payload.t,
-    service_name: String.t
-  }
+          host: String.t(),
+          path: String.t(),
+          send: Envoy.Api.V2.Core.HealthCheck.Payload.t(),
+          receive: Envoy.Api.V2.Core.HealthCheck.Payload.t(),
+          service_name: String.t()
+        }
   defstruct [:host, :path, :send, :receive, :service_name]
 
   field :host, 1, type: :string
@@ -60,12 +72,13 @@ defmodule Envoy.Api.V2.Core.HealthCheck.HttpHealthCheck do
 end
 
 defmodule Envoy.Api.V2.Core.HealthCheck.TcpHealthCheck do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    send:    Envoy.Api.V2.Core.HealthCheck.Payload.t,
-    receive: [Envoy.Api.V2.Core.HealthCheck.Payload.t]
-  }
+          send: Envoy.Api.V2.Core.HealthCheck.Payload.t(),
+          receive: [Envoy.Api.V2.Core.HealthCheck.Payload.t()]
+        }
   defstruct [:send, :receive]
 
   field :send, 1, type: Envoy.Api.V2.Core.HealthCheck.Payload
@@ -73,28 +86,31 @@ defmodule Envoy.Api.V2.Core.HealthCheck.TcpHealthCheck do
 end
 
 defmodule Envoy.Api.V2.Core.HealthCheck.RedisHealthCheck do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    key: String.t
-  }
+          key: String.t()
+        }
   defstruct [:key]
 
   field :key, 1, type: :string
 end
 
 defmodule Envoy.Api.V2.Core.HealthCheck.GrpcHealthCheck do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    service_name: String.t
-  }
+          service_name: String.t()
+        }
   defstruct [:service_name]
 
   field :service_name, 1, type: :string
 end
 
 defmodule Envoy.Api.V2.Core.HealthStatus do
+  @moduledoc false
   use Protobuf, enum: true, syntax: :proto3
 
   field :UNKNOWN, 0

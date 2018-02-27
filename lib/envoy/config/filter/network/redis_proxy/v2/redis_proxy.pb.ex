@@ -1,11 +1,12 @@
 defmodule Envoy.Config.Filter.Network.RedisProxy.V2.RedisProxy do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    stat_prefix: String.t,
-    cluster:     String.t,
-    settings:    Envoy.Config.Filter.Network.RedisProxy.V2.RedisProxy.ConnPoolSettings.t
-  }
+          stat_prefix: String.t(),
+          cluster: String.t(),
+          settings: Envoy.Config.Filter.Network.RedisProxy.V2.RedisProxy.ConnPoolSettings.t()
+        }
   defstruct [:stat_prefix, :cluster, :settings]
 
   field :stat_prefix, 1, type: :string
@@ -14,11 +15,12 @@ defmodule Envoy.Config.Filter.Network.RedisProxy.V2.RedisProxy do
 end
 
 defmodule Envoy.Config.Filter.Network.RedisProxy.V2.RedisProxy.ConnPoolSettings do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    op_timeout: Google.Protobuf.Duration.t
-  }
+          op_timeout: Google.Protobuf.Duration.t()
+        }
   defstruct [:op_timeout]
 
   field :op_timeout, 1, type: Google.Protobuf.Duration

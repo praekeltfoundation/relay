@@ -1,9 +1,10 @@
 defmodule Envoy.Config.Ratelimit.V2.RateLimitServiceConfig do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    service_specifier: {atom, any}
-  }
+          service_specifier: {atom, any}
+        }
   defstruct [:service_specifier]
 
   oneof :service_specifier, 0

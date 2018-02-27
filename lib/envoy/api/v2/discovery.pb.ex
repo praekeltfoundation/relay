@@ -1,14 +1,15 @@
 defmodule Envoy.Api.V2.DiscoveryRequest do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    version_info:   String.t,
-    node:           Envoy.Api.V2.Core.Node.t,
-    resource_names: [String.t],
-    type_url:       String.t,
-    response_nonce: String.t,
-    error_detail:   Google.Rpc.Status.t
-  }
+          version_info: String.t(),
+          node: Envoy.Api.V2.Core.Node.t(),
+          resource_names: [String.t()],
+          type_url: String.t(),
+          response_nonce: String.t(),
+          error_detail: Google.Rpc.Status.t()
+        }
   defstruct [:version_info, :node, :resource_names, :type_url, :response_nonce, :error_detail]
 
   field :version_info, 1, type: :string
@@ -20,15 +21,16 @@ defmodule Envoy.Api.V2.DiscoveryRequest do
 end
 
 defmodule Envoy.Api.V2.DiscoveryResponse do
+  @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-    version_info: String.t,
-    resources:    [Google.Protobuf.Any.t],
-    canary:       boolean,
-    type_url:     String.t,
-    nonce:        String.t
-  }
+          version_info: String.t(),
+          resources: [Google.Protobuf.Any.t()],
+          canary: boolean,
+          type_url: String.t(),
+          nonce: String.t()
+        }
   defstruct [:version_info, :resources, :canary, :type_url, :nonce]
 
   field :version_info, 1, type: :string
