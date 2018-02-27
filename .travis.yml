@@ -55,4 +55,6 @@ jobs:
         - echo "Installed Bazel ($(which bazel)), protoc ($(which protoc)), protobuf-elixir ($(which protoc-gen-elixir))"
       script:
         - ./generate_protos.sh
-        - status="$(git status -s lib/)" && echo "$status" && [[ -z "$status" ]]
+        - if [[ -n "$(git status -s lib/)" ]]; then
+            git status; git diff; exit 1;
+          fi
