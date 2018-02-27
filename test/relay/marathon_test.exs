@@ -1,7 +1,7 @@
 defmodule Relay.MarathonTest do
   use ExUnit.Case, async: true
 
-  alias Relay.Marathon.{App, Task}
+  alias Relay.Marathon.{App, State, Task}
 
   @test_app %{
     "id" => "/mc2",
@@ -165,6 +165,158 @@ defmodule Relay.MarathonTest do
       task = Task.from_definition(App.from_definition(@test_app), @test_task)
 
       assert Task.endpoint(task, 0) == {"10.70.4.100", 15979}
+    end
+  end
+
+  describe "Marathon.State" do
+    test "add app" do
+      app = App.from_definition(@test_app)
+      %App{id: app_id} = app
+
+      assert {nil, state} = State.put_app(%State{}, app)
+
+      assert state == %State{
+        apps: %{app_id => app},
+        app_tasks: %{app_id => MapSet.new()},
+        tasks: %{}
+      }
+    end
+
+    test "update app same version" do
+      app = App.from_definition(@test_app)
+      %App{version: app_version} = app
+
+      assert {nil, state} = State.put_app(%State{}, app)
+      assert {^app_version, ^state} = State.put_app(state, app)
+    end
+
+    test "update app new version" do
+      app = App.from_definition(@test_app)
+      %App{id: app_id, version: app_version} = app
+
+      assert {nil, state} = State.put_app(%State{}, app)
+
+      app2_version = "2017-11-10T15:06:31.066Z"
+      assert app2_version > app_version
+      app2 = %{app | version: app2_version}
+
+      assert {^app_version, state2} = State.put_app(state, app2)
+
+      assert %State{apps: %{^app_id => ^app2}} = state2
+    end
+
+    test "delete app" do
+      app = App.from_definition(@test_app)
+
+      assert {nil, state} = State.put_app(%State{}, app)
+
+      assert State.delete_app(state, app) == %State{apps: %{}, tasks: %{}, app_tasks: %{}}
+    end
+
+    test "delete app does not exist" do
+      app = App.from_definition(@test_app)
+
+      assert State.delete_app(%State{}, app) == %State{apps: %{}, tasks: %{}, app_tasks: %{}}
+    end
+
+    test "add task" do
+      app = App.from_definition(@test_app)
+      assert {nil, state} = State.put_app(%State{}, app)
+
+      task = Task.from_definition(app, @test_task)
+      %Task{id: task_id, app_id: app_id} = task
+      assert {nil, state2} = State.put_task!(state, task)
+
+      assert state2 == %State{
+        apps: %{app_id => app},
+        tasks: %{task_id => task},
+        app_tasks: %{app_id => MapSet.new([task_id])}
+      }
+    end
+
+    test "add task without app" do
+      app = App.from_definition(@test_app)
+      task = Task.from_definition(app, @test_task)
+
+      assert_raise KeyError, "key \"/mc2\" not found in: %{}", fn ->
+        State.put_task!(%State{}, task)
+      end
+    end
+
+    test "update task same version" do
+      app = App.from_definition(@test_app)
+      assert {nil, state} = State.put_app(%State{}, app)
+
+      task = Task.from_definition(app, @test_task)
+      %Task{version: task_version} = task
+      assert {nil, state2} = State.put_task!(state, task)
+
+      assert {^task_version, ^state2} = State.put_task!(state2, task)
+    end
+
+    test "update task new version" do
+      app = App.from_definition(@test_app)
+      assert {nil, state} = State.put_app(%State{}, app)
+
+      task = Task.from_definition(app, @test_task)
+      %Task{id: task_id, version: task_version} = task
+      assert {nil, state2} = State.put_task!(state, task)
+
+      task2_version = "2017-11-10T15:06:31.066Z"
+      assert task2_version > task_version
+      task2 = %{task | version: task2_version}
+
+      assert {^task_version, state3} = State.put_task!(state2, task2)
+
+      assert %State{tasks: %{^task_id => ^task2}} = state3
+    end
+
+    test "delete task" do
+      app = App.from_definition(@test_app)
+      assert {nil, state} = State.put_app(%State{}, app)
+
+      task = Task.from_definition(app, @test_task)
+      %Task{app_id: app_id} = task
+      assert {nil, state2} = State.put_task!(state, task)
+
+      assert State.delete_task!(state2, task) == %State{
+        apps: %{app_id => app},
+        tasks: %{},
+        app_tasks: %{app_id => MapSet.new()}
+      }
+    end
+
+    test "delete task does not exist" do
+      app = App.from_definition(@test_app)
+      assert {nil, state} = State.put_app(%State{}, app)
+
+      task = Task.from_definition(app, @test_task)
+      %Task{app_id: app_id} = task
+
+      assert State.delete_task!(state, task) == %State{
+        apps: %{app_id => app},
+        tasks: %{},
+        app_tasks: %{app_id => MapSet.new()}
+      }
+    end
+
+    test "delete task does not exist without app" do
+      app = App.from_definition(@test_app)
+      task = Task.from_definition(app, @test_task)
+
+      assert_raise KeyError, "key \"/mc2\" not found in: %{}", fn ->
+        State.delete_task!(%State{}, task)
+      end
+    end
+
+    test "delete app deletes tasks" do
+      app = App.from_definition(@test_app)
+      assert {nil, state} = State.put_app(%State{}, app)
+
+      task = Task.from_definition(app, @test_task)
+      assert {nil, state2} = State.put_task!(state, task)
+
+      assert State.delete_app(state2, app) == %State{apps: %{}, tasks: %{}, app_tasks: %{}}
     end
   end
 end
