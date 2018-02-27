@@ -76,9 +76,7 @@ protobuf_protos=(
 	any
 	duration
 	struct
-	# Google.Protobuf.Timestamp was added to elixir-protobuf (0.5.2+)
-	# https://github.com/tony612/protobuf-elixir/pull/25
-	# timestamp
+	timestamp
 	wrappers
 )
 
