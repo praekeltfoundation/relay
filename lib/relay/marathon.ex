@@ -93,14 +93,15 @@ defmodule Relay.Marathon do
     unchanged.
     """
     def delete_app(%State{apps: apps, tasks: tasks, app_tasks: app_tasks} = state, %App{id: id}) do
-      {app, new_apps} = Map.pop(apps, id)
+      case Map.pop(apps, id) do
+        {%App{}, new_apps} ->
+          {tasks_for_app, new_app_tasks} = Map.pop(app_tasks, id)
+          new_tasks = Map.drop(tasks, tasks_for_app)
 
-      if app do
-        {tasks_for_app, new_app_tasks} = Map.pop(app_tasks, id)
+          %{state | apps: new_apps, tasks: new_tasks, app_tasks: new_app_tasks}
 
-        %{state | apps: new_apps, tasks: Map.drop(tasks, tasks_for_app), app_tasks: new_app_tasks}
-      else
-        state
+        {nil, _} ->
+          state
       end
     end
 
