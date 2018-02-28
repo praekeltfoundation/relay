@@ -8,6 +8,8 @@ defmodule Relay.Marathon.AdapterTest do
   alias Envoy.Api.V2.Core.{Address, ApiConfigSource, ConfigSource, Locality, SocketAddress}
   alias Envoy.Api.V2.Endpoint.{Endpoint, LbEndpoint, LocalityLbEndpoints}
 
+  alias Google.Protobuf.Duration
+
   @test_app %Marathon.App{
     id: "/mc2",
     labels: %{
@@ -65,15 +67,14 @@ defmodule Relay.Marathon.AdapterTest do
                eds_cluster_config: %Cluster.EdsClusterConfig{
                  eds_config: @test_config_source,
                  service_name: "/mc2_0"
-               }
+               },
+               connect_timeout: %Duration{seconds: 5}
              } = cluster
 
       assert Protobuf.Validator.valid?(cluster)
     end
 
     test "cluster with options" do
-      alias Google.Protobuf.Duration
-
       eds_type = Cluster.DiscoveryType.value(:EDS)
       connect_timeout = Duration.new(seconds: 10)
       lb_policy = Cluster.LbPolicy.value(:MAGLEV)

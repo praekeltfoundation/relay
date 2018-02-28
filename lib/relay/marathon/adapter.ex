@@ -5,9 +5,12 @@ defmodule Relay.Marathon.Adapter do
   alias Envoy.Api.V2.Core.{Address, ConfigSource, Locality, SocketAddress}
   alias Envoy.Api.V2.Endpoint.{Endpoint, LbEndpoint, LocalityLbEndpoints}
 
+  alias Google.Protobuf.Duration
+
   @default_max_obj_name_length 60
   @truncated_name_prefix "[...]"
 
+  @default_cluster_connect_timeout Duration.new(seconds: 5)
   @default_locality Locality.new(region: "default")
 
   @doc """
@@ -32,7 +35,8 @@ defmodule Relay.Marathon.Adapter do
           Cluster.EdsClusterConfig.new(
             eds_config: eds_config_source,
             service_name: service_name
-          )
+          ),
+        connect_timeout: Keyword.get(options, :connect_timeout, @default_cluster_connect_timeout)
       ] ++ options
     )
   end
