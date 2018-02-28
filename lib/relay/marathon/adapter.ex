@@ -1,11 +1,14 @@
 defmodule Relay.Marathon.Adapter do
-  alias Relay.Marathon.App
+  alias Relay.Marathon.{App, Task}
 
-  alias Envoy.Api.V2.Cluster
-  alias Envoy.Api.V2.Core.ConfigSource
+  alias Envoy.Api.V2.{Cluster, ClusterLoadAssignment}
+  alias Envoy.Api.V2.Core.{Address, ConfigSource, Locality, SocketAddress}
+  alias Envoy.Api.V2.Endpoint.{Endpoint, LbEndpoint, LocalityLbEndpoints}
 
   @default_max_obj_name_length 60
   @truncated_name_prefix "[...]"
+
+  @default_locality Locality.new(region: "default")
 
   @doc """
   Create a Cluster for the given app and port index. The Cluster will have the
@@ -57,5 +60,50 @@ defmodule Relay.Marathon.Adapter do
       _ ->
         name
     end
+  end
+
+  @doc """
+  Create a ClusterLoadAssignment for the given app, tasks, and port index. The
+  ClusterLoadAssignment will have the minimum amount of options set. Additional
+  options can be specified using `options`.
+  """
+  def app_port_cluster_load_assignment(%App{id: app_id}, tasks, port_index, options \\ []) do
+    {locality_lb_endpoints_options, options} =
+      Keyword.pop(options, :locality_lb_endpoints_options, [])
+
+    ClusterLoadAssignment.new(
+      [
+        cluster_name: "#{app_id}_#{port_index}",
+        endpoints:
+          task_port_locality_lb_endpoints(tasks, port_index, locality_lb_endpoints_options)
+      ] ++ options
+    )
+  end
+
+  def task_port_locality_lb_endpoints(tasks, port_index, options \\ []) do
+    # TODO: Support more than one locality
+    {lb_endpoint_options, options} = Keyword.pop(options, :lb_endpoint_options, [])
+
+    [
+      LocalityLbEndpoints.new(
+        [
+          locality: @default_locality,
+          lb_endpoints:
+            tasks |> Enum.map(&task_port_lb_endpoint(&1, port_index, lb_endpoint_options))
+        ] ++ options
+      )
+    ]
+  end
+
+  def task_port_lb_endpoint(%Task{address: address, ports: ports}, port_index, options \\ []) do
+    LbEndpoint.new(
+      [endpoint: Endpoint.new(address: socket_address(address, Enum.at(ports, port_index)))] ++
+        options
+    )
+  end
+
+  defp socket_address(address, port) do
+    sock = SocketAddress.new(address: address, port_specifier: {:port_value, port})
+    Address.new(address: {:socket_address, sock})
   end
 end

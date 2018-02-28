@@ -4,8 +4,9 @@ defmodule Relay.Marathon.AdapterTest do
   alias Relay.Marathon
   alias Marathon.Adapter
 
-  alias Envoy.Api.V2.Cluster
-  alias Envoy.Api.V2.Core.{ApiConfigSource, ConfigSource}
+  alias Envoy.Api.V2.{Cluster, ClusterLoadAssignment}
+  alias Envoy.Api.V2.Core.{Address, ApiConfigSource, ConfigSource, Locality, SocketAddress}
+  alias Envoy.Api.V2.Endpoint.{Endpoint, LbEndpoint, LocalityLbEndpoints}
 
   @test_app %Marathon.App{
     id: "/mc2",
@@ -18,6 +19,14 @@ defmodule Relay.Marathon.AdapterTest do
     networking_mode: :"container/bridge",
     ports_list: [80],
     version: "2017-11-08T15:06:31.066Z"
+  }
+
+  @test_task %Marathon.Task{
+    address: "10.70.4.100",
+    app_id: "/mc2",
+    id: "mc2.be753491-1325-11e8-b5d6-4686525b33db",
+    ports: [15979],
+    version: "2017-11-09T08:43:59.890Z"
   }
 
   @test_config_source ConfigSource.new(
@@ -105,6 +114,69 @@ defmodule Relay.Marathon.AdapterTest do
 
       assert %Cluster{name: "[...]ame_0"} = cluster
       assert Protobuf.Validator.valid?(cluster)
+    end
+  end
+
+  describe "app_port_cluster_load_assignment/4" do
+    test "simple cluster load assignment" do
+      cla = Adapter.app_port_cluster_load_assignment(@test_app, [@test_task], 0)
+
+      assert %ClusterLoadAssignment{
+               cluster_name: "/mc2_0",
+               endpoints: [
+                 %LocalityLbEndpoints{
+                   locality: %Locality{region: "default"},
+                   lb_endpoints: [
+                     %LbEndpoint{
+                       endpoint: %Endpoint{
+                         address: %Address{
+                           address:
+                             {:socket_address,
+                              %SocketAddress{
+                                address: "10.70.4.100",
+                                port_specifier: {:port_value, 15979}
+                              }}
+                         }
+                       }
+                     }
+                   ]
+                 }
+               ]
+             } = cla
+
+      assert Protobuf.Validator.valid?(cla)
+    end
+
+    test "cluster load assignment with options" do
+      alias Google.Protobuf.{UInt32Value, UInt64Value}
+
+      cla =
+        Adapter.app_port_cluster_load_assignment(
+          @test_app,
+          [@test_task],
+          0,
+          policy: ClusterLoadAssignment.Policy.new(drop_overload: 5.0),
+          locality_lb_endpoints_options: [
+            load_balancing_weight: UInt64Value.new(value: 42),
+            lb_endpoint_options: [
+              load_balancing_weight: UInt32Value.new(value: 13)
+            ]
+          ]
+        )
+
+      assert %ClusterLoadAssignment{
+               policy: %ClusterLoadAssignment.Policy{drop_overload: 5.0},
+               endpoints: [
+                 %LocalityLbEndpoints{
+                   load_balancing_weight: %UInt64Value{value: 42},
+                   lb_endpoints: [
+                     %LbEndpoint{load_balancing_weight: %UInt32Value{value: 13}}
+                   ]
+                 }
+               ]
+             } = cla
+
+      assert Protobuf.Validator.valid?(cla)
     end
   end
 end
