@@ -24,17 +24,17 @@ defmodule Relay.Marathon.Adapter do
     service_name = "#{app_id}_#{port_index}"
     {max_size, options} = max_obj_name_length(options)
 
-    kw = [
-      name: truncate_name(service_name, max_size),
-      type: Cluster.DiscoveryType.value(:EDS),
-      eds_cluster_config:
-        Cluster.EdsClusterConfig.new(
-          eds_config: eds_config_source,
-          service_name: service_name
-        )
-    ]
-
-    Cluster.new(Keyword.merge(options, kw))
+    Cluster.new(
+      [
+        name: truncate_name(service_name, max_size),
+        type: Cluster.DiscoveryType.value(:EDS),
+        eds_cluster_config:
+          Cluster.EdsClusterConfig.new(
+            eds_config: eds_config_source,
+            service_name: service_name
+          )
+      ] ++ options
+    )
   end
 
   # Pop the max_obj_name_length keyword from the given keyword list.
