@@ -7,6 +7,7 @@ defmodule Relay.Marathon.AdapterTest do
   alias Envoy.Api.V2.{Cluster, ClusterLoadAssignment}
   alias Envoy.Api.V2.Core.{Address, ApiConfigSource, ConfigSource, Locality, SocketAddress}
   alias Envoy.Api.V2.Endpoint.{Endpoint, LbEndpoint, LocalityLbEndpoints}
+  alias Envoy.Api.V2.Route.{RedirectAction, Route, RouteAction, RouteMatch, VirtualHost}
 
   alias Google.Protobuf.Duration
 
@@ -178,6 +179,136 @@ defmodule Relay.Marathon.AdapterTest do
              } = cla
 
       assert Protobuf.Validator.valid?(cla)
+    end
+  end
+
+  describe "app_port_virtual_host/3" do
+    test "http virtual host" do
+      app = %{
+        @test_app
+        | labels: @test_app.labels |> Map.put("HAPROXY_0_REDIRECT_TO_HTTPS", "false")
+      }
+
+      virtual_host = Adapter.app_port_virtual_host(:http, app, 0)
+
+      assert %VirtualHost{
+               name: "http_/mc2_0",
+               domains: ["mc2.example.org"],
+               routes: [
+                 %Route{
+                   action: {:route, %RouteAction{cluster_specifier: {:cluster, "/mc2_0"}}},
+                   match: %RouteMatch{path_specifier: {:prefix, "/"}}
+                 }
+               ]
+             } = virtual_host
+
+      assert Protobuf.Validator.valid?(virtual_host)
+    end
+
+    test "https virtual host" do
+      app = %{
+        @test_app
+        | labels: @test_app.labels |> Map.put("HAPROXY_0_REDIRECT_TO_HTTPS", "false")
+      }
+
+      virtual_host = Adapter.app_port_virtual_host(:https, app, 0)
+
+      assert %VirtualHost{
+               name: "https_/mc2_0",
+               domains: ["mc2.example.org"],
+               routes: [
+                 %Route{
+                   action: {:route, %RouteAction{cluster_specifier: {:cluster, "/mc2_0"}}},
+                   match: %RouteMatch{path_specifier: {:prefix, "/"}}
+                 }
+               ]
+             } = virtual_host
+
+      assert Protobuf.Validator.valid?(virtual_host)
+    end
+
+    test "http virtual host with options" do
+      alias Envoy.Api.V2.Core.{HeaderValue, HeaderValueOption, RuntimeUInt32}
+      alias Envoy.Api.V2.Route.Decorator
+      alias Google.Protobuf.UInt32Value
+
+      app = %{
+        @test_app
+        | labels: @test_app.labels |> Map.put("HAPROXY_0_REDIRECT_TO_HTTPS", "false")
+      }
+
+      virtual_host =
+        Adapter.app_port_virtual_host(
+          :http,
+          app,
+          0,
+          response_headers_to_add: [
+            HeaderValueOption.new(
+              header: HeaderValue.new(key: "Strict-Transport-Security", value: "max-age=31536000")
+            )
+          ],
+          route_options: [
+            decorator: Decorator.new(operation: "mytrace"),
+            action_options: [
+              retry_policy: RouteAction.RetryPolicy.new(num_retries: UInt32Value.new(value: 3))
+            ],
+            match_options: [
+              runtime:
+                RuntimeUInt32.new(
+                  runtime_key: "routing.traffic_shift.helloworld",
+                  default_value: 50
+                )
+            ]
+          ]
+        )
+
+      assert %VirtualHost{
+               response_headers_to_add: [
+                 %HeaderValueOption{
+                   header: %HeaderValue{
+                     key: "Strict-Transport-Security",
+                     value: "max-age=31536000"
+                   }
+                 }
+               ],
+               routes: [
+                 %Route{
+                   decorator: %Decorator{operation: "mytrace"},
+                   action:
+                     {:route,
+                      %RouteAction{
+                        retry_policy: %RouteAction.RetryPolicy{
+                          num_retries: %UInt32Value{value: 3}
+                        }
+                      }},
+                   match: %RouteMatch{
+                     runtime: %RuntimeUInt32{
+                       runtime_key: "routing.traffic_shift.helloworld",
+                       default_value: 50
+                     }
+                   }
+                 }
+               ]
+             } = virtual_host
+
+      assert Protobuf.Validator.valid?(virtual_host)
+    end
+
+    test "http to https redirect" do
+      virtual_host = Adapter.app_port_virtual_host(:http, @test_app, 0)
+
+      assert %VirtualHost{
+               name: "http_/mc2_0",
+               domains: ["mc2.example.org"],
+               routes: [
+                 %Route{
+                   action: {:redirect, %RedirectAction{https_redirect: true}},
+                   match: %RouteMatch{path_specifier: {:prefix, "/"}}
+                 }
+               ]
+             } = virtual_host
+
+      assert Protobuf.Validator.valid?(virtual_host)
     end
   end
 end

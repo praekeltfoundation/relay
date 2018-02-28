@@ -5,7 +5,7 @@ defmodule Relay.Demo do
   @demo_app %Marathon.App{
     id: "/demo",
     labels: %{
-      "HAPROXY_0_REDIRECT_TO_HTTPS" => "true",
+      "HAPROXY_0_REDIRECT_TO_HTTPS" => "false",
       "HAPROXY_0_VHOST" => "example.com",
       "HAPROXY_GROUP" => "external",
       "MARATHON_ACME_0_DOMAIN" => "example.com"
@@ -138,20 +138,11 @@ defmodule Relay.Demo do
 
   def routes do
     alias Envoy.Api.V2.RouteConfiguration
-    alias Envoy.Api.V2.Route.{Route, RouteAction, RouteMatch, VirtualHost}
     [
       RouteConfiguration.new(
         name: "http",
-        virtual_hosts: [
-          VirtualHost.new(
-            name: "demo",
-            domains: ["example.com"],
-            routes: [
-              Route.new(
-                match: RouteMatch.new(path_specifier: {:prefix, "/"}),
-                action: {:route, RouteAction.new(cluster_specifier: {:cluster, "/demo_0"})})
-            ])
-        ])
+        virtual_hosts: [Adapter.app_port_virtual_host(:http, @demo_app, 0)]
+      )
     ]
   end
 

@@ -4,6 +4,7 @@ defmodule Relay.Marathon.Adapter do
   alias Envoy.Api.V2.{Cluster, ClusterLoadAssignment}
   alias Envoy.Api.V2.Core.{Address, ConfigSource, Locality, SocketAddress}
   alias Envoy.Api.V2.Endpoint.{Endpoint, LbEndpoint, LocalityLbEndpoints}
+  alias Envoy.Api.V2.Route.{RedirectAction, Route, RouteAction, RouteMatch, VirtualHost}
 
   alias Google.Protobuf.Duration
 
@@ -109,5 +110,76 @@ defmodule Relay.Marathon.Adapter do
   defp socket_address(address, port) do
     sock = SocketAddress.new(address: address, port_specifier: {:port_value, port})
     Address.new(address: {:socket_address, sock})
+  end
+
+  def app_port_virtual_host(listener, %App{id: app_id} = app, port_index, options \\ [])
+      when listener in [:http, :https] do
+    {route_options, options} = Keyword.pop(options, :route_options, [])
+
+    VirtualHost.new(
+      [
+        # TODO: Do VirtualHost names need to be truncated?
+        name: "#{listener}_#{app_id}_#{port_index}",
+        # TODO: Validate domains
+        domains: App.marathon_lb_vhost(app, port_index),
+        routes: app_port_routes(listener, app, port_index, route_options)
+      ] ++ options
+    )
+  end
+
+  defp app_port_routes(:http, %App{id: app_id} = app, port_index, options) do
+    {action_options, options} = Keyword.pop(options, :action_options, [])
+
+    primary_route_action =
+      if App.marathon_lb_redirect_to_https?(app, port_index) do
+        {:redirect, RedirectAction.new(https_redirect: true)}
+      else
+        {:route,
+         RouteAction.new(
+           [
+             # TODO: Does the cluster name here need to be truncated?
+             cluster_specifier: {:cluster, "#{app_id}_#{port_index}"}
+           ] ++ action_options
+         )}
+      end
+
+    {match_options, options} = Keyword.pop(options, :match_options, [])
+
+    primary_route =
+      Route.new(
+        [
+          action: primary_route_action,
+          # TODO: Support path-based routing
+          match: RouteMatch.new([path_specifier: {:prefix, "/"}] ++ match_options)
+        ] ++ options
+      )
+
+    # TODO: marathon-acme route (which will come before the primary route in
+    # the list)
+
+    [primary_route]
+  end
+
+  defp app_port_routes(:https, %App{id: app_id}, port_index, options) do
+    # TODO: Do we want an HTTPS route for apps without certificates?
+    {action_options, options} = Keyword.pop(options, :action_options, [])
+    {match_options, options} = Keyword.pop(options, :match_options, [])
+
+    [
+      Route.new(
+        [
+          action:
+            {:route,
+             RouteAction.new(
+               [
+                 # TODO: Does the cluster name here need to be truncated?
+                 cluster_specifier: {:cluster, "#{app_id}_#{port_index}"}
+               ] ++ action_options
+             )},
+          # TODO: Support path-based routing
+          match: RouteMatch.new([path_specifier: {:prefix, "/"}] ++ match_options)
+        ] ++ options
+      )
+    ]
   end
 end
