@@ -69,18 +69,22 @@ defmodule Relay.Marathon.Adapter do
 
   @doc """
   Create a ClusterLoadAssignment for the given app, tasks, and port index. The
-  ClusterLoadAssignment will have the minimum amount of options set. Additional
-  options can be specified using `options`.
+  ClusterLoadAssignment will have the minimum amount of options set.
+
+  Additional options can be specified using `options` and options for nested
+  types are nested within that:
+  - ClusterLoadAssignment: `options`
+  - LocalityLbEndpoints: `options.llbe_options`
+  - LbEndpoint: `options.llbe_options.lb_endpoint_options`
   """
   def app_port_cluster_load_assignment(%App{id: app_id}, tasks, port_index, options \\ []) do
-    {locality_lb_endpoints_options, options} =
-      Keyword.pop(options, :locality_lb_endpoints_options, [])
+    {llbe_options, options} = Keyword.pop(options, :llbe_options, [])
 
     ClusterLoadAssignment.new(
       [
         cluster_name: "#{app_id}_#{port_index}",
         endpoints:
-          task_port_locality_lb_endpoints(tasks, port_index, locality_lb_endpoints_options)
+          task_port_locality_lb_endpoints(tasks, port_index, llbe_options)
       ] ++ options
     )
   end

@@ -158,7 +158,7 @@ defmodule Relay.Marathon.AdapterTest do
           [@test_task],
           0,
           policy: ClusterLoadAssignment.Policy.new(drop_overload: 5.0),
-          locality_lb_endpoints_options: [
+          llbe_options: [
             load_balancing_weight: UInt64Value.new(value: 42),
             lb_endpoint_options: [
               load_balancing_weight: UInt32Value.new(value: 13)
