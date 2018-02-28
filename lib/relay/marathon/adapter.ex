@@ -116,6 +116,17 @@ defmodule Relay.Marathon.Adapter do
     Address.new(address: {:socket_address, sock})
   end
 
+  @doc """
+  Create a VirtualHost for the given listener, app, and port index. The
+  VirtualHost will have the minimum amount of options set.
+
+  Additional options can be specified using `options` and options for nested
+  types are nested within that:
+  - VirtualHost: `options`
+  - Route: `options.route_options`
+  - RouteAction: `options.route_options.action_options`
+  - RouteMatch: `options.route_options.match_options`
+  """
   def app_port_virtual_host(listener, %App{id: app_id} = app, port_index, options \\ [])
       when listener in [:http, :https] do
     {route_options, options} = Keyword.pop(options, :route_options, [])
