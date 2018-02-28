@@ -20,7 +20,7 @@ defmodule Relay.Marathon.Adapter do
   discovery. Additional options can be specified using `options`.
   """
   def app_port_cluster(
-        %App{id: app_id} = _app,
+        %App{id: app_id},
         port_index,
         %ConfigSource{} = eds_config_source,
         options \\ []
