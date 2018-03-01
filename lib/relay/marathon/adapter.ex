@@ -75,7 +75,7 @@ defmodule Relay.Marathon.Adapter do
   types are nested within that:
   - ClusterLoadAssignment: `options`
   - LocalityLbEndpoints: `options.locality_lb_endpoints_opts`
-  - LbEndpoint: `options.llbe_options.lb_endpoint_opts`
+  - LbEndpoint: `options.locality_lb_endpoints_opts.lb_endpoint_opts`
   """
   def app_port_cluster_load_assignment(%App{id: app_id}, tasks, port_index, options \\ []) do
     {llbe_opts, options} = Keyword.pop(options, :locality_lb_endpoints_opts, [])
