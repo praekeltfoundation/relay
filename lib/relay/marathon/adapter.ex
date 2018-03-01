@@ -19,7 +19,7 @@ defmodule Relay.Marathon.Adapter do
   minimum amount of options set but will be a Cluster with EDS endpoint
   discovery. Additional options can be specified using `options`.
   """
-  @spec app_port_cluster(App.t, non_neg_integer, ConfigSource.t, Keyword.t) :: Cluster.t
+  @spec app_port_cluster(App.t, non_neg_integer, ConfigSource.t, keyword) :: Cluster.t
   def app_port_cluster(
         %App{id: app_id},
         port_index,
@@ -79,7 +79,7 @@ defmodule Relay.Marathon.Adapter do
   - LocalityLbEndpoints: `options.locality_lb_endpoints_opts`
   - LbEndpoint: `options.locality_lb_endpoints_opts.lb_endpoint_opts`
   """
-  @spec app_port_cluster_load_assignment(App.t, [Task.t], non_neg_integer, Keyword.t)
+  @spec app_port_cluster_load_assignment(App.t, [Task.t], non_neg_integer, keyword)
     :: ClusterLoadAssignment.t
   def app_port_cluster_load_assignment(%App{id: app_id}, tasks, port_index, options \\ []) do
     {llbe_opts, options} = Keyword.pop(options, :locality_lb_endpoints_opts, [])
@@ -92,7 +92,7 @@ defmodule Relay.Marathon.Adapter do
     )
   end
 
-  @spec task_port_locality_lb_endpoints([Task.t], non_neg_integer, Keyword.t)
+  @spec task_port_locality_lb_endpoints([Task.t], non_neg_integer, keyword)
     :: [LocalityLbEndpoints.t]
   def task_port_locality_lb_endpoints(tasks, port_index, options \\ []) do
     # TODO: Support more than one locality
@@ -109,7 +109,7 @@ defmodule Relay.Marathon.Adapter do
     ]
   end
 
-  @spec task_port_lb_endpoint(Task.t, non_neg_integer, Keyword.t) :: LbEndpoint.t
+  @spec task_port_lb_endpoint(Task.t, non_neg_integer, keyword) :: LbEndpoint.t
   def task_port_lb_endpoint(%Task{address: address, ports: ports}, port_index, options \\ []) do
     LbEndpoint.new(
       [endpoint: Endpoint.new(address: socket_address(address, Enum.at(ports, port_index)))] ++
@@ -136,7 +136,7 @@ defmodule Relay.Marathon.Adapter do
   - RouteAction: `options.route_opts.action_opts`
   - RouteMatch: `options.route_opts.match_opts`
   """
-  @spec app_port_virtual_host(listener, App.t, non_neg_integer, Keyword.t) :: VirtualHost.t
+  @spec app_port_virtual_host(listener, App.t, non_neg_integer, keyword) :: VirtualHost.t
   def app_port_virtual_host(listener, %App{id: app_id} = app, port_index, options \\ [])
       when listener in [:http, :https] do
     {route_opts, options} = Keyword.pop(options, :route_opts, [])
@@ -152,7 +152,7 @@ defmodule Relay.Marathon.Adapter do
     )
   end
 
-  @spec app_port_routes(listener, App.t, non_neg_integer, Keyword.t) :: [Route.t]
+  @spec app_port_routes(listener, App.t, non_neg_integer, keyword) :: [Route.t]
   defp app_port_routes(:http, %App{id: app_id} = app, port_index, options) do
     {action_opts, options} = Keyword.pop(options, :action_opts, [])
 
