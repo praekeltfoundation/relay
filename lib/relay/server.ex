@@ -16,6 +16,7 @@ defmodule Relay.Server.Macros do
 
         alias Relay.{ProtobufUtil, Store}
         alias Envoy.Api.V2.{DiscoveryRequest, DiscoveryResponse}
+        alias GRPC.Server.Stream
 
         # TODO: Figure out a way to not have these attributes but also not
         # unquote multiple time?
@@ -25,7 +26,7 @@ defmodule Relay.Server.Macros do
         def xds(), do: @xds
         def type_url(), do: @type_url
 
-        @spec unquote(stream_func)(Enumerable.t, GRPC.Server.Stream.t) :: :ok
+        @spec unquote(stream_func)(Enumerable.t, Stream.t) :: :ok
         def unquote(stream_func)(req_stream, stream) do
           IO.inspect({unquote(stream_func), self()})
 
@@ -33,18 +34,17 @@ defmodule Relay.Server.Macros do
           handle_requests(req_stream, stream)
         end
 
-        @spec unquote(fetch_func)(DiscoveryRequest.t, GRPC.Server.Stream.t) ::
-                DiscoveryResponse.t
+        @spec unquote(fetch_func)(DiscoveryRequest.t, Stream.t) :: DiscoveryResponse.t
         def unquote(fetch_func)(_request, _stream) do
           raise GRPC.RPCError, status: GRPC.Status.unimplemented(), message: "not implemented"
         end
 
         # Enum.each returns :ok
-        @spec handle_requests(Enumerable.t, GRPC.Server.Stream.t) :: :ok
+        @spec handle_requests(Enumerable.t, Stream.t) :: :ok
         defp handle_requests(req_stream, stream),
           do: req_stream |> Enum.each(&handle_request(&1, stream))
 
-        @spec handle_request(DiscoveryRequest.t, GRPC.Server.Stream.t) :: any
+        @spec handle_request(DiscoveryRequest.t, Stream.t) :: any
         defp handle_request(_request, stream) do
           # TODO: How to handle errors?
           # FIXME: What if we get multiple updates between requests?
@@ -54,8 +54,7 @@ defmodule Relay.Server.Macros do
           end
         end
 
-        @spec stream_send_response(GRPC.Server.Stream.t, String.t, [unquote(resource_type).t]) ::
-                any
+        @spec stream_send_response(Stream.t, String.t, [unquote(resource_type).t]) :: any
         defp stream_send_response(stream, version_info, resources) do
           GRPC.Server.stream_send(stream, mkresponse(version_info, resources))
         end
