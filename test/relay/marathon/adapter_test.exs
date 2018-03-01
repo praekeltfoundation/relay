@@ -1,8 +1,7 @@
 defmodule Relay.Marathon.AdapterTest do
   use ExUnit.Case, async: true
 
-  alias Relay.Marathon
-  alias Marathon.Adapter
+  alias Relay.Marathon.{Adapter, App, Task}
 
   alias Envoy.Api.V2.{Cluster, ClusterLoadAssignment}
   alias Envoy.Api.V2.Core.{Address, ApiConfigSource, ConfigSource, Locality, SocketAddress}
@@ -11,7 +10,7 @@ defmodule Relay.Marathon.AdapterTest do
 
   alias Google.Protobuf.Duration
 
-  @test_app %Marathon.App{
+  @test_app %App{
     id: "/mc2",
     labels: %{
       "HAPROXY_0_REDIRECT_TO_HTTPS" => "true",
@@ -24,7 +23,7 @@ defmodule Relay.Marathon.AdapterTest do
     version: "2017-11-08T15:06:31.066Z"
   }
 
-  @test_task %Marathon.Task{
+  @test_task %Task{
     address: "10.70.4.100",
     app_id: "/mc2",
     id: "mc2.be753491-1325-11e8-b5d6-4686525b33db",

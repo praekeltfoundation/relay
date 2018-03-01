@@ -1,8 +1,8 @@
 defmodule Relay.Demo do
-  alias Relay.{Marathon, Store}
-  alias Marathon.Adapter
+  alias Relay.Store
+  alias Relay.Marathon.{Adapter, App, Task}
 
-  @demo_app %Marathon.App{
+  @demo_app %App{
     id: "/demo",
     labels: %{
       "HAPROXY_0_REDIRECT_TO_HTTPS" => "false",
@@ -15,7 +15,7 @@ defmodule Relay.Demo do
     version: "2017-11-08T15:06:31.066Z"
   }
 
-  @demo_task %Marathon.Task{
+  @demo_task %Task{
     address: "127.0.0.1",
     app_id: "/demo",
     id: "demo.be753491-1325-11e8-b5d6-4686525b33db",
