@@ -1,5 +1,11 @@
 defmodule Relay.Server.Macros do
-  defmacro discovery_service(name, xds: xds, type_url: type_url, service: service, resources: resources) do
+  defmacro discovery_service(
+             name,
+             xds: xds,
+             type_url: type_url,
+             service: service,
+             resources: resources
+           ) do
     stream_func = :"stream_#{resources}" # noqa excoveralls ignores macros
     fetch_func = :"fetch_#{resources}" # noqa
 
@@ -20,13 +26,14 @@ defmodule Relay.Server.Macros do
 
         @spec unquote(stream_func)(Enumerable.t, GRPC.Server.Stream.t) :: any
         def unquote(stream_func)(req_stream, stream) do
-          IO.inspect {unquote(stream_func), self()}
+          IO.inspect({unquote(stream_func), self()})
 
           :ok = Store.subscribe(Store, @xds, self())
           handle_requests(req_stream, stream)
         end
 
-        @spec unquote(fetch_func)(DiscoveryRequest.t, GRPC.Server.Stream.t) :: DiscoveryResponse.t
+        @spec unquote(fetch_func)(DiscoveryRequest.t, GRPC.Server.Stream.t) ::
+                DiscoveryResponse.t
         def unquote(fetch_func)(_request, _stream) do
           raise GRPC.RPCError, status: GRPC.Status.unimplemented(), message: "not implemented"
         end
@@ -48,9 +55,14 @@ defmodule Relay.Server.Macros do
         end
 
         defp mkresponse(version_info, resources) do
-          typed_resources = resources |> Enum.map(fn res -> ProtobufUtil.mkany(@type_url, res) end)
+          typed_resources =
+            resources |> Enum.map(fn res -> ProtobufUtil.mkany(@type_url, res) end)
+
           DiscoveryResponse.new(
-            type_url: @type_url, version_info: version_info, resources: typed_resources)
+            type_url: @type_url,
+            version_info: version_info,
+            resources: typed_resources
+          )
         end
       end
     end
@@ -60,27 +72,35 @@ end
 defmodule Relay.Server do
   import Relay.Server.Macros
 
-  discovery_service ListenerDiscoveryService,
+  discovery_service(
+    ListenerDiscoveryService,
     xds: :lds,
     type_url: "type.googleapis.com/envoy.api.v2.Listener",
     service: Envoy.Api.V2.ListenerDiscoveryService.Service,
     resources: :listeners
+  )
 
-  discovery_service RouteDiscoveryService,
+  discovery_service(
+    RouteDiscoveryService,
     xds: :rds,
     type_url: "type.googleapis.com/envoy.api.v2.RouteConfiguration",
     service: Envoy.Api.V2.RouteDiscoveryService.Service,
     resources: :routes
+  )
 
-  discovery_service ClusterDiscoveryService,
+  discovery_service(
+    ClusterDiscoveryService,
     xds: :cds,
     type_url: "type.googleapis.com/envoy.api.v2.Cluster",
     service: Envoy.Api.V2.ClusterDiscoveryService.Service,
     resources: :clusters
+  )
 
-  discovery_service EndpointDiscoveryService,
+  discovery_service(
+    EndpointDiscoveryService,
     xds: :eds,
     type_url: "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment",
     service: Envoy.Api.V2.EndpointDiscoveryService.Service,
     resources: :endpoints
+  )
 end
