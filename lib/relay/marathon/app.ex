@@ -6,7 +6,7 @@ defmodule Relay.Marathon.App do
     id: String.t,
     networking_mode: Networking.networking_mode,
     ports_list: [Networking.port_number],
-    labels: %{optional(String.t) => String.t},
+    labels: Labels.labels,
     version: String.t
   }
 
