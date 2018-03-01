@@ -4,7 +4,8 @@ defmodule Relay.Server.Macros do
              xds: xds,
              type_url: type_url,
              service: service,
-             resources: resources
+             resources: resources,
+             resource_type: resource_type
            ) do
     stream_func = :"stream_#{resources}" # noqa excoveralls ignores macros
     fetch_func = :"fetch_#{resources}" # noqa
@@ -24,7 +25,7 @@ defmodule Relay.Server.Macros do
         def xds(), do: @xds
         def type_url(), do: @type_url
 
-        @spec unquote(stream_func)(Enumerable.t, GRPC.Server.Stream.t) :: any
+        @spec unquote(stream_func)(Enumerable.t, GRPC.Server.Stream.t) :: :ok
         def unquote(stream_func)(req_stream, stream) do
           IO.inspect({unquote(stream_func), self()})
 
@@ -38,9 +39,12 @@ defmodule Relay.Server.Macros do
           raise GRPC.RPCError, status: GRPC.Status.unimplemented(), message: "not implemented"
         end
 
+        # Enum.each returns :ok
+        @spec handle_requests(Enumerable.t, GRPC.Server.Stream.t) :: :ok
         defp handle_requests(req_stream, stream),
           do: req_stream |> Enum.each(&handle_request(&1, stream))
 
+        @spec handle_request(DiscoveryRequest.t, GRPC.Server.Stream.t) :: any
         defp handle_request(_request, stream) do
           # TODO: How to handle errors?
           # FIXME: What if we get multiple updates between requests?
@@ -50,10 +54,13 @@ defmodule Relay.Server.Macros do
           end
         end
 
+        @spec stream_send_response(GRPC.Server.Stream.t, String.t, [unquote(resource_type).t]) ::
+                any
         defp stream_send_response(stream, version_info, resources) do
           GRPC.Server.stream_send(stream, mkresponse(version_info, resources))
         end
 
+        @spec mkresponse(String.t, [unquote(resource_type).t]) :: DiscoveryResponse.t
         defp mkresponse(version_info, resources) do
           typed_resources = resources |> Enum.map(&ProtobufUtil.mkany(@type_url, &1))
 
@@ -76,7 +83,8 @@ defmodule Relay.Server do
     xds: :lds,
     type_url: "type.googleapis.com/envoy.api.v2.Listener",
     service: Envoy.Api.V2.ListenerDiscoveryService.Service,
-    resources: :listeners
+    resources: :listeners,
+    resource_type: Envoy.Api.V2.Listener
   )
 
   discovery_service(
@@ -84,7 +92,8 @@ defmodule Relay.Server do
     xds: :rds,
     type_url: "type.googleapis.com/envoy.api.v2.RouteConfiguration",
     service: Envoy.Api.V2.RouteDiscoveryService.Service,
-    resources: :routes
+    resources: :routes,
+    resource_type: Envoy.Api.V2.RouteConfiguration
   )
 
   discovery_service(
@@ -92,7 +101,8 @@ defmodule Relay.Server do
     xds: :cds,
     type_url: "type.googleapis.com/envoy.api.v2.Cluster",
     service: Envoy.Api.V2.ClusterDiscoveryService.Service,
-    resources: :clusters
+    resources: :clusters,
+    resource_type: Envoy.Api.V2.Cluster
   )
 
   discovery_service(
@@ -100,6 +110,7 @@ defmodule Relay.Server do
     xds: :eds,
     type_url: "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment",
     service: Envoy.Api.V2.EndpointDiscoveryService.Service,
-    resources: :endpoints
+    resources: :endpoints,
+    resource_type: Envoy.Api.V2.ClusterLoadAssignment
   )
 end
