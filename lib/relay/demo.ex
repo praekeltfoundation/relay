@@ -1,5 +1,27 @@
 defmodule Relay.Demo do
   alias Relay.Store
+  alias Relay.Marathon.{Adapter, App, Task}
+
+  @demo_app %App{
+    id: "/demo",
+    labels: %{
+      "HAPROXY_0_REDIRECT_TO_HTTPS" => "false",
+      "HAPROXY_0_VHOST" => "example.com",
+      "HAPROXY_GROUP" => "external",
+      "MARATHON_ACME_0_DOMAIN" => "example.com"
+    },
+    networking_mode: :"container/bridge",
+    ports_list: [80],
+    version: "2017-11-08T15:06:31.066Z"
+  }
+
+  @demo_task %Task{
+    address: "127.0.0.1",
+    app_id: "/demo",
+    id: "demo.be753491-1325-11e8-b5d6-4686525b33db",
+    ports: [8081],
+    version: "2017-11-09T08:43:59.890Z"
+  }
 
   use GenServer
 
@@ -64,21 +86,7 @@ defmodule Relay.Demo do
   end
 
   def clusters do
-    alias Envoy.Api.V2.Cluster
-    alias Envoy.Api.V2.Core.Http1ProtocolOptions
-    alias Google.Protobuf.Duration
-
-    [
-      Cluster.new(
-        name: "demo",
-        type: Cluster.DiscoveryType.value(:EDS),
-        eds_cluster_config: Cluster.EdsClusterConfig.new(eds_config: own_api_config_source()),
-        connect_timeout: Duration.new(seconds: 30),
-        lb_policy: Cluster.LbPolicy.value(:ROUND_ROBIN),
-        health_checks: [],
-        http_protocol_options: Http1ProtocolOptions.new()
-      )
-    ]
+    [Adapter.app_port_cluster(@demo_app, 0, own_api_config_source())]
   end
 
   defp router_filter do
@@ -130,38 +138,15 @@ defmodule Relay.Demo do
 
   def routes do
     alias Envoy.Api.V2.RouteConfiguration
-    alias Envoy.Api.V2.Route.{Route, RouteAction, RouteMatch, VirtualHost}
     [
       RouteConfiguration.new(
         name: "http",
-        virtual_hosts: [
-          VirtualHost.new(
-            name: "demo",
-            domains: ["example.com"],
-            routes: [
-              Route.new(
-                match: RouteMatch.new(path_specifier: {:prefix, "/"}),
-                action: {:route, RouteAction.new(cluster_specifier: {:cluster, "demo"})})
-            ])
-        ])
+        virtual_hosts: [Adapter.app_port_virtual_host(:http, @demo_app, 0)]
+      )
     ]
   end
 
   def endpoints do
-    alias Envoy.Api.V2.ClusterLoadAssignment
-    alias Envoy.Api.V2.Endpoint.{Endpoint, LbEndpoint, LocalityLbEndpoints}
-    alias Envoy.Api.V2.Core.Locality
-    [
-      ClusterLoadAssignment.new(
-        cluster_name: "demo",
-        endpoints: [
-          LocalityLbEndpoints.new(
-            locality: Locality.new(region: "local"),
-            lb_endpoints: [
-              LbEndpoint.new(endpoint: Endpoint.new(address: socket_address("127.0.0.1", 8081)))
-            ])
-        ]
-      )
-    ]
+    [Adapter.app_port_cluster_load_assignment(@demo_app, [@demo_task], 0)]
   end
 end
