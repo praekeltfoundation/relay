@@ -3,202 +3,55 @@ defmodule Relay.MarathonTest do
 
   alias Relay.Marathon.{App, State, Task}
 
-  @test_app %{
-    "id" => "/mc2",
-    "backoffFactor" => 1.15,
-    "backoffSeconds" => 1,
-    "container" => %{
-      "type" => "DOCKER",
-      "docker" => %{
-        "forcePullImage" => true,
-        "image" => "praekeltfoundation/mc2:release-3.11.2",
-        "parameters" => [
-          %{
-            "key" => "add-host",
-            "value" => "servicehost:172.17.0.1"
-          }
-        ],
-        "privileged" => false
-      },
-      "volumes" => [],
-      "portMappings" => [
-        %{
-          "containerPort" => 80,
-          "hostPort" => 0,
-          "labels" => %{},
-          "protocol" => "tcp",
-          "servicePort" => 10003
-        }
-      ]
-    },
-    "cpus" => 0.1,
-    "disk" => 0,
-    "env" => %{
-      "MESOS_MARATHON_HOST" => "http://master.mesos:8080",
-      "DEBUG" => "False",
-      "PROJECT_ROOT" => "/deploy/",
-    },
-    "executor" => "",
-    "instances" => 1,
-    "labels" => %{
-      "MARATHON_ACME_0_DOMAIN" => "mc2.example.org",
+  @test_app %App{
+    id: "/mc2",
+    labels: %{
       "HAPROXY_0_REDIRECT_TO_HTTPS" => "true",
       "HAPROXY_0_VHOST" => "mc2.example.org",
-      "HAPROXY_GROUP" => "external"
+      "HAPROXY_GROUP" => "external",
+      "MARATHON_ACME_0_DOMAIN" => "mc2.example.org"
     },
-    "maxLaunchDelaySeconds" => 3600,
-    "mem" => 256,
-    "gpus" => 0,
-    "networks" => [
-      %{
-        "mode" => "container/bridge"
-      }
-    ],
-    "requirePorts" => false,
-    "upgradeStrategy" => %{
-      "maximumOverCapacity" => 1,
-      "minimumHealthCapacity" => 1
-    },
-    "version" => "2017-11-09T08:43:59.89Z",
-    "versionInfo" => %{
-      "lastScalingAt" => "2017-11-09T08:43:59.89Z",
-      "lastConfigChangeAt" => "2017-11-08T15:06:31.066Z"
-    },
-    "killSelection" => "YOUNGEST_FIRST",
-    "unreachableStrategy" => %{
-      "inactiveAfterSeconds" => 300,
-      "expungeAfterSeconds" => 600
-    },
-    "tasksStaged" => 0,
-    "tasksRunning" => 1,
-    "tasksHealthy" => 0,
-    "tasksUnhealthy" => 0,
-    "deployments" => []
+    networking_mode: :"container/bridge",
+    ports_list: [80],
+    version: "2017-11-08T15:06:31.066Z"
   }
 
-  @test_task %{
-    "ipAddresses" => [
-      %{
-        "ipAddress" => "172.17.0.9",
-        "protocol" => "IPv4"
-      }
-    ],
-    "stagedAt" => "2018-02-16T14:29:06.487Z",
-    "state" => "TASK_RUNNING",
-    "ports" => [
-      15979
-    ],
-    "startedAt" => "2018-02-16T14:29:09.605Z",
-    "version" => "2017-11-09T08:43:59.890Z",
-    "id" => "mc2.be753491-1325-11e8-b5d6-4686525b33db",
-    "appId" => "/mc2",
-    "slaveId" => "d25be2a7-61ce-475f-8b07-d56400c8d744-S1",
-    "host" => "10.70.4.100"
+  @test_task %Task{
+    address: "10.70.4.100",
+    app_id: "/mc2",
+    id: "mc2.be753491-1325-11e8-b5d6-4686525b33db",
+    ports: [15979],
+    version: "2017-11-09T08:43:59.890Z"
   }
-
-  describe "Marathon.App" do
-    test "app from definition" do
-      assert App.from_definition(@test_app) == %App{
-        id: "/mc2",
-        labels: %{
-          "HAPROXY_0_REDIRECT_TO_HTTPS" => "true",
-          "HAPROXY_0_VHOST" => "mc2.example.org",
-          "HAPROXY_GROUP" => "external",
-          "MARATHON_ACME_0_DOMAIN" => "mc2.example.org"
-        },
-        networking_mode: :"container/bridge",
-        ports_list: [80],
-        version: "2017-11-08T15:06:31.066Z"
-      }
-    end
-
-    test "app port indices in group" do
-      app = App.from_definition(@test_app)
-
-      assert App.port_indices_in_group(app, "internal") == []
-      assert App.port_indices_in_group(app, "external") == [0]
-    end
-
-    test "app label getters" do
-      app = App.from_definition(@test_app)
-
-      assert App.marathon_lb_vhost(app, 0) == ["mc2.example.org"]
-      assert App.marathon_lb_vhost(app, 1) == []
-
-      assert App.marathon_lb_redirect_to_https?(app, 0)
-      assert not App.marathon_lb_redirect_to_https?(app, 1)
-
-      assert App.marathon_acme_domain(app, 0) == ["mc2.example.org"]
-      assert App.marathon_acme_domain(app, 1) == []
-    end
-  end
-
-  describe "Marathon.Task" do
-    test "task from definition" do
-      app = App.from_definition(@test_app)
-
-      assert Task.from_definition(app, @test_task) == %Task{
-        address: "10.70.4.100",
-        app_id: "/mc2",
-        id: "mc2.be753491-1325-11e8-b5d6-4686525b33db",
-        ports: [15979],
-        version: "2017-11-09T08:43:59.890Z"
-      }
-    end
-
-    test "task from definition container networking" do
-      app =
-        @test_app
-        |> Map.put("networks", [%{"mode" => "container", "name" => "dcos"}])
-        |> App.from_definition()
-
-      assert Task.from_definition(app, @test_task) == %Task{
-        address: "172.17.0.9",
-        app_id: "/mc2",
-        id: "mc2.be753491-1325-11e8-b5d6-4686525b33db",
-        ports: [80],
-        version: "2017-11-09T08:43:59.890Z"
-      }
-    end
-
-    test "task port" do
-      task = Task.from_definition(App.from_definition(@test_app), @test_task)
-
-      assert Task.endpoint(task, 0) == {"10.70.4.100", 15979}
-    end
-  end
 
   describe "Marathon.State" do
     test "add app" do
-      app = App.from_definition(@test_app)
-      %App{id: app_id} = app
+      %App{id: app_id} = @test_app
 
-      assert {nil, state} = State.put_app(%State{}, app)
+      assert {nil, state} = State.put_app(%State{}, @test_app)
 
       assert state == %State{
-        apps: %{app_id => app},
+        apps: %{app_id => @test_app},
         app_tasks: %{app_id => MapSet.new()},
         tasks: %{}
       }
     end
 
     test "update app same version" do
-      app = App.from_definition(@test_app)
-      %App{version: app_version} = app
+      %App{version: app_version} = @test_app
 
-      assert {nil, state} = State.put_app(%State{}, app)
-      assert {^app_version, ^state} = State.put_app(state, app)
+      assert {nil, state} = State.put_app(%State{}, @test_app)
+      assert {^app_version, ^state} = State.put_app(state, @test_app)
     end
 
     test "update app new version" do
-      app = App.from_definition(@test_app)
-      %App{id: app_id, version: app_version} = app
+      %App{id: app_id, version: app_version} = @test_app
 
-      assert {nil, state} = State.put_app(%State{}, app)
+      assert {nil, state} = State.put_app(%State{}, @test_app)
 
       app2_version = "2017-11-10T15:06:31.066Z"
       assert app2_version > app_version
-      app2 = %{app | version: app2_version}
+      app2 = %{@test_app | version: app2_version}
 
       assert {^app_version, state2} = State.put_app(state, app2)
 
@@ -206,65 +59,52 @@ defmodule Relay.MarathonTest do
     end
 
     test "delete app" do
-      app = App.from_definition(@test_app)
+      assert {nil, state} = State.put_app(%State{}, @test_app)
 
-      assert {nil, state} = State.put_app(%State{}, app)
-
-      assert State.delete_app(state, app) == %State{apps: %{}, tasks: %{}, app_tasks: %{}}
+      assert State.delete_app(state, @test_app) == %State{apps: %{}, tasks: %{}, app_tasks: %{}}
     end
 
     test "delete app does not exist" do
-      app = App.from_definition(@test_app)
-
-      assert State.delete_app(%State{}, app) == %State{apps: %{}, tasks: %{}, app_tasks: %{}}
+      assert State.delete_app(%State{}, @test_app) == %State{apps: %{}, tasks: %{}, app_tasks: %{}}
     end
 
     test "add task" do
-      app = App.from_definition(@test_app)
-      assert {nil, state} = State.put_app(%State{}, app)
+      assert {nil, state} = State.put_app(%State{}, @test_app)
 
-      task = Task.from_definition(app, @test_task)
-      %Task{id: task_id, app_id: app_id} = task
-      assert {nil, state2} = State.put_task!(state, task)
+      %Task{id: task_id, app_id: app_id} = @test_task
+      assert {nil, state2} = State.put_task!(state, @test_task)
 
       assert state2 == %State{
-        apps: %{app_id => app},
-        tasks: %{task_id => task},
+        apps: %{app_id => @test_app},
+        tasks: %{task_id => @test_task},
         app_tasks: %{app_id => MapSet.new([task_id])}
       }
     end
 
     test "add task without app" do
-      app = App.from_definition(@test_app)
-      task = Task.from_definition(app, @test_task)
-
       assert_raise KeyError, "key \"/mc2\" not found in: %{}", fn ->
-        State.put_task!(%State{}, task)
+        State.put_task!(%State{}, @test_task)
       end
     end
 
     test "update task same version" do
-      app = App.from_definition(@test_app)
-      assert {nil, state} = State.put_app(%State{}, app)
+      assert {nil, state} = State.put_app(%State{}, @test_app)
 
-      task = Task.from_definition(app, @test_task)
-      %Task{version: task_version} = task
-      assert {nil, state2} = State.put_task!(state, task)
+      %Task{version: task_version} = @test_task
+      assert {nil, state2} = State.put_task!(state, @test_task)
 
-      assert {^task_version, ^state2} = State.put_task!(state2, task)
+      assert {^task_version, ^state2} = State.put_task!(state2, @test_task)
     end
 
     test "update task new version" do
-      app = App.from_definition(@test_app)
-      assert {nil, state} = State.put_app(%State{}, app)
+      assert {nil, state} = State.put_app(%State{}, @test_app)
 
-      task = Task.from_definition(app, @test_task)
-      %Task{id: task_id, version: task_version} = task
-      assert {nil, state2} = State.put_task!(state, task)
+      %Task{id: task_id, version: task_version} = @test_task
+      assert {nil, state2} = State.put_task!(state, @test_task)
 
       task2_version = "2017-11-10T15:06:31.066Z"
       assert task2_version > task_version
-      task2 = %{task | version: task2_version}
+      task2 = %{@test_task | version: task2_version}
 
       assert {^task_version, state3} = State.put_task!(state2, task2)
 
@@ -272,51 +112,41 @@ defmodule Relay.MarathonTest do
     end
 
     test "delete task" do
-      app = App.from_definition(@test_app)
-      assert {nil, state} = State.put_app(%State{}, app)
+      assert {nil, state} = State.put_app(%State{}, @test_app)
 
-      task = Task.from_definition(app, @test_task)
-      %Task{app_id: app_id} = task
-      assert {nil, state2} = State.put_task!(state, task)
+      %Task{app_id: app_id} = @test_task
+      assert {nil, state2} = State.put_task!(state, @test_task)
 
-      assert State.delete_task!(state2, task) == %State{
-        apps: %{app_id => app},
+      assert State.delete_task!(state2, @test_task) == %State{
+        apps: %{app_id => @test_app},
         tasks: %{},
         app_tasks: %{app_id => MapSet.new()}
       }
     end
 
     test "delete task does not exist" do
-      app = App.from_definition(@test_app)
-      assert {nil, state} = State.put_app(%State{}, app)
+      assert {nil, state} = State.put_app(%State{}, @test_app)
 
-      task = Task.from_definition(app, @test_task)
-      %Task{app_id: app_id} = task
+      %Task{app_id: app_id} = @test_task
 
-      assert State.delete_task!(state, task) == %State{
-        apps: %{app_id => app},
+      assert State.delete_task!(state, @test_task) == %State{
+        apps: %{app_id => @test_app},
         tasks: %{},
         app_tasks: %{app_id => MapSet.new()}
       }
     end
 
     test "delete task does not exist without app" do
-      app = App.from_definition(@test_app)
-      task = Task.from_definition(app, @test_task)
-
       assert_raise KeyError, "key \"/mc2\" not found in: %{}", fn ->
-        State.delete_task!(%State{}, task)
+        State.delete_task!(%State{}, @test_task)
       end
     end
 
     test "delete app deletes tasks" do
-      app = App.from_definition(@test_app)
-      assert {nil, state} = State.put_app(%State{}, app)
+      assert {nil, state} = State.put_app(%State{}, @test_app)
+      assert {nil, state2} = State.put_task!(state, @test_task)
 
-      task = Task.from_definition(app, @test_task)
-      assert {nil, state2} = State.put_task!(state, task)
-
-      assert State.delete_app(state2, app) == %State{apps: %{}, tasks: %{}, app_tasks: %{}}
+      assert State.delete_app(state2, @test_app) == %State{apps: %{}, tasks: %{}, app_tasks: %{}}
     end
   end
 end
