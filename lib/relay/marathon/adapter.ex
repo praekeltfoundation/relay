@@ -79,8 +79,8 @@ defmodule Relay.Marathon.Adapter do
   - LocalityLbEndpoints: `options.locality_lb_endpoints_opts`
   - LbEndpoint: `options.locality_lb_endpoints_opts.lb_endpoint_opts`
   """
-  @spec app_port_cluster_load_assignment(App.t, [Task.t], non_neg_integer, keyword)
-    :: ClusterLoadAssignment.t
+  @spec app_port_cluster_load_assignment(App.t, [Task.t], non_neg_integer, keyword) ::
+          ClusterLoadAssignment.t
   def app_port_cluster_load_assignment(%App{id: app_id}, tasks, port_index, options \\ []) do
     {llbe_opts, options} = Keyword.pop(options, :locality_lb_endpoints_opts, [])
 
@@ -92,8 +92,8 @@ defmodule Relay.Marathon.Adapter do
     )
   end
 
-  @spec task_port_locality_lb_endpoints([Task.t], non_neg_integer, keyword)
-    :: [LocalityLbEndpoints.t]
+  @spec task_port_locality_lb_endpoints([Task.t], non_neg_integer, keyword) ::
+          [LocalityLbEndpoints.t]
   def task_port_locality_lb_endpoints(tasks, port_index, options \\ []) do
     # TODO: Support more than one locality
     {lb_endpoint_opts, options} = Keyword.pop(options, :lb_endpoint_opts, [])
