@@ -55,8 +55,7 @@ defmodule Relay.Server.Macros do
         end
 
         defp mkresponse(version_info, resources) do
-          typed_resources =
-            resources |> Enum.map(fn res -> ProtobufUtil.mkany(@type_url, res) end)
+          typed_resources = resources |> Enum.map(&ProtobufUtil.mkany(@type_url, &1))
 
           DiscoveryResponse.new(
             type_url: @type_url,
