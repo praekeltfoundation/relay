@@ -157,9 +157,9 @@ defmodule Relay.Marathon.AdapterTest do
           [@test_task],
           0,
           policy: ClusterLoadAssignment.Policy.new(drop_overload: 5.0),
-          llbe_options: [
+          locality_lb_endpoints_opts: [
             load_balancing_weight: UInt64Value.new(value: 42),
-            lb_endpoint_options: [
+            lb_endpoint_opts: [
               load_balancing_weight: UInt32Value.new(value: 13)
             ]
           ]
@@ -246,12 +246,12 @@ defmodule Relay.Marathon.AdapterTest do
               header: HeaderValue.new(key: "Strict-Transport-Security", value: "max-age=31536000")
             )
           ],
-          route_options: [
+          route_opts: [
             decorator: Decorator.new(operation: "mytrace"),
-            action_options: [
+            action_opts: [
               retry_policy: RouteAction.RetryPolicy.new(num_retries: UInt32Value.new(value: 3))
             ],
-            match_options: [
+            match_opts: [
               runtime:
                 RuntimeUInt32.new(
                   runtime_key: "routing.traffic_shift.helloworld",

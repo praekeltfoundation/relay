@@ -74,31 +74,30 @@ defmodule Relay.Marathon.Adapter do
   Additional options can be specified using `options` and options for nested
   types are nested within that:
   - ClusterLoadAssignment: `options`
-  - LocalityLbEndpoints: `options.llbe_options`
-  - LbEndpoint: `options.llbe_options.lb_endpoint_options`
+  - LocalityLbEndpoints: `options.locality_lb_endpoints_opts`
+  - LbEndpoint: `options.llbe_options.lb_endpoint_opts`
   """
   def app_port_cluster_load_assignment(%App{id: app_id}, tasks, port_index, options \\ []) do
-    {llbe_options, options} = Keyword.pop(options, :llbe_options, [])
+    {llbe_opts, options} = Keyword.pop(options, :locality_lb_endpoints_opts, [])
 
     ClusterLoadAssignment.new(
       [
         cluster_name: "#{app_id}_#{port_index}",
-        endpoints:
-          task_port_locality_lb_endpoints(tasks, port_index, llbe_options)
+        endpoints: task_port_locality_lb_endpoints(tasks, port_index, llbe_opts)
       ] ++ options
     )
   end
 
   def task_port_locality_lb_endpoints(tasks, port_index, options \\ []) do
     # TODO: Support more than one locality
-    {lb_endpoint_options, options} = Keyword.pop(options, :lb_endpoint_options, [])
+    {lb_endpoint_opts, options} = Keyword.pop(options, :lb_endpoint_opts, [])
 
     [
       LocalityLbEndpoints.new(
         [
           locality: @default_locality,
           lb_endpoints:
-            tasks |> Enum.map(&task_port_lb_endpoint(&1, port_index, lb_endpoint_options))
+            tasks |> Enum.map(&task_port_lb_endpoint(&1, port_index, lb_endpoint_opts))
         ] ++ options
       )
     ]
@@ -123,13 +122,13 @@ defmodule Relay.Marathon.Adapter do
   Additional options can be specified using `options` and options for nested
   types are nested within that:
   - VirtualHost: `options`
-  - Route: `options.route_options`
-  - RouteAction: `options.route_options.action_options`
-  - RouteMatch: `options.route_options.match_options`
+  - Route: `options.route_opts`
+  - RouteAction: `options.route_opts.action_opts`
+  - RouteMatch: `options.route_opts.match_opts`
   """
   def app_port_virtual_host(listener, %App{id: app_id} = app, port_index, options \\ [])
       when listener in [:http, :https] do
-    {route_options, options} = Keyword.pop(options, :route_options, [])
+    {route_opts, options} = Keyword.pop(options, :route_opts, [])
 
     VirtualHost.new(
       [
@@ -137,13 +136,13 @@ defmodule Relay.Marathon.Adapter do
         name: "#{listener}_#{app_id}_#{port_index}",
         # TODO: Validate domains
         domains: App.marathon_lb_vhost(app, port_index),
-        routes: app_port_routes(listener, app, port_index, route_options)
+        routes: app_port_routes(listener, app, port_index, route_opts)
       ] ++ options
     )
   end
 
   defp app_port_routes(:http, %App{id: app_id} = app, port_index, options) do
-    {action_options, options} = Keyword.pop(options, :action_options, [])
+    {action_opts, options} = Keyword.pop(options, :action_opts, [])
 
     primary_route_action =
       if App.marathon_lb_redirect_to_https?(app, port_index) do
@@ -154,18 +153,18 @@ defmodule Relay.Marathon.Adapter do
            [
              # TODO: Does the cluster name here need to be truncated?
              cluster_specifier: {:cluster, "#{app_id}_#{port_index}"}
-           ] ++ action_options
+           ] ++ action_opts
          )}
       end
 
-    {match_options, options} = Keyword.pop(options, :match_options, [])
+    {match_opts, options} = Keyword.pop(options, :match_opts, [])
 
     primary_route =
       Route.new(
         [
           action: primary_route_action,
           # TODO: Support path-based routing
-          match: RouteMatch.new([path_specifier: {:prefix, "/"}] ++ match_options)
+          match: RouteMatch.new([path_specifier: {:prefix, "/"}] ++ match_opts)
         ] ++ options
       )
 
@@ -177,8 +176,8 @@ defmodule Relay.Marathon.Adapter do
 
   defp app_port_routes(:https, %App{id: app_id}, port_index, options) do
     # TODO: Do we want an HTTPS route for apps without certificates?
-    {action_options, options} = Keyword.pop(options, :action_options, [])
-    {match_options, options} = Keyword.pop(options, :match_options, [])
+    {action_opts, options} = Keyword.pop(options, :action_opts, [])
+    {match_opts, options} = Keyword.pop(options, :match_opts, [])
 
     [
       Route.new(
@@ -189,10 +188,10 @@ defmodule Relay.Marathon.Adapter do
                [
                  # TODO: Does the cluster name here need to be truncated?
                  cluster_specifier: {:cluster, "#{app_id}_#{port_index}"}
-               ] ++ action_options
+               ] ++ action_opts
              )},
           # TODO: Support path-based routing
-          match: RouteMatch.new([path_specifier: {:prefix, "/"}] ++ match_options)
+          match: RouteMatch.new([path_specifier: {:prefix, "/"}] ++ match_opts)
         ] ++ options
       )
     ]
