@@ -123,8 +123,6 @@ defmodule Relay.Marathon.Adapter do
     Address.new(address: {:socket_address, sock})
   end
 
-  @type listener :: :http | :https
-
   @doc """
   Create a VirtualHost for the given listener, app, and port index. The
   VirtualHost will have the minimum amount of options set.
@@ -136,9 +134,11 @@ defmodule Relay.Marathon.Adapter do
   - RouteAction: `options.route_opts.action_opts`
   - RouteMatch: `options.route_opts.match_opts`
   """
-  @spec app_port_virtual_host(listener, App.t, non_neg_integer, keyword) :: VirtualHost.t
-  def app_port_virtual_host(listener, %App{id: app_id} = app, port_index, options \\ [])
-      when listener in [:http, :https] do
+  @spec app_port_virtual_host(atom, App.t, non_neg_integer, keyword) :: VirtualHost.t
+  def app_port_virtual_host(listener, %App{id: app_id} = app, port_index, options \\ []) do
+    if not listener in [:http, :https],
+      do: raise(ArgumentError, "only :http and :https listeners supported")
+
     {route_opts, options} = Keyword.pop(options, :route_opts, [])
 
     VirtualHost.new(
@@ -152,7 +152,7 @@ defmodule Relay.Marathon.Adapter do
     )
   end
 
-  @spec app_port_routes(listener, App.t, non_neg_integer, keyword) :: [Route.t]
+  @spec app_port_routes(atom, App.t, non_neg_integer, keyword) :: [Route.t]
   defp app_port_routes(:http, %App{id: app_id} = app, port_index, options) do
     {action_opts, options} = Keyword.pop(options, :action_opts, [])
 
