@@ -76,6 +76,75 @@ defmodule Relay.Marathon.AppTest do
     "deployments" => []
   }
 
+  @test_event %{
+    "clientIp" => "10.0.91.11",
+    "uri" => "/v2/apps",
+    "appDefinition" => %{
+      "id" => "/jamie-event-test",
+      "cmd" => "python -m http.server 8080",
+      "args" => nil,
+      "user" => nil,
+      "env" => %{},
+      "instances" => 1,
+      "cpus" => 0.01,
+      "mem" => 64,
+      "disk" => 0,
+      "gpus" => 0,
+      "executor" => "",
+      "constraints" => [],
+      "uris" => [],
+      "fetch" => [],
+      "storeUrls" => [],
+      "backoffSeconds" => 1,
+      "backoffFactor" => 1.15,
+      "maxLaunchDelaySeconds" => 3600,
+      "container" => %{
+        "type" => "DOCKER",
+        "volumes" => [],
+        "docker" => %{
+          "image" => "python:3-alpine3.7",
+          "network" => nil,
+          "portMappings" => [],
+          "privileged" => false,
+          "parameters" => [],
+          "forcePullImage" => false
+        }
+      },
+      "healthChecks" => [],
+      "readinessChecks" => [],
+      "dependencies" => [],
+      "upgradeStrategy" => %{
+        "minimumHealthCapacity" => 1,
+        "maximumOverCapacity" => 1
+      },
+      "labels" => %{},
+      "ipAddress" => nil,
+      "version" => "2018-03-02T09:31:54.763Z",
+      "residency" => nil,
+      "secrets" => %{},
+      "taskKillGracePeriodSeconds" => nil,
+      "unreachableStrategy" => %{
+        "inactiveAfterSeconds" => 300,
+        "expungeAfterSeconds" => 600
+      },
+      "killSelection" => "YOUNGEST_FIRST",
+      "ports" => [
+        0
+      ],
+      "portDefinitions" => [
+        %{
+          "port" => 0,
+          "protocol" => "tcp",
+          "name" => "default",
+          "labels" => {}
+        }
+      ],
+      "requirePorts" => false
+    },
+    "eventType" => "api_post_event",
+    "timestamp" => "2018-03-02T09:31:54.909Z"
+  }
+
   test "from definition" do
     assert App.from_definition(@test_app) == %App{
       id: "/mc2",
@@ -91,6 +160,15 @@ defmodule Relay.Marathon.AppTest do
     }
   end
 
+  test "from event" do
+    assert App.from_event(@test_event) == %App{
+      id: "/jamie-event-test",
+      labels: %{},
+      networking_mode: :host,
+      ports_list: [0],
+      version: "2018-03-02T09:31:54.763Z"
+    }
+  end
 
   test "port indices in group" do
     app = App.from_definition(@test_app)

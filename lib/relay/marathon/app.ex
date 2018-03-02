@@ -17,11 +17,23 @@ defmodule Relay.Marathon.App do
       networking_mode: Networking.networking_mode(app),
       ports_list: Networking.ports_list(app),
       labels: labels,
-      version: config_version(app)
+      version: version(app)
     }
   end
 
-  defp config_version(%{"versionInfo" => %{"lastConfigChangeAt" => version}}), do: version
+  @spec from_event(map) :: t
+  def from_event(%{"eventType" => "api_post_event", "appDefinition" => definition} = _event),
+    do: from_definition(definition)
+
+  @spec version(map) :: String.t()
+  defp version(app) do
+    case app do
+      # In most cases the `lastConfigChangeAt` value should be available...
+      %{"versionInfo" => %{"lastConfigChangeAt" => version}} -> version
+      # ...but if this is an app that hasn't been changed yet then use `version`
+      %{"version" => version} -> version
+    end
+  end
 
   def port_indices_in_group(%__MODULE__{ports_list: []}, _group), do: []
 
