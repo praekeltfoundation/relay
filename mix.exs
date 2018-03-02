@@ -50,7 +50,7 @@ defmodule Relay.MixProject do
       {:hackney, "~> 1.9.0"},
       {:httpoison, "~> 0.13"},
 
-      {:exjsx, "~> 4.0"},
+      {:poison, "~> 3.1"},
 
       # Test deps.
       {:sse_test_server,
