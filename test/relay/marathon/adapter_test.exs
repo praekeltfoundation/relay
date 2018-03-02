@@ -309,5 +309,11 @@ defmodule Relay.Marathon.AdapterTest do
 
       assert Protobuf.Validator.valid?(virtual_host)
     end
+
+    test "other listeners rejected" do
+      assert_raise ArgumentError, "only :http and :https listeners supported", fn ->
+        Adapter.app_port_virtual_host(:ftp, @test_app, 0)
+      end
+    end
   end
 end

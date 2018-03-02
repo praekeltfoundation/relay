@@ -1,5 +1,5 @@
 defmodule Relay.Marathon.Adapter do
-  alias Relay.Marathon.{App, Task}
+  alias Relay.Marathon.{App, Task, Networking}
 
   alias Envoy.Api.V2.{Cluster, ClusterLoadAssignment}
   alias Envoy.Api.V2.Core.{Address, ConfigSource, Locality, SocketAddress}
@@ -19,6 +19,7 @@ defmodule Relay.Marathon.Adapter do
   minimum amount of options set but will be a Cluster with EDS endpoint
   discovery. Additional options can be specified using `options`.
   """
+  @spec app_port_cluster(App.t, non_neg_integer, ConfigSource.t, keyword) :: Cluster.t
   def app_port_cluster(
         %App{id: app_id},
         port_index,
@@ -52,6 +53,7 @@ defmodule Relay.Marathon.Adapter do
 
   https://www.envoyproxy.io/docs/envoy/v1.5.0/operations/cli.html#cmdoption-max-obj-name-len
   """
+  @spec truncate_name(String.t, pos_integer) :: String.t
   def truncate_name(name, max_size) do
     if byte_size(@truncated_name_prefix) > max_size,
       do: raise(ArgumentError, "`max_size` must be larger than the prefix length")
@@ -77,6 +79,8 @@ defmodule Relay.Marathon.Adapter do
   - LocalityLbEndpoints: `options.locality_lb_endpoints_opts`
   - LbEndpoint: `options.locality_lb_endpoints_opts.lb_endpoint_opts`
   """
+  @spec app_port_cluster_load_assignment(App.t, [Task.t], non_neg_integer, keyword) ::
+          ClusterLoadAssignment.t
   def app_port_cluster_load_assignment(%App{id: app_id}, tasks, port_index, options \\ []) do
     {llbe_opts, options} = Keyword.pop(options, :locality_lb_endpoints_opts, [])
 
@@ -88,6 +92,8 @@ defmodule Relay.Marathon.Adapter do
     )
   end
 
+  @spec task_port_locality_lb_endpoints([Task.t], non_neg_integer, keyword) ::
+          [LocalityLbEndpoints.t]
   def task_port_locality_lb_endpoints(tasks, port_index, options \\ []) do
     # TODO: Support more than one locality
     {lb_endpoint_opts, options} = Keyword.pop(options, :lb_endpoint_opts, [])
@@ -103,6 +109,7 @@ defmodule Relay.Marathon.Adapter do
     ]
   end
 
+  @spec task_port_lb_endpoint(Task.t, non_neg_integer, keyword) :: LbEndpoint.t
   def task_port_lb_endpoint(%Task{address: address, ports: ports}, port_index, options \\ []) do
     LbEndpoint.new(
       [endpoint: Endpoint.new(address: socket_address(address, Enum.at(ports, port_index)))] ++
@@ -110,6 +117,7 @@ defmodule Relay.Marathon.Adapter do
     )
   end
 
+  @spec socket_address(String.t, Networking.port_number) :: Address.t
   defp socket_address(address, port) do
     sock = SocketAddress.new(address: address, port_specifier: {:port_value, port})
     Address.new(address: {:socket_address, sock})
@@ -126,8 +134,11 @@ defmodule Relay.Marathon.Adapter do
   - RouteAction: `options.route_opts.action_opts`
   - RouteMatch: `options.route_opts.match_opts`
   """
-  def app_port_virtual_host(listener, %App{id: app_id} = app, port_index, options \\ [])
-      when listener in [:http, :https] do
+  @spec app_port_virtual_host(atom, App.t, non_neg_integer, keyword) :: VirtualHost.t
+  def app_port_virtual_host(listener, %App{id: app_id} = app, port_index, options \\ []) do
+    if not listener in [:http, :https],
+      do: raise(ArgumentError, "only :http and :https listeners supported")
+
     {route_opts, options} = Keyword.pop(options, :route_opts, [])
 
     VirtualHost.new(
@@ -141,6 +152,7 @@ defmodule Relay.Marathon.Adapter do
     )
   end
 
+  @spec app_port_routes(atom, App.t, non_neg_integer, keyword) :: [Route.t]
   defp app_port_routes(:http, %App{id: app_id} = app, port_index, options) do
     {action_opts, options} = Keyword.pop(options, :action_opts, [])
 
