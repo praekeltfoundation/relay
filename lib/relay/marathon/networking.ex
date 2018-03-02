@@ -83,7 +83,7 @@ defmodule Relay.Marathon.Networking do
   Get the address (IP or hostname) for a task given the app's networking mode
   and a task definition.
   """
-  @spec task_address(networking_mode, map) :: String.t()
+  @spec task_address(networking_mode, map) :: String.t
   def task_address(:container, task), do: task_ip_address(task)
 
   def task_address(_networking_mode, task), do: task_host(task)
