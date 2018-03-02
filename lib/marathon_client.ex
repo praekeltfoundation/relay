@@ -1,9 +1,11 @@
 defmodule MarathonClient do
   alias HTTPoison.Response
 
-  @typep jsx_decode_result :: {:ok, map} | {:error, :badarg}
+  # FIXME: Next version of Poison will have an error type which will make this nicer
+  @typep poison_decode_result :: {:ok, Poison.Parser.t} | {:error, :invalid}
+    | {:error, {:invalid, String.t}}
   @typep client_error :: {:error, {integer, map}}
-  @type response :: jsx_decode_result | client_error
+  @type response :: poison_decode_result | client_error
 
   @spec stream_events(String.t, [pid], non_neg_integer) :: GenServer.on_start
   def stream_events(base_url, listeners, timeout \\ 60_000) do
@@ -11,11 +13,11 @@ defmodule MarathonClient do
     MarathonClient.SSEClient.start_link({url, listeners, timeout})
   end
 
-  defp marathon_response(%Response{status_code: 200, body: body}), do: JSX.decode(body)
+  defp marathon_response(%Response{status_code: 200, body: body}), do: Poison.decode(body)
 
   defp marathon_response(%Response{status_code: status_code, body: body})
        when status_code in 400..499 do
-    {:ok, message} = JSX.decode(body)
+    {:ok, message} = Poison.decode(body)
     {:error, {status_code, message}}
   end
 
