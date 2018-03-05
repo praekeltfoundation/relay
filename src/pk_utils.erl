@@ -30,9 +30,7 @@ extract_DNSNames(_) ->
 
 
 get_subject_CNs(#'OTPTBSCertificate'{subject = {rdnSequence, RDNSeq}}) ->
-    lists:flatmap(fun extract_CNs/1, RDNSeq);
-get_subject_CNs(#'OTPTBSCertificate'{}) ->
-    [].
+    lists:flatmap(fun extract_CNs/1, RDNSeq).
 
 
 extract_CNs(RDN) ->
