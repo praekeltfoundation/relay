@@ -5,7 +5,7 @@ defmodule Relay.CertsTest do
 
   @localhost_pem Path.expand("../support/localhost.pem", __DIR__)
 
-  test "can get a list of valid hostnames from a cert" do
+  test "get a list of valid hostnames from a cert" do
     [_key, cert, _cacert] = :public_key.pem_decode(File.read!(@localhost_pem))
     hostnames = Certs.get_hostnames(cert)
     assert ["localhost", "pebble"] = Enum.sort(hostnames)
@@ -16,4 +16,8 @@ defmodule Relay.CertsTest do
     assert [] = Certs.get_hostnames(cacert)
   end
 
+  test "collect hostnames for all end-entity certs in pem data" do
+    hostnames = Certs.get_end_entity_hostnames(File.read!(@localhost_pem))
+    assert ["localhost", "pebble"] = Enum.sort(hostnames)
+  end
 end
