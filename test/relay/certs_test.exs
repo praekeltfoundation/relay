@@ -11,4 +11,9 @@ defmodule Relay.CertsTest do
     assert ["localhost", "pebble"] = Enum.sort(hostnames)
   end
 
+  test "some certs may have no hostnames" do
+    [_key, _cert, cacert] = :public_key.pem_decode(File.read!(@localhost_pem))
+    assert [] = Certs.get_hostnames(cacert)
+  end
+
 end
