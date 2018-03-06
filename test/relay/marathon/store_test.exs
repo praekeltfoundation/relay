@@ -36,6 +36,9 @@ defmodule Relay.Marathon.StoreTest do
     state
   end
 
+  defp assert_empty_state(store),
+    do: assert get_state(store) == %Store.State{apps: %{}, tasks: %{}, app_tasks: %{}}
+
   test "update app not existing", %{store: store} do
     %App{id: app_id} = @test_app
 
@@ -81,7 +84,7 @@ defmodule Relay.Marathon.StoreTest do
     assert Store.update_app(store, @test_app) == :ok
     assert Store.delete_app(store, app_id) == :ok
 
-    assert get_state(store) == %Store.State{apps: %{}, tasks: %{}, app_tasks: %{}}
+    assert_empty_state(store)
   end
 
   test "delete app does not exist", %{store: store} do
@@ -89,7 +92,7 @@ defmodule Relay.Marathon.StoreTest do
 
     assert Store.delete_app(store, app_id) == :ok
 
-    assert get_state(store) == %Store.State{apps: %{}, tasks: %{}, app_tasks: %{}}
+    assert_empty_state(store)
   end
 
   test "update task not existing", %{store: store} do
@@ -113,7 +116,7 @@ defmodule Relay.Marathon.StoreTest do
       assert Store.update_task(store, @test_task) == :ok
     end) =~ "Unable to find app '#{app_id}' for task '#{task_id}'. Task update ignored."
 
-    assert get_state(store) == %Store.State{apps: %{}, tasks: %{}, app_tasks: %{}}
+    assert_empty_state(store)
   end
 
   test "update task same version", %{store: store} do
@@ -159,7 +162,7 @@ defmodule Relay.Marathon.StoreTest do
   test "delete task does not exist", %{store: store} do
     assert Store.delete_task(store, "foo") == :ok
 
-    assert get_state(store) == %Store.State{apps: %{}, tasks: %{}, app_tasks: %{}}
+    assert_empty_state(store)
   end
 
   test "delete app deletes tasks", %{store: store} do
@@ -170,6 +173,6 @@ defmodule Relay.Marathon.StoreTest do
 
     assert Store.delete_app(store, app_id) == :ok
 
-    assert get_state(store) == %Store.State{apps: %{}, tasks: %{}, app_tasks: %{}}
+    assert_empty_state(store)
   end
 end
