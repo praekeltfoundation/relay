@@ -1,4 +1,4 @@
-defmodule Relay.Marathon.State do
+defmodule Relay.Marathon.Store do
   alias Relay.Marathon.{App, Task}
 
   defstruct apps: %{}, tasks: %{}, app_tasks: %{}
