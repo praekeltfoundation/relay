@@ -1,96 +1,191 @@
 defmodule Relay.Marathon.Store do
   alias Relay.Marathon.{App, Task}
 
-  defstruct apps: %{}, tasks: %{}, app_tasks: %{}
-  @type t :: %__MODULE__{
-    apps: %{optional(String.t) => App.t},
-    tasks: %{optional(String.t) => Task.t},
-    app_tasks: %{optional(String.t) => String.t}
-  }
+  use GenServer
+  require Logger
+
+  defmodule State do
+    defstruct apps: %{}, tasks: %{}, app_tasks: %{}
+    @type t :: %__MODULE__{
+      apps: %{optional(String.t) => App.t},
+      tasks: %{optional(String.t) => Task.t},
+      app_tasks: %{optional(String.t) => String.t}
+    }
+  end
+
+  def start_link(opts \\ []) do
+    GenServer.start_link(__MODULE__, :ok, opts)
+  end
 
   @doc """
-  Add an app to `state`. The app is only added if its version is newer than
-  the existing app.
-
-  Returns a tuple where the first element is the version of the app already in
-  the state (or `nil` if there was no app with the ID) and the second element
-  is the new state.
+  Update an app in the Store. The app is only added if its version is newer than
+  any existing app.
   """
-  @spec put_app(t, App.t) :: {String.t | nil, t}
-  def put_app(%__MODULE__{apps: apps} = state, %App{id: id, version: version} = app) do
+  @spec update_app(pid, App.t) :: :ok
+  def update_app(server, %App{} = app), do: GenServer.call(server, {:update_app, app})
+
+  @doc """
+  Delete an app from the Store. All tasks for the app will also be removed.
+  """
+  @spec delete_app(pid, String.t) :: :ok
+  def delete_app(server, app_id), do: GenServer.call(server, {:delete_app, app_id})
+
+  @doc """
+  Update a task in the Store. The task is only added if its version is newer
+  than any existing task.
+  """
+  @spec update_task(pid, Task.t) :: :ok
+  def update_task(server, %Task{} = task), do: GenServer.call(server, {:update_task, task})
+
+  @doc """
+  Delete a task from the Store.
+  """
+  @spec delete_task(pid, String.t) :: :ok
+  def delete_task(server, task_id), do: GenServer.call(server, {:delete_task, task_id})
+
+  def init(_arg) do
+    {:ok, %State{}}
+  end
+
+  def handle_call({:update_app, %App{id: id, version: version} = app}, _from, state) do
+    {old_app, new_state} = get_and_update_app(state, app)
+    _ =
+      case old_app do
+        %App{version: existing_version} when version > existing_version  ->
+          Logger.debug("App '#{id}' updated: #{existing_version} -> #{version}")
+          # Notify update!
+
+        %App{version: existing_version} ->
+          Logger.debug("App '#{id}' unchanged: #{version} <= #{existing_version}")
+
+        nil ->
+          Logger.info("App '#{id}' with version #{version} added")
+          # Notify update!
+      end
+
+    {:reply, :ok, new_state}
+  end
+
+  def handle_call({:delete_app, id}, _from, state) do
+    {app, new_state} = pop_app(state, id)
+    _ =
+      case app do
+        %App{version: version} ->
+          Logger.info("App '#{id}' with version #{version} deleted")
+          # Notify update!
+
+        nil ->
+          Logger.debug("App '#{id}' not present/already deleted")
+      end
+
+    {:reply, :ok, new_state}
+  end
+
+  def handle_call({:update_task, %Task{id: id, app_id: app_id, version: version} = task}, _from, state) do
+    new_state =
+      try do
+        {old_task, new_state} = get_and_update_task!(state, task)
+        _ =
+          case old_task do
+            %Task{version: existing_version} when version > existing_version  ->
+              Logger.debug("Task '#{id}' updated: #{existing_version} -> #{version}")
+              # Notify update!
+
+            %Task{version: existing_version} ->
+              Logger.debug("Task '#{id}' unchanged: #{version} <= #{existing_version}")
+
+            nil ->
+              Logger.info("Task '#{id}' with version #{version} added")
+              # Notify update!
+          end
+
+        new_state
+      rescue
+        KeyError ->
+          _ = Logger.warn("Unable to find app '#{app_id}' for task '#{id}'. Task update ignored.")
+          state
+      end
+
+    {:reply, :ok, new_state}
+  end
+
+  def handle_call({:delete_task, id}, _from, state) do
+    {task, new_state} = pop_task(state, id)
+    _ =
+      case task do
+        %Task{version: version} ->
+          Logger.info("Task '#{id}' with version #{version} deleted")
+          # Notify update!
+
+        nil ->
+          Logger.debug("Task '#{id}' not present/already deleted")
+      end
+
+    {:reply, :ok, new_state}
+  end
+
+  # For testing only
+  def handle_call(:_get_state, _from, state), do: {:reply, {:ok, state}, state}
+
+  @spec get_and_update_app(State.t, App.t) :: {App.t | nil, State.t}
+  defp get_and_update_app(%State{apps: apps} = state, %App{id: id, version: version} = app) do
     case Map.get(apps, id) do
       # App is newer than existing app, update the app
-      %App{version: existing_version} when version > existing_version ->
-        {existing_version, update_app!(state, app)}
+      %App{version: existing_version} = existing_app when version > existing_version ->
+        {existing_app, replace_app!(state, app)}
 
       # App is the same or older than existing app, do nothing
-      %App{version: existing_version} ->
-        {existing_version, state}
+      %App{} ->
+        {app, state}
 
       # No existing app with this ID, add this one
       nil ->
-        {nil, add_app(state, app)}
+        {nil, put_app(state, app)}
     end
   end
 
-  @spec add_app(t, App.t) :: t
-  defp add_app(%__MODULE__{apps: apps, app_tasks: app_tasks} = state, %App{id: id} = app),
+  @spec put_app(State.t, App.t) :: State.t
+  defp put_app(%State{apps: apps, app_tasks: app_tasks} = state, %App{id: id} = app),
     do: %{state | apps: Map.put(apps, id, app), app_tasks: Map.put(app_tasks, id, MapSet.new())}
 
-  @spec update_app!(t, App.t) :: t
-  defp update_app!(%__MODULE__{apps: apps} = state, %App{id: id} = app),
+  @spec replace_app!(State.t, App.t) :: State.t
+  defp replace_app!(%State{apps: apps} = state, %App{id: id} = app),
     do: %{state | apps: Map.replace!(apps, id, app)}
 
-  @doc """
-  Delete an app from the state. All tasks for the app will also be removed.
-
-  Returns the new state. If the app is not in `state`, returns `state`
-  unchanged.
-  """
-  @spec delete_app(t, App.t) :: t
-  def delete_app(%__MODULE__{apps: apps, tasks: tasks, app_tasks: app_tasks} = state, %App{id: id}) do
+  @spec pop_app(State.t, String.t) :: {App.t | nil, State.t}
+  defp pop_app(%State{apps: apps, tasks: tasks, app_tasks: app_tasks} = state, id) do
     case Map.pop(apps, id) do
-      {%App{}, new_apps} ->
+      {%App{} = app, new_apps} ->
         {tasks_for_app, new_app_tasks} = Map.pop(app_tasks, id)
         new_tasks = Map.drop(tasks, tasks_for_app)
 
-        %{state | apps: new_apps, tasks: new_tasks, app_tasks: new_app_tasks}
+        {app, %{state | apps: new_apps, tasks: new_tasks, app_tasks: new_app_tasks}}
 
       {nil, _} ->
-        state
+        {nil, state}
     end
   end
 
-  @doc """
-  Add a task to `state`. The task is only added if its version is newer than
-  the existing task.
-
-  Returns a tuple where the first element is the version of the task already
-  in the state (or `nil` if there was no task with the ID) and the second
-  element is the new state.
-
-  Raises a `KeyError` if the app that the task belongs to is not in `state`.
-  """
-  @spec put_task!(t, Task.t) :: {String.t | nil, t}
-  def put_task!(%__MODULE__{tasks: tasks} = state, %Task{id: id, version: version} = task) do
+  @spec get_and_update_task!(State.t, Task.t) :: {Task.t | nil, State.t}
+  defp get_and_update_task!(%State{tasks: tasks} = state, %Task{id: id, version: version} = task) do
     case Map.get(tasks, id) do
       # Task is newer than existing task, update the task
-      %Task{version: existing_version} when version > existing_version ->
-        {existing_version, update_task!(state, task)}
+      %Task{version: existing_version} = existing_task when version > existing_version ->
+        {existing_task, replace_task!(state, task)}
 
       # Task is the same or older than existing task, do nothing
-      %Task{version: existing_version} ->
-        {existing_version, state}
+      %Task{} ->
+        {task, state}
 
       # No existing task with this ID, add this one
       nil ->
-        {nil, add_task!(state, task)}
+        {nil, put_task!(state, task)}
     end
   end
 
-  @spec add_task!(t, Task.t) :: t
-  defp add_task!(
-         %__MODULE__{tasks: tasks, app_tasks: app_tasks} = state,
+  @spec put_task!(State.t, Task.t) :: State.t
+  defp put_task!(
+         %State{tasks: tasks, app_tasks: app_tasks} = state,
          %Task{id: id, app_id: app_id} = task
        ) do
     %{
@@ -100,27 +195,20 @@ defmodule Relay.Marathon.Store do
     }
   end
 
-  @spec update_task!(t, Task.t) :: t
-  defp update_task!(%__MODULE__{tasks: tasks} = state, %Task{id: id} = task),
+  @spec replace_task!(State.t, Task.t) :: State.t
+  defp replace_task!(%State{tasks: tasks} = state, %Task{id: id} = task),
     do: %{state | tasks: Map.replace!(tasks, id, task)}
 
-  @doc """
-  Delete a task from `state`.
+  @spec pop_task(State.t, String.t) :: {Task.t | nil, State.t}
+  defp pop_task(%State{tasks: tasks, app_tasks: app_tasks} = state, id) do
+    case Map.pop(tasks, id) do
+      {%Task{app_id: app_id} = task, new_tasks} ->
+        new_app_tasks = Map.update!(app_tasks, app_id, &MapSet.delete(&1, id))
 
-  Returns the new state. If the task is not in `state`, returns `state`
-  unchanged.
+        {task, %{state | tasks: new_tasks, app_tasks: new_app_tasks}}
 
-  Raises a `KeyError` if the app that the task belongs to is not in `state`.
-  """
-  @spec delete_task!(t, Task.t) :: t
-  def delete_task!(%__MODULE__{tasks: tasks, app_tasks: app_tasks} = state, %Task{
-        id: id,
-        app_id: app_id
-      }) do
-    %{
-      state
-      | tasks: Map.delete(tasks, id),
-        app_tasks: Map.update!(app_tasks, app_id, fn tasks -> MapSet.delete(tasks, id) end)
-    }
+      {nil, _} ->
+        {nil, state}
+    end
   end
 end

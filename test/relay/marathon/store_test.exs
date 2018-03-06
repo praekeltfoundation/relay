@@ -24,127 +24,152 @@ defmodule Relay.Marathon.StoreTest do
     version: "2017-11-09T08:43:59.890Z"
   }
 
-  test "add app" do
+  setup do
+    TestHelpers.override_log_level(:warn)
+
+    {:ok, store} = start_supervised(Store)
+    %{store: store}
+  end
+
+  defp get_state(store) do
+    {:ok, state} = GenServer.call(store, :_get_state)
+    state
+  end
+
+  test "update app not existing", %{store: store} do
     %App{id: app_id} = @test_app
 
-    assert {nil, state} = Store.put_app(%Store{}, @test_app)
+    assert Store.update_app(store, @test_app) == :ok
 
-    assert state == %Store{
+    assert get_state(store) == %Store.State{
       apps: %{app_id => @test_app},
       app_tasks: %{app_id => MapSet.new()},
       tasks: %{}
     }
   end
 
-  test "update app same version" do
-    %App{version: app_version} = @test_app
+  test "update app same version", %{store: store} do
+    %App{id: app_id} = @test_app
 
-    assert {nil, state} = Store.put_app(%Store{}, @test_app)
-    assert {^app_version, ^state} = Store.put_app(state, @test_app)
+    assert Store.update_app(store, @test_app) == :ok
+    assert Store.update_app(store, @test_app) == :ok
+
+    assert get_state(store) == %Store.State{
+      apps: %{app_id => @test_app},
+      app_tasks: %{app_id => MapSet.new()},
+      tasks: %{}
+    }
   end
 
-  test "update app new version" do
+  test "update app new version", %{store: store} do
     %App{id: app_id, version: app_version} = @test_app
 
-    assert {nil, state} = Store.put_app(%Store{}, @test_app)
+    assert Store.update_app(store, @test_app) == :ok
 
     app2_version = "2017-11-10T15:06:31.066Z"
     assert app2_version > app_version
     app2 = %{@test_app | version: app2_version}
 
-    assert {^app_version, state2} = Store.put_app(state, app2)
+    assert Store.update_app(store, app2) == :ok
 
-    assert %Store{apps: %{^app_id => ^app2}} = state2
+    assert %Store.State{apps: %{^app_id => ^app2}} = get_state(store)
   end
 
-  test "delete app" do
-    assert {nil, state} = Store.put_app(%Store{}, @test_app)
+  test "delete app", %{store: store} do
+    %App{id: app_id} = @test_app
 
-    assert Store.delete_app(state, @test_app) == %Store{apps: %{}, tasks: %{}, app_tasks: %{}}
+    assert Store.update_app(store, @test_app) == :ok
+    assert Store.delete_app(store, app_id) == :ok
+
+    assert get_state(store) == %Store.State{apps: %{}, tasks: %{}, app_tasks: %{}}
   end
 
-  test "delete app does not exist" do
-    assert Store.delete_app(%Store{}, @test_app) == %Store{apps: %{}, tasks: %{}, app_tasks: %{}}
+  test "delete app does not exist", %{store: store} do
+    %App{id: app_id} = @test_app
+
+    assert Store.delete_app(store, app_id) == :ok
+
+    assert get_state(store) == %Store.State{apps: %{}, tasks: %{}, app_tasks: %{}}
   end
 
-  test "add task" do
-    assert {nil, state} = Store.put_app(%Store{}, @test_app)
+  test "update task not existing", %{store: store} do
+    assert Store.update_app(store, @test_app) == :ok
 
     %Task{id: task_id, app_id: app_id} = @test_task
-    assert {nil, state2} = Store.put_task!(state, @test_task)
+    assert Store.update_task(store, @test_task) == :ok
 
-    assert state2 == %Store{
+    assert get_state(store) == %Store.State{
       apps: %{app_id => @test_app},
       tasks: %{task_id => @test_task},
       app_tasks: %{app_id => MapSet.new([task_id])}
     }
   end
 
-  test "add task without app" do
-    assert_raise KeyError, "key \"/mc2\" not found in: %{}", fn ->
-      Store.put_task!(%Store{}, @test_task)
-    end
+  test "update task without app", %{store: store} do
+    %Task{id: task_id, app_id: app_id} = @test_task
+
+    import ExUnit.CaptureLog
+    assert capture_log(fn ->
+      assert Store.update_task(store, @test_task) == :ok
+    end) =~ "Unable to find app '#{app_id}' for task '#{task_id}'. Task update ignored."
+
+    assert get_state(store) == %Store.State{apps: %{}, tasks: %{}, app_tasks: %{}}
   end
 
-  test "update task same version" do
-    assert {nil, state} = Store.put_app(%Store{}, @test_app)
+  test "update task same version", %{store: store} do
+    assert Store.update_app(store, @test_app) == :ok
 
-    %Task{version: task_version} = @test_task
-    assert {nil, state2} = Store.put_task!(state, @test_task)
+    %Task{id: task_id} = @test_task
+    assert Store.update_task(store, @test_task) == :ok
+    assert Store.update_task(store, @test_task) == :ok
 
-    assert {^task_version, ^state2} = Store.put_task!(state2, @test_task)
+    assert %Store.State{tasks: %{^task_id => @test_task}} = get_state(store)
   end
 
-  test "update task new version" do
-    assert {nil, state} = Store.put_app(%Store{}, @test_app)
+  test "update task new version", %{store: store} do
+    assert Store.update_app(store, @test_app) == :ok
 
     %Task{id: task_id, version: task_version} = @test_task
-    assert {nil, state2} = Store.put_task!(state, @test_task)
+    assert Store.update_task(store, @test_task) == :ok
 
     task2_version = "2017-11-10T15:06:31.066Z"
     assert task2_version > task_version
     task2 = %{@test_task | version: task2_version}
 
-    assert {^task_version, state3} = Store.put_task!(state2, task2)
+    assert Store.update_task(store, task2)
 
-    assert %Store{tasks: %{^task_id => ^task2}} = state3
+    assert %Store.State{tasks: %{^task_id => ^task2}} = get_state(store)
   end
 
-  test "delete task" do
-    assert {nil, state} = Store.put_app(%Store{}, @test_app)
+  test "delete task", %{store: store} do
+    assert Store.update_app(store, @test_app) == :ok
 
-    %Task{app_id: app_id} = @test_task
-    assert {nil, state2} = Store.put_task!(state, @test_task)
+    %Task{id: task_id, app_id: app_id} = @test_task
+    assert Store.update_task(store, @test_task) == :ok
+    assert Store.delete_task(store, task_id) == :ok
 
-    assert Store.delete_task!(state2, @test_task) == %Store{
-      apps: %{app_id => @test_app},
+    empty_set = MapSet.new()
+    assert %Store.State{
+      apps: %{^app_id => @test_app},
       tasks: %{},
-      app_tasks: %{app_id => MapSet.new()}
-    }
+      app_tasks: %{^app_id => ^empty_set}
+    } = get_state(store)
   end
 
-  test "delete task does not exist" do
-    assert {nil, state} = Store.put_app(%Store{}, @test_app)
+  test "delete task does not exist", %{store: store} do
+    assert Store.delete_task(store, "foo") == :ok
 
-    %Task{app_id: app_id} = @test_task
-
-    assert Store.delete_task!(state, @test_task) == %Store{
-      apps: %{app_id => @test_app},
-      tasks: %{},
-      app_tasks: %{app_id => MapSet.new()}
-    }
+    assert get_state(store) == %Store.State{apps: %{}, tasks: %{}, app_tasks: %{}}
   end
 
-  test "delete task does not exist without app" do
-    assert_raise KeyError, "key \"/mc2\" not found in: %{}", fn ->
-      Store.delete_task!(%Store{}, @test_task)
-    end
-  end
+  test "delete app deletes tasks", %{store: store} do
+    %App{id: app_id} = @test_app
 
-  test "delete app deletes tasks" do
-    assert {nil, state} = Store.put_app(%Store{}, @test_app)
-    assert {nil, state2} = Store.put_task!(state, @test_task)
+    assert Store.update_app(store, @test_app) == :ok
+    assert Store.update_task(store, @test_task) == :ok
 
-    assert Store.delete_app(state2, @test_app) == %Store{apps: %{}, tasks: %{}, app_tasks: %{}}
+    assert Store.delete_app(store, app_id) == :ok
+
+    assert get_state(store) == %Store.State{apps: %{}, tasks: %{}, app_tasks: %{}}
   end
 end
