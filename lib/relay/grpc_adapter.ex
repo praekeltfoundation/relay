@@ -16,7 +16,6 @@ defmodule Relay.GRPCAdapter do
   # We override start_link to do add our own retry-with-timeout logic.
   @spec start_link(atom, GRPC.Server.servers_map(), [any]) :: {:ok, pid} | {:error, any}
   def start_link(scheme, servers, args) do
-    IO.inspect{:start_link, scheme, servers, args}
     start_fun = fn() -> GAC.start_link(scheme, servers, args) end
     retry_start(start_fun, now() + @retry_timeout)
   end
@@ -25,7 +24,6 @@ defmodule Relay.GRPCAdapter do
 
   defp retry_start(start_fun, deadline) do
     result = start_fun.()
-    IO.inspect{:retry_start, now(), deadline, result}
     if (now() + @retry_interval < deadline) and retry?(result) do
       Process.sleep(@retry_interval)
       retry_start(start_fun, deadline)
