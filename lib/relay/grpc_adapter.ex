@@ -50,9 +50,10 @@ defmodule Relay.GRPCAdapter do
     {ref, {__MODULE__, func, args}, type, timeout, kind, modules}
   end
 
-  # All other functions are just forwarded to the wrapped adapter.
+  # All other functions are just forwarded to the wrapped adapter. Some of the
+  # typespecs are slightly modified to make dialyzer happy.
 
-  @spec start(GRPC.Server.servers_map(), non_neg_integer, keyword) :: {:ok, pid, non_neg_integer}
+  @spec start(GRPC.Server.servers_map(), non_neg_integer, keyword) :: {:ok, pid, char}
   def start(servers, port, opts), do: GAC.start(servers, port, opts)
 
   @spec stop(GRPC.Server.servers_map()) :: :ok | {:error, :not_found}
@@ -64,7 +65,7 @@ defmodule Relay.GRPCAdapter do
   @spec reading_stream(GRPC.Client.Stream.t(), ([binary] -> [struct])) :: Enumerable.t()
   def reading_stream(stream, func), do: GAC.reading_stream(stream, func)
 
-  @spec stream_send(GRPC.Client.Stream.t(), binary) :: any
+  @spec stream_send(GRPC.Server.Stream.t(), binary) :: any
   def stream_send(stream, data), do: GAC.stream_send(stream, data)
 
   @doc false
