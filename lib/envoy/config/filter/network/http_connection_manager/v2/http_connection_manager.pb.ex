@@ -96,9 +96,9 @@ defmodule Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionMan
   @type t :: %__MODULE__{
           operation_name: integer,
           request_headers_for_tags: [String.t()],
-          client_sampling: Envoy.Api.V2.Core.Percent.t(),
-          random_sampling: Envoy.Api.V2.Core.Percent.t(),
-          overall_sampling: Envoy.Api.V2.Core.Percent.t()
+          client_sampling: Envoy.Type.Percent.t(),
+          random_sampling: Envoy.Type.Percent.t(),
+          overall_sampling: Envoy.Type.Percent.t()
         }
   defstruct [
     :operation_name,
@@ -114,9 +114,9 @@ defmodule Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionMan
     enum: true
 
   field :request_headers_for_tags, 2, repeated: true, type: :string
-  field :client_sampling, 3, type: Envoy.Api.V2.Core.Percent
-  field :random_sampling, 4, type: Envoy.Api.V2.Core.Percent
-  field :overall_sampling, 5, type: Envoy.Api.V2.Core.Percent
+  field :client_sampling, 3, type: Envoy.Type.Percent
+  field :random_sampling, 4, type: Envoy.Type.Percent
+  field :overall_sampling, 5, type: Envoy.Type.Percent
 end
 
 defmodule Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionManager.Tracing.OperationName do

@@ -14,18 +14,6 @@ defmodule Envoy.Api.V2.Core.Locality do
   field :sub_zone, 3, type: :string
 end
 
-defmodule Envoy.Api.V2.Core.Percent do
-  @moduledoc false
-  use Protobuf, syntax: :proto3
-
-  @type t :: %__MODULE__{
-          value: float
-        }
-  defstruct [:value]
-
-  field :value, 1, type: :double
-end
-
 defmodule Envoy.Api.V2.Core.Node do
   @moduledoc false
   use Protobuf, syntax: :proto3
