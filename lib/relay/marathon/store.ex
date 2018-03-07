@@ -21,27 +21,27 @@ defmodule Relay.Marathon.Store do
   Update an app in the Store. The app is only added if its version is newer than
   any existing app.
   """
-  @spec update_app(pid, App.t) :: :ok
-  def update_app(server, %App{} = app), do: GenServer.call(server, {:update_app, app})
+  @spec update_app(GenServer.server, App.t) :: :ok
+  def update_app(store, %App{} = app), do: GenServer.call(store, {:update_app, app})
 
   @doc """
   Delete an app from the Store. All tasks for the app will also be removed.
   """
-  @spec delete_app(pid, String.t) :: :ok
-  def delete_app(server, app_id), do: GenServer.call(server, {:delete_app, app_id})
+  @spec delete_app(GenServer.server, String.t) :: :ok
+  def delete_app(store, app_id), do: GenServer.call(store, {:delete_app, app_id})
 
   @doc """
   Update a task in the Store. The task is only added if its version is newer
   than any existing task.
   """
-  @spec update_task(pid, Task.t) :: :ok
-  def update_task(server, %Task{} = task), do: GenServer.call(server, {:update_task, task})
+  @spec update_task(GenServer.server, Task.t) :: :ok
+  def update_task(store, %Task{} = task), do: GenServer.call(store, {:update_task, task})
 
   @doc """
   Delete a task from the Store.
   """
-  @spec delete_task(pid, String.t) :: :ok
-  def delete_task(server, task_id), do: GenServer.call(server, {:delete_task, task_id})
+  @spec delete_task(GenServer.server, String.t) :: :ok
+  def delete_task(store, task_id), do: GenServer.call(store, {:delete_task, task_id})
 
   def init(_arg) do
     {:ok, %State{}}
