@@ -37,6 +37,47 @@ defmodule Relay.SupervisorTest do
     assert resources |> Enum.map(fn any_res -> Listener.decode(any_res.value) end) == listeners
   end
 
+  defp port_blocker(wait_time) do
+    caller = self()
+    task = Task.async(fn ->
+      {:ok, socket} = :gen_tcp.listen(0, [:binary, active: false])
+      send(caller, :inet.port(socket))
+      Process.sleep(wait_time)
+      :ok = :gen_tcp.close(socket)
+    end)
+    assert_receive {:ok, port}, 50
+    {task, port}
+  end
+
+  defp extract_reason(reason) do
+    case reason do
+      {reason, {:child, _, _, _, _, _, _, _}} -> extract_reason(reason)
+      {:shutdown, {:failed_to_start_child, _, reason}} -> extract_reason(reason)
+      reason -> reason
+    end
+  end
+
+  test "retry listener startup when address is in use" do
+    :ok = stop_supervised(Supervisor)
+
+    {blocker_task, port} = port_blocker(100)
+    assert capture_log(fn() ->
+      {:ok, _} = start_supervised({Supervisor, {port}})
+    end) =~ ~r/Failed to start Ranch listener .* :eaddrinuse/
+    Task.await(blocker_task)
+  end
+
+  test "retry times out after one second" do
+    :ok = stop_supervised(Supervisor)
+
+    {blocker_task, port} = port_blocker(1_050)
+    assert capture_log(fn() ->
+      {:error, reason} = start_supervised({Supervisor, {port}})
+      assert {:listen_error, _, :eaddrinuse} = extract_reason(reason)
+    end) =~ ~r/Failed to start Ranch listener .* :eaddrinuse/
+    Task.await(blocker_task)
+  end
+
   test "when the Store exits everything is restarted" do
     Process.flag(:trap_exit, true)
 
