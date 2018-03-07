@@ -11,6 +11,7 @@ defmodule Relay.Supervisor do
   `port` is the port that the gRPC server should listen on.
   """
   def start_link({port}, options \\ []) do
+    options = Keyword.put_new(options, :name, __MODULE__)
     Supervisor.start_link(__MODULE__, {port}, options)
   end
 
@@ -22,6 +23,7 @@ defmodule Relay.Supervisor do
     use Supervisor
 
     def start_link(arg, options \\ []) do
+      options = Keyword.put_new(options, :name, __MODULE__)
       Supervisor.start_link(__MODULE__, arg, options)
     end
 

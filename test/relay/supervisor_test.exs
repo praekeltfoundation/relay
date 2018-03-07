@@ -2,6 +2,7 @@ defmodule Relay.SupervisorTest do
   use ExUnit.Case
 
   alias Relay.{Supervisor, Demo, Store}
+  alias Relay.Supervisor.FrontendSupervisor
 
   alias Envoy.Api.V2.{DiscoveryRequest, DiscoveryResponse}
   alias Envoy.Api.V2.ListenerDiscoveryService.Stub, as: LDSStub
@@ -57,6 +58,22 @@ defmodule Relay.SupervisorTest do
     end
   end
 
+  defp wait_until_live() do
+    case procs_live?(Supervisor) and procs_live?(FrontendSupervisor) do
+      true -> :ok
+      _ ->
+        Process.sleep(10)
+        wait_until_live()
+    end
+  end
+
+  defp procs_live?(sup) do
+    case Elixir.Supervisor.count_children(sup) do
+      %{specs: n, active: n} -> true
+      _ -> false
+    end
+  end
+
   test "retry listener startup when address is in use" do
     :ok = stop_supervised(Supervisor)
 
@@ -95,8 +112,7 @@ defmodule Relay.SupervisorTest do
     assert_receive {:DOWN, ^server_ref, :process, _, :shutdown}, 1_000
     assert_receive {:DOWN, ^demo_ref, :process, _, :shutdown}, 1_000
 
-    # Wait for the processes to restart :-/
-    Process.sleep(50)
+    wait_until_live()
 
     # Things still work as everything has been restarted
     assert_example_response()
@@ -126,8 +142,7 @@ defmodule Relay.SupervisorTest do
       assert Process.alive?(store_pid)
       assert Process.alive?(demo_pid)
 
-      # Wait for the processes to restart :-/
-      Process.sleep(50)
+      wait_until_live()
     end) =~ ~r/\[error\] GenServer #PID<\S*> terminating\n\*\* \(stop\) killed/
 
     # Everything else still works because it's all running again
@@ -155,6 +170,8 @@ defmodule Relay.SupervisorTest do
     # Other things still happily running
     assert Process.alive?(store_pid)
     assert Process.alive?(grpc_pid)
+
+    wait_until_live()
 
     # Everything else still works because the state is still available
     assert_example_response()
