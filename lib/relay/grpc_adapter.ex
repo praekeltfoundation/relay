@@ -3,6 +3,14 @@ defmodule Relay.GRPCAdapter do
   A wrapper around GRPC.Adapter.Cowboy for handling some startup edge cases
   more cleanly. This allows us to not worry about delays in the listening port
   being released after a crash or shutdown.
+
+  This wrapper is only used by the supervisor, so we don't need the start and
+  stop functions that GRPC.Server calls. Furthermore, we don't need any of the
+  request or stream handling functions, because the request handler we get via
+  the wrapped adapter is GRPC.Adapter.Cowboy.Handler and that references
+  GRPC.Adapter.Cowboy directly. Thus, the only functions we need to wrap are
+  start_link (to do the retries) and child_spec (to swap out the wrapped
+  adapter's module for our wrapper in the supervisor spec).
   """
 
   # Retry interval in milliseconds
@@ -13,7 +21,7 @@ defmodule Relay.GRPCAdapter do
 
   alias GRPC.Adapter.Cowboy, as: GAC
 
-  # We override start_link to do add our own retry-with-timeout logic.
+  # Override start_link to do add our own retry-with-timeout logic.
   @spec start_link(atom, GRPC.Server.servers_map(), [any]) :: {:ok, pid} | {:error, any}
   def start_link(scheme, servers, args) do
     start_fun = fn() -> GAC.start_link(scheme, servers, args) end
@@ -32,41 +40,17 @@ defmodule Relay.GRPCAdapter do
     end
   end
 
-  # defp retry?({:error, {:shutdown, {_, _, {{_, {:error, :eaddrinuse}}, _}}}}),
-  #   do: true
   defp retry?({:error, {:shutdown, {:failed_to_start_child, _, reason}}}),
     do: retry?({:error, reason})
   defp retry?({:error, {:listen_error, _, :eaddrinuse}}), do: true
   defp retry?(_), do: false
 
 
-  # We override child_spec to replace the adapter module with our own.
+  # Override child_spec to replace the adapter module with our own.
   @spec child_spec(GRPC.Server.servers_map(), non_neg_integer, Keyword.t()) :: Supervisor.Spec.spec()
   def child_spec(servers, port, opts) do
     {ref, {_module, func, args}, type, timeout, kind, modules} =
       GAC.child_spec(servers, port, opts)
     {ref, {__MODULE__, func, args}, type, timeout, kind, modules}
   end
-
-  # All other functions are just forwarded to the wrapped adapter. Some of the
-  # typespecs are slightly modified to make dialyzer happy.
-
-  @spec start(GRPC.Server.servers_map(), non_neg_integer, keyword) :: {:ok, pid, char}
-  def start(servers, port, opts), do: GAC.start(servers, port, opts)
-
-  @spec stop(GRPC.Server.servers_map()) :: :ok | {:error, :not_found}
-  def stop(servers), do: GAC.stop(servers)
-
-  @spec read_body(GRPC.Client.Stream.t()) :: {:ok, binary, GRPC.Client.Stream.t()}
-  def read_body(stream), do: GAC.read_body(stream)
-
-  @spec reading_stream(GRPC.Client.Stream.t(), ([binary] -> [struct])) :: Enumerable.t()
-  def reading_stream(stream, func), do: GAC.reading_stream(stream, func)
-
-  @spec stream_send(GRPC.Server.Stream.t(), binary) :: any
-  def stream_send(stream, data), do: GAC.stream_send(stream, data)
-
-  @doc false
-  @spec flow_control(GRPC.Client.Stream.t(), non_neg_integer) :: any
-  def flow_control(stream, size), do: flow_control(stream, size)
 end

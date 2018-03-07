@@ -1,6 +1,4 @@
 # "Comments" are almost certainly interpreted as match strings, but that's okay because they won't match anything.
-# h2_connection:stream_id is private, but GRPC.Client.Stream.t references it.
-:0: Unknown type h2_connection:stream_id/0
 # The following matches are from generated code, which we don't really care about.
 lib/envoy/api/v2/cds.pb.ex:213: Function fetch_clusters/2 has no local return
 lib/envoy/api/v2/cds.pb.ex:213: Function fetch_clusters/3 has no local return
