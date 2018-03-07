@@ -16,13 +16,6 @@ defmodule Relay.SupervisorTest do
     TestHelpers.override_log_level(:warn)
     Application.put_env(:grpc, :start_server, true)
 
-    # It seems that sometimes a port remains "in use" for a short time after
-    # the listening socket is closed. To work around that and make our tests
-    # less prone to random failures in certain environments, we wait a short
-    # time at the end of the test. For dicussion of the issue, see
-    # https://stackoverflow.com/questions/23786265/erlang-otp-supervisor-gen-tcp-error-eaddrinuse
-    on_exit(fn() -> Process.sleep(100) end)
-
     {:ok, sup} = start_supervised({Supervisor, {@port}})
     %{supervisor: sup}
   end

@@ -32,9 +32,10 @@ defmodule Relay.Supervisor do
         Relay.Server.ClusterDiscoveryService,
         Relay.Server.EndpointDiscoveryService,
       ]
+      opts = [adapter: Relay.GRPCAdapter]
       children = [
         {Relay.Demo, []},
-        supervisor(GRPC.Server.Supervisor, [{services, port}])
+        supervisor(GRPC.Server.Supervisor, [{services, port, opts}])
       ]
 
       Supervisor.init(children, strategy: :one_for_one)
