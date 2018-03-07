@@ -20,18 +20,18 @@ defmodule Relay.Store do
 
   defguardp is_xds(xds) when xds in @discovery_services
 
-  @spec subscribe(identifier | atom, discovery_service, pid) :: :ok
+  @spec subscribe(GenServer.server, discovery_service, pid) :: :ok
   def subscribe(server, xds, pid) when is_xds(xds),
     do: GenServer.call(server, {:subscribe, xds, pid})
 
-  @spec unsubscribe(identifier | atom, discovery_service, pid) :: :ok
+  @spec unsubscribe(GenServer.server, discovery_service, pid) :: :ok
   def unsubscribe(server, xds, pid) when is_xds(xds),
     do: GenServer.call(server, {:unsubscribe, xds, pid})
 
-  @spec update(identifier | atom, :lds, String.t, [Envoy.Api.V2.Listener.t]) :: :ok
-  @spec update(identifier | atom, :rds, String.t, [Envoy.Api.V2.RouteConfiguration.t]) :: :ok
-  @spec update(identifier | atom, :cds, String.t, [Envoy.Api.V2.Cluster.t]) :: :ok
-  @spec update(identifier | atom, :eds, String.t, [Envoy.Api.V2.ClusterLoadAssignment.t]) :: :ok
+  @spec update(GenServer.server, :lds, String.t, [Envoy.Api.V2.Listener.t]) :: :ok
+  @spec update(GenServer.server, :rds, String.t, [Envoy.Api.V2.RouteConfiguration.t]) :: :ok
+  @spec update(GenServer.server, :cds, String.t, [Envoy.Api.V2.Cluster.t]) :: :ok
+  @spec update(GenServer.server, :eds, String.t, [Envoy.Api.V2.ClusterLoadAssignment.t]) :: :ok
   def update(server, xds, version_info, resources) when is_xds(xds),
     do: GenServer.call(server, {:update, xds, version_info, resources})
 
