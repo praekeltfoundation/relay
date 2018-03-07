@@ -256,13 +256,11 @@ defmodule Envoy.Api.V2.ClusterDiscoveryService.Service do
   @moduledoc false
   use GRPC.Service, name: "envoy.api.v2.ClusterDiscoveryService"
 
-  rpc(
-    :StreamClusters,
-    stream(Envoy.Api.V2.DiscoveryRequest),
-    stream(Envoy.Api.V2.DiscoveryResponse)
-  )
+  rpc :StreamClusters,
+      stream(Envoy.Api.V2.DiscoveryRequest),
+      stream(Envoy.Api.V2.DiscoveryResponse)
 
-  rpc(:FetchClusters, Envoy.Api.V2.DiscoveryRequest, Envoy.Api.V2.DiscoveryResponse)
+  rpc :FetchClusters, Envoy.Api.V2.DiscoveryRequest, Envoy.Api.V2.DiscoveryResponse
 end
 
 defmodule Envoy.Api.V2.ClusterDiscoveryService.Stub do

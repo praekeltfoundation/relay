@@ -60,13 +60,11 @@ defmodule Envoy.Api.V2.ListenerDiscoveryService.Service do
   @moduledoc false
   use GRPC.Service, name: "envoy.api.v2.ListenerDiscoveryService"
 
-  rpc(
-    :StreamListeners,
-    stream(Envoy.Api.V2.DiscoveryRequest),
-    stream(Envoy.Api.V2.DiscoveryResponse)
-  )
+  rpc :StreamListeners,
+      stream(Envoy.Api.V2.DiscoveryRequest),
+      stream(Envoy.Api.V2.DiscoveryResponse)
 
-  rpc(:FetchListeners, Envoy.Api.V2.DiscoveryRequest, Envoy.Api.V2.DiscoveryResponse)
+  rpc :FetchListeners, Envoy.Api.V2.DiscoveryRequest, Envoy.Api.V2.DiscoveryResponse
 end
 
 defmodule Envoy.Api.V2.ListenerDiscoveryService.Stub do
