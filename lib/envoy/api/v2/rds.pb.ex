@@ -34,13 +34,8 @@ defmodule Envoy.Api.V2.RouteDiscoveryService.Service do
   @moduledoc false
   use GRPC.Service, name: "envoy.api.v2.RouteDiscoveryService"
 
-  rpc(
-    :StreamRoutes,
-    stream(Envoy.Api.V2.DiscoveryRequest),
-    stream(Envoy.Api.V2.DiscoveryResponse)
-  )
-
-  rpc(:FetchRoutes, Envoy.Api.V2.DiscoveryRequest, Envoy.Api.V2.DiscoveryResponse)
+  rpc :StreamRoutes, stream(Envoy.Api.V2.DiscoveryRequest), stream(Envoy.Api.V2.DiscoveryResponse)
+  rpc :FetchRoutes, Envoy.Api.V2.DiscoveryRequest, Envoy.Api.V2.DiscoveryResponse
 end
 
 defmodule Envoy.Api.V2.RouteDiscoveryService.Stub do
