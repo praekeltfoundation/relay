@@ -5,6 +5,7 @@ defmodule Envoy.Config.Filter.Network.TcpProxy.V2.TcpProxy do
   @type t :: %__MODULE__{
           stat_prefix: String.t(),
           cluster: String.t(),
+          metadata_match: Envoy.Api.V2.Core.Metadata.t(),
           idle_timeout: Google.Protobuf.Duration.t(),
           downstream_idle_timeout: Google.Protobuf.Duration.t(),
           upstream_idle_timeout: Google.Protobuf.Duration.t(),
@@ -15,6 +16,7 @@ defmodule Envoy.Config.Filter.Network.TcpProxy.V2.TcpProxy do
   defstruct [
     :stat_prefix,
     :cluster,
+    :metadata_match,
     :idle_timeout,
     :downstream_idle_timeout,
     :upstream_idle_timeout,
@@ -25,6 +27,7 @@ defmodule Envoy.Config.Filter.Network.TcpProxy.V2.TcpProxy do
 
   field :stat_prefix, 1, type: :string
   field :cluster, 2, type: :string
+  field :metadata_match, 9, type: Envoy.Api.V2.Core.Metadata
   field :idle_timeout, 8, type: Google.Protobuf.Duration
   field :downstream_idle_timeout, 3, type: Google.Protobuf.Duration
   field :upstream_idle_timeout, 4, type: Google.Protobuf.Duration

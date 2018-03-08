@@ -11,7 +11,8 @@ defmodule Envoy.Api.V2.Listener do
           metadata: Envoy.Api.V2.Core.Metadata.t(),
           deprecated_v1: Envoy.Api.V2.Listener.DeprecatedV1.t(),
           drain_type: integer,
-          listener_filters: [Envoy.Api.V2.Listener.ListenerFilter.t()]
+          listener_filters: [Envoy.Api.V2.Listener.ListenerFilter.t()],
+          transparent: boolean
         }
   defstruct [
     :name,
@@ -22,7 +23,8 @@ defmodule Envoy.Api.V2.Listener do
     :metadata,
     :deprecated_v1,
     :drain_type,
-    :listener_filters
+    :listener_filters,
+    :transparent
   ]
 
   field :name, 1, type: :string
@@ -34,6 +36,7 @@ defmodule Envoy.Api.V2.Listener do
   field :deprecated_v1, 7, type: Envoy.Api.V2.Listener.DeprecatedV1
   field :drain_type, 8, type: Envoy.Api.V2.Listener.DrainType, enum: true
   field :listener_filters, 9, repeated: true, type: Envoy.Api.V2.Listener.ListenerFilter
+  field :transparent, 10, type: :bool
 end
 
 defmodule Envoy.Api.V2.Listener.DeprecatedV1 do
@@ -60,13 +63,11 @@ defmodule Envoy.Api.V2.ListenerDiscoveryService.Service do
   @moduledoc false
   use GRPC.Service, name: "envoy.api.v2.ListenerDiscoveryService"
 
-  rpc(
-    :StreamListeners,
-    stream(Envoy.Api.V2.DiscoveryRequest),
-    stream(Envoy.Api.V2.DiscoveryResponse)
-  )
+  rpc :StreamListeners,
+      stream(Envoy.Api.V2.DiscoveryRequest),
+      stream(Envoy.Api.V2.DiscoveryResponse)
 
-  rpc(:FetchListeners, Envoy.Api.V2.DiscoveryRequest, Envoy.Api.V2.DiscoveryResponse)
+  rpc :FetchListeners, Envoy.Api.V2.DiscoveryRequest, Envoy.Api.V2.DiscoveryResponse
 end
 
 defmodule Envoy.Api.V2.ListenerDiscoveryService.Stub do

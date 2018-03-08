@@ -2,6 +2,7 @@ defmodule Relay.SupervisorTest do
   use ExUnit.Case
 
   alias Relay.{Supervisor, Demo, Store}
+  alias Relay.Supervisor.FrontendSupervisor
 
   alias Envoy.Api.V2.{DiscoveryRequest, DiscoveryResponse}
   alias Envoy.Api.V2.ListenerDiscoveryService.Stub, as: LDSStub
@@ -15,13 +16,6 @@ defmodule Relay.SupervisorTest do
     TestHelpers.setup_apps([:grpc])
     TestHelpers.override_log_level(:warn)
     Application.put_env(:grpc, :start_server, true)
-
-    # It seems that sometimes a port remains "in use" for a short time after
-    # the listening socket is closed. To work around that and make our tests
-    # less prone to random failures in certain environments, we wait a short
-    # time at the end of the test. For dicussion of the issue, see
-    # https://stackoverflow.com/questions/23786265/erlang-otp-supervisor-gen-tcp-error-eaddrinuse
-    on_exit(fn() -> Process.sleep(100) end)
 
     {:ok, sup} = start_supervised({Supervisor, {@port}})
     %{supervisor: sup}
@@ -44,6 +38,63 @@ defmodule Relay.SupervisorTest do
     assert resources |> Enum.map(fn any_res -> Listener.decode(any_res.value) end) == listeners
   end
 
+  defp port_blocker(wait_time) do
+    caller = self()
+    task = Task.async(fn ->
+      {:ok, socket} = :gen_tcp.listen(0, [:binary, active: false])
+      send(caller, :inet.port(socket))
+      Process.sleep(wait_time)
+      :ok = :gen_tcp.close(socket)
+    end)
+    assert_receive {:ok, port}, 50
+    {task, port}
+  end
+
+  defp extract_reason(reason) do
+    case reason do
+      {reason, {:child, _, _, _, _, _, _, _}} -> extract_reason(reason)
+      {:shutdown, {:failed_to_start_child, _, reason}} -> extract_reason(reason)
+      reason -> reason
+    end
+  end
+
+  defp wait_until_live() do
+    case procs_live?(Supervisor) and procs_live?(FrontendSupervisor) do
+      true -> :ok
+      _ ->
+        Process.sleep(10)
+        wait_until_live()
+    end
+  end
+
+  defp procs_live?(sup) do
+    case Elixir.Supervisor.count_children(sup) do
+      %{specs: n, active: n} -> true
+      _ -> false
+    end
+  end
+
+  test "retry listener startup when address is in use" do
+    :ok = stop_supervised(Supervisor)
+
+    {blocker_task, port} = port_blocker(100)
+    assert capture_log(fn() ->
+      {:ok, _} = start_supervised({Supervisor, {port}})
+    end) =~ ~r/Failed to start Ranch listener .* :eaddrinuse/
+    Task.await(blocker_task)
+  end
+
+  test "retry times out after one second" do
+    :ok = stop_supervised(Supervisor)
+
+    {blocker_task, port} = port_blocker(1_050)
+    assert capture_log(fn() ->
+      {:error, reason} = start_supervised({Supervisor, {port}})
+      assert {:listen_error, _, :eaddrinuse} = extract_reason(reason)
+    end) =~ ~r/Failed to start Ranch listener .* :eaddrinuse/
+    Task.await(blocker_task)
+  end
+
   test "when the Store exits everything is restarted" do
     Process.flag(:trap_exit, true)
 
@@ -61,8 +112,7 @@ defmodule Relay.SupervisorTest do
     assert_receive {:DOWN, ^server_ref, :process, _, :shutdown}, 1_000
     assert_receive {:DOWN, ^demo_ref, :process, _, :shutdown}, 1_000
 
-    # Wait for the processes to restart :-/
-    Process.sleep(50)
+    wait_until_live()
 
     # Things still work as everything has been restarted
     assert_example_response()
@@ -92,8 +142,7 @@ defmodule Relay.SupervisorTest do
       assert Process.alive?(store_pid)
       assert Process.alive?(demo_pid)
 
-      # Wait for the processes to restart :-/
-      Process.sleep(50)
+      wait_until_live()
     end) =~ ~r/\[error\] GenServer #PID<\S*> terminating\n\*\* \(stop\) killed/
 
     # Everything else still works because it's all running again
@@ -121,6 +170,8 @@ defmodule Relay.SupervisorTest do
     # Other things still happily running
     assert Process.alive?(store_pid)
     assert Process.alive?(grpc_pid)
+
+    wait_until_live()
 
     # Everything else still works because the state is still available
     assert_example_response()
