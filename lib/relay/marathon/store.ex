@@ -192,7 +192,7 @@ defmodule Relay.Marathon.Store do
               Logger.debug("Task '#{id}' unchanged: #{version} <= #{existing_version}")
 
             nil ->
-              Logger.info("Task '#{id}' with version #{version} added")
+              _ = Logger.info("Task '#{id}' with version #{version} added")
               notify_updated_task()
           end
 
