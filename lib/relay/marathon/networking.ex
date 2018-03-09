@@ -18,17 +18,17 @@ defmodule Relay.Marathon.Networking do
     do: network |> Map.get("mode", "container") |> String.to_atom()
 
   # Pre-Marathon 1.5 Docker container networking mode
-  def networking_mode(%{"container" => %{"docker" => %{"network" => network}}}) do
-    case network do
-      "USER"   -> :container
-      "BRIDGE" -> :"container/bridge"
-      "HOST"   -> :host
-    end
-  end
+  def networking_mode(%{"container" => %{"docker" => %{"network" => "USER"}}}), do: :container
+
+  def networking_mode(%{"container" => %{"docker" => %{"network" => "BRIDGE"}}}),
+    do: :"container/bridge"
+
+  def networking_mode(%{"container" => %{"docker" => %{"network" => "HOST"}}}), do: :host
 
   # Legacy IP-per-task networking mode
-  def networking_mode(%{"ipAddress" => ip_address}) when not is_nil(ip_address), do:
-    :container
+  def networking_mode(%{"ipAddress" => ip_address})
+      when not is_nil(ip_address),
+      do: :container
 
   # Default to host networking mode
   def networking_mode(_app), do: :host
@@ -59,22 +59,21 @@ defmodule Relay.Marathon.Networking do
   end
 
   # Marathon 1.5+: container.portMappings field
-  defp container_port_mappings(%{"container" => %{"portMappings" => port_mappings}}), do:
-    port_mappings
+  defp container_port_mappings(%{"container" => %{"portMappings" => port_mappings}}),
+    do: port_mappings
 
   # Older Marathon: container.docker.portMappings field
-  defp container_port_mappings(
-      %{"container" => %{"docker" => %{"portMappings" => port_mappings}}}), do:
-    port_mappings
+  defp container_port_mappings(%{"container" => %{"docker" => %{"portMappings" => port_mappings}}}),
+       do: port_mappings
 
   defp container_port_mappings(_app), do: nil
 
   # Marathon 1.5+: the ipAddress field is missing
   # Marathon <1.5: the ipAddress field can be present, but can still have an
   # empty ports list :-/
-  defp ip_address_discovery_ports(
-      %{"ipAddress" => %{"discovery" => %{"ports" => ports}}}) when length(ports) > 0, do:
-    ports |> Enum.map(fn %{"number" => number} -> number end)
+  defp ip_address_discovery_ports(%{"ipAddress" => %{"discovery" => %{"ports" => ports}}})
+       when length(ports) > 0,
+       do: ports |> Enum.map(fn %{"number" => number} -> number end)
 
   defp ip_address_discovery_ports(_app), do: nil
 
@@ -88,8 +87,8 @@ defmodule Relay.Marathon.Networking do
   def task_address(_networking_mode, task), do: task_host(task)
 
   defp task_ip_address(%{"ipAddresses" => [%{"ipAddress" => ip_address} | _]})
-      when is_binary(ip_address),
-    do: ip_address
+       when is_binary(ip_address),
+       do: ip_address
 
   # No address allocated yet
   defp task_ip_address(_task), do: nil
