@@ -1,6 +1,7 @@
 defmodule Relay.Marathon.App do
   alias Relay.Marathon.{Labels, Networking}
 
+  @enforce_keys [:id, :networking_mode, :ports_list, :port_indices_in_group, :labels, :version]
   defstruct [:id, :networking_mode, :ports_list, :port_indices_in_group, :labels, :version]
 
   @type t :: %__MODULE__{

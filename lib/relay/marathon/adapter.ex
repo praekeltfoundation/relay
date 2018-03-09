@@ -15,16 +15,26 @@ defmodule Relay.Marathon.Adapter do
   @default_locality Locality.new(region: "default")
 
   @doc """
-  Create a Cluster for the given app and port index. The Cluster will have the
-  minimum amount of options set but will be a Cluster with EDS endpoint
-  discovery. Additional options can be specified using `options`.
+  Create Clusters for the given app. The Clusters will have the minimum amount
+  of options set but will be Clusters with EDS endpoint discovery. Additional
+  options can be specified using `options`.
   """
+  @spec app_clusters(App.t, ConfigSource.t, keyword) :: [Cluster.t]
+  def app_clusters(
+        %App{port_indices_in_group: port_indices_in_group} = app,
+        %ConfigSource{} = eds_config_source,
+        options \\ []
+      ) do
+    port_indices_in_group
+    |> Enum.map(&app_port_cluster(app, &1, eds_config_source, options))
+  end
+
   @spec app_port_cluster(App.t, non_neg_integer, ConfigSource.t, keyword) :: Cluster.t
-  def app_port_cluster(
+  defp app_port_cluster(
         %App{id: app_id},
         port_index,
         %ConfigSource{} = eds_config_source,
-        options \\ []
+        options
       ) do
     service_name = "#{app_id}_#{port_index}"
     {max_size, options} = max_obj_name_length(options)

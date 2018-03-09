@@ -12,6 +12,7 @@ defmodule Relay.Demo do
     },
     networking_mode: :"container/bridge",
     ports_list: [80],
+    port_indices_in_group: [0],
     version: "2017-11-08T15:06:31.066Z"
   }
 
@@ -86,7 +87,7 @@ defmodule Relay.Demo do
   end
 
   def clusters do
-    [Adapter.app_port_cluster(@demo_app, 0, own_api_config_source())]
+    Adapter.app_clusters(@demo_app, own_api_config_source())
   end
 
   defp router_filter do
