@@ -1,10 +1,13 @@
 defmodule Relay.StoreTest.Macros do
   defmacro xds_tests(name_suffix, assertion) do
     Relay.Store.discovery_services()
-    |> Enum.map(fn(xds) ->
+    |> Enum.map(fn xds ->
       quote do
-        test "#{unquote(xds)} #{unquote(name_suffix)}", %{store: store},
+        test(
+          "#{unquote(xds)} #{unquote(name_suffix)}",
+          %{store: store},
           do: unquote(assertion).(store, unquote(xds))
+        )
       end
     end)
   end
@@ -28,7 +31,7 @@ defmodule Relay.StoreTest do
     resources
   end
 
-  xds_tests "subscribe idempotent", fn(store, xds) ->
+  xds_tests "subscribe idempotent", fn store, xds ->
     assert get_resources(store, xds) == %Resources{subscribers: MapSet.new()}
 
     assert Store.subscribe(store, xds, self()) == :ok
@@ -45,7 +48,7 @@ defmodule Relay.StoreTest do
     assert_receive {^xds, ^version_info, ^resources}, 100
   end
 
-  xds_tests "unsubscribe idempotent", fn(store, xds) ->
+  xds_tests "unsubscribe idempotent", fn store, xds ->
     assert_subscribe(store, xds)
     assert get_resources(store, xds) == %Resources{subscribers: MapSet.new([self()])}
 
@@ -56,7 +59,7 @@ defmodule Relay.StoreTest do
     assert get_resources(store, xds) == %Resources{subscribers: MapSet.new()}
   end
 
-  xds_tests "subscribers receive updates", fn(store, xds) ->
+  xds_tests "subscribers receive updates", fn store, xds ->
     assert_subscribe(store, xds)
 
     resources = [:foo, :bar]
@@ -65,7 +68,7 @@ defmodule Relay.StoreTest do
     assert_receive {^xds, "1", ^resources}, 1_000
   end
 
-  xds_tests "old updates ignored", fn(store, xds) ->
+  xds_tests "old updates ignored", fn store, xds ->
     resources = [:foobar, :baz]
     assert Store.update(store, xds, "2", resources) == :ok
 
