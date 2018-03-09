@@ -118,9 +118,9 @@ defmodule Relay.Marathon.AdapterTest do
     end
   end
 
-  describe "app_port_cluster_load_assignment/4" do
+  describe "app_cluster_load_assignments/3" do
     test "simple cluster load assignment" do
-      cla = Adapter.app_port_cluster_load_assignment(@test_app, [@test_task], 0)
+      assert [cla] = Adapter.app_cluster_load_assignments(@test_app, [@test_task])
 
       assert %ClusterLoadAssignment{
                cluster_name: "/mc2_0",
@@ -151,11 +151,10 @@ defmodule Relay.Marathon.AdapterTest do
     test "cluster load assignment with options" do
       alias Google.Protobuf.{UInt32Value, UInt64Value}
 
-      cla =
-        Adapter.app_port_cluster_load_assignment(
+      assert [cla] =
+        Adapter.app_cluster_load_assignments(
           @test_app,
           [@test_task],
-          0,
           policy: ClusterLoadAssignment.Policy.new(drop_overload: 5.0),
           locality_lb_endpoints_opts: [
             load_balancing_weight: UInt64Value.new(value: 42),

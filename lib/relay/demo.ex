@@ -148,6 +148,6 @@ defmodule Relay.Demo do
   end
 
   def endpoints do
-    [Adapter.app_port_cluster_load_assignment(@demo_app, [@demo_task], 0)]
+    Adapter.app_cluster_load_assignments(@demo_app, [@demo_task])
   end
 end

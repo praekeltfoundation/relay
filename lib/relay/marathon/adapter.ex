@@ -80,8 +80,8 @@ defmodule Relay.Marathon.Adapter do
   end
 
   @doc """
-  Create a ClusterLoadAssignment for the given app, tasks, and port index. The
-  ClusterLoadAssignment will have the minimum amount of options set.
+  Create ClusterLoadAssignments for the given app and tasks. The
+  ClusterLoadAssignments will have the minimum amount of options set.
 
   Additional options can be specified using `options` and options for nested
   types are nested within that:
@@ -89,9 +89,19 @@ defmodule Relay.Marathon.Adapter do
   - LocalityLbEndpoints: `options.locality_lb_endpoints_opts`
   - LbEndpoint: `options.locality_lb_endpoints_opts.lb_endpoint_opts`
   """
+  @spec app_cluster_load_assignments(App.t, [Task.t], keyword) :: [ClusterLoadAssignment.t]
+  def app_cluster_load_assignments(
+        %App{port_indices_in_group: port_indices_in_group} = app,
+        tasks,
+        options \\ []
+      ) do
+    port_indices_in_group
+    |> Enum.map(&app_port_cluster_load_assignment(app, tasks, &1, options))
+  end
+
   @spec app_port_cluster_load_assignment(App.t, [Task.t], non_neg_integer, keyword) ::
           ClusterLoadAssignment.t
-  def app_port_cluster_load_assignment(%App{id: app_id}, tasks, port_index, options \\ []) do
+  defp app_port_cluster_load_assignment(%App{id: app_id}, tasks, port_index, options) do
     {llbe_opts, options} = Keyword.pop(options, :locality_lb_endpoints_opts, [])
 
     ClusterLoadAssignment.new(
