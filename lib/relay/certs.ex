@@ -9,8 +9,9 @@ defmodule Relay.Certs do
   Extracts the subject CNs and SAN DNS names from the given certificate to
   determine which SNI hostnames to serve it for.
   """
+  @spec get_hostnames(:relay_pk_utils.cert) :: [String.t]
   def get_hostnames(cert) do
-    :pk_utils.get_cert_names(cert)
+    :relay_pk_utils.get_cert_names(cert)
     |> Enum.map(&to_string/1)
     |> Enum.filter(&String.match?(&1, @hostname_regex))
     |> Enum.uniq()
@@ -19,11 +20,12 @@ defmodule Relay.Certs do
   @doc """
   Extracts hostnames from all end-entity certs in the given PEM data.
   """
+  @spec get_end_entity_hostnames(binary | [:public_key.pem_entry]) :: [String.t]
   def get_end_entity_hostnames(pem_data) when is_binary(pem_data),
     do: get_end_entity_hostnames(:public_key.pem_decode(pem_data))
 
   def get_end_entity_hostnames(pem_things) do
-    :pk_utils.get_end_entity_certs(pem_things)
+    :relay_pk_utils.get_end_entity_certs(pem_things)
     |> Enum.flat_map(&get_hostnames/1)
     |> Enum.uniq()
   end
