@@ -28,7 +28,7 @@ get_end_entity_certs(PEM_things) ->
 
 get_end_entity_cert({'Certificate', CertBinary, not_encrypted}) ->
     OtpCert = public_key:pkix_decode_cert(CertBinary, otp),
-    TbsCert = OtpCert #'OTPCertificate'.tbsCertificate,
+    TbsCert = OtpCert#'OTPCertificate'.tbsCertificate,
     Extensions = TbsCert#'OTPTBSCertificate'.extensions,
     BC = pubkey_cert:select_extension(?'id-ce-basicConstraints', Extensions),
     case BC of
