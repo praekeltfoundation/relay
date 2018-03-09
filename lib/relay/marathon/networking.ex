@@ -18,14 +18,12 @@ defmodule Relay.Marathon.Networking do
     do: network |> Map.get("mode", "container") |> String.to_atom()
 
   # Pre-Marathon 1.5 Docker container networking mode
-  def networking_mode(%{"container" => %{"docker" => %{"network" => network}}})
-      when not is_nil(network) do
-    case network do
-      "USER" -> :container
-      "BRIDGE" -> :"container/bridge"
-      "HOST" -> :host
-    end
-  end
+  def networking_mode(%{"container" => %{"docker" => %{"network" => "USER"}}}), do: :container
+
+  def networking_mode(%{"container" => %{"docker" => %{"network" => "BRIDGE"}}}),
+    do: :"container/bridge"
+
+  def networking_mode(%{"container" => %{"docker" => %{"network" => "HOST"}}}), do: :host
 
   # Legacy IP-per-task networking mode
   def networking_mode(%{"ipAddress" => ip_address})
