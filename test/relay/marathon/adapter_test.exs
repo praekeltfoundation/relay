@@ -180,14 +180,14 @@ defmodule Relay.Marathon.AdapterTest do
     end
   end
 
-  describe "app_port_virtual_host/3" do
+  describe "app_virtual_hosts/3" do
     test "http virtual host" do
       app = %{
         @test_app
         | labels: @test_app.labels |> Map.put("HAPROXY_0_REDIRECT_TO_HTTPS", "false")
       }
 
-      virtual_host = Adapter.app_port_virtual_host(:http, app, 0)
+      assert [virtual_host] = Adapter.app_virtual_hosts(:http, app)
 
       assert %VirtualHost{
                name: "http_/mc2_0",
@@ -209,7 +209,7 @@ defmodule Relay.Marathon.AdapterTest do
         | labels: @test_app.labels |> Map.put("HAPROXY_0_REDIRECT_TO_HTTPS", "false")
       }
 
-      virtual_host = Adapter.app_port_virtual_host(:https, app, 0)
+      assert [virtual_host] = Adapter.app_virtual_hosts(:https, app)
 
       assert %VirtualHost{
                name: "https_/mc2_0",
@@ -235,11 +235,10 @@ defmodule Relay.Marathon.AdapterTest do
         | labels: @test_app.labels |> Map.put("HAPROXY_0_REDIRECT_TO_HTTPS", "false")
       }
 
-      virtual_host =
-        Adapter.app_port_virtual_host(
+      assert [virtual_host] =
+        Adapter.app_virtual_hosts(
           :http,
           app,
-          0,
           response_headers_to_add: [
             HeaderValueOption.new(
               header: HeaderValue.new(key: "Strict-Transport-Security", value: "max-age=31536000")
@@ -293,7 +292,7 @@ defmodule Relay.Marathon.AdapterTest do
     end
 
     test "http to https redirect" do
-      virtual_host = Adapter.app_port_virtual_host(:http, @test_app, 0)
+      assert [virtual_host] = Adapter.app_virtual_hosts(:http, @test_app)
 
       assert %VirtualHost{
                name: "http_/mc2_0",
@@ -311,7 +310,7 @@ defmodule Relay.Marathon.AdapterTest do
 
     test "other listeners rejected" do
       assert_raise ArgumentError, "only :http and :https listeners supported", fn ->
-        Adapter.app_port_virtual_host(:ftp, @test_app, 0)
+        Adapter.app_virtual_hosts(:ftp, @test_app)
       end
     end
   end

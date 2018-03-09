@@ -144,8 +144,8 @@ defmodule Relay.Marathon.Adapter do
   end
 
   @doc """
-  Create a VirtualHost for the given listener, app, and port index. The
-  VirtualHost will have the minimum amount of options set.
+  Create VirtualHosts for the given listener and app. The VirtualHosts will have
+  the minimum amount of options set.
 
   Additional options can be specified using `options` and options for nested
   types are nested within that:
@@ -154,11 +154,21 @@ defmodule Relay.Marathon.Adapter do
   - RouteAction: `options.route_opts.action_opts`
   - RouteMatch: `options.route_opts.match_opts`
   """
-  @spec app_port_virtual_host(atom, App.t, non_neg_integer, keyword) :: VirtualHost.t
-  def app_port_virtual_host(listener, %App{id: app_id} = app, port_index, options \\ []) do
+  @spec app_virtual_hosts(atom, App.t, keyword) :: VirtualHost.t
+  def app_virtual_hosts(
+        listener,
+        %App{port_indices_in_group: port_indices_in_group} = app,
+        options \\ []
+      ) do
     if not listener in [:http, :https],
       do: raise(ArgumentError, "only :http and :https listeners supported")
 
+    port_indices_in_group
+    |> Enum.map(&app_port_virtual_host(listener, app, &1, options))
+  end
+
+  @spec app_port_virtual_host(atom, App.t, non_neg_integer, keyword) :: VirtualHost.t
+  defp app_port_virtual_host(listener, %App{id: app_id} = app, port_index, options) do
     {route_opts, options} = Keyword.pop(options, :route_opts, [])
 
     VirtualHost.new(

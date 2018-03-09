@@ -142,7 +142,7 @@ defmodule Relay.Demo do
     [
       RouteConfiguration.new(
         name: "http",
-        virtual_hosts: [Adapter.app_port_virtual_host(:http, @demo_app, 0)]
+        virtual_hosts: Adapter.app_virtual_hosts(:http, @demo_app)
       )
     ]
   end
