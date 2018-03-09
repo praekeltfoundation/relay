@@ -4,10 +4,7 @@ defmodule MarathonClient.SSEClient do
   data chunks to the SSE parser.
   """
 
-  # The logging "functions" are actually macros, so we need to `require Logger`
-  # in order to access them. We match the return value to `_` to keep dialyzer
-  # happy without allowing a failed log message to break stuff.
-  require Logger
+  use LogWrapper, as: Log
 
   use GenServer
 
@@ -36,7 +33,7 @@ defmodule MarathonClient.SSEClient do
       %HTTPoison.AsyncStatus{code: 200} ->
         {:ok, {r, ssep}}
       msg ->
-        _ = Logger.debug("Failed to connect to stream: #{inspect msg}")
+        Log.debug("Failed to connect to stream: #{inspect msg}")
         {:stop, "Error connecting to event stream: #{inspect msg}"}
     end
   end
@@ -60,7 +57,7 @@ defmodule MarathonClient.SSEClient do
   end
 
   def handle_info(msg, state) do
-    _ = Logger.debug("Unexpected message: #{inspect msg}") # noqa
+    Log.debug("Unexpected message: #{inspect msg}") # noqa
     {:noreply, state}
   end
 end
