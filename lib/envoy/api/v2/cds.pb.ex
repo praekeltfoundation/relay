@@ -179,11 +179,11 @@ defmodule Envoy.Api.V2.Cluster.CommonLbConfig do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          healthy_panic_threshold: Envoy.Api.V2.Core.Percent.t()
+          healthy_panic_threshold: Envoy.Type.Percent.t()
         }
   defstruct [:healthy_panic_threshold]
 
-  field :healthy_panic_threshold, 1, type: Envoy.Api.V2.Core.Percent
+  field :healthy_panic_threshold, 1, type: Envoy.Type.Percent
 end
 
 defmodule Envoy.Api.V2.Cluster.CommonLbConfig.ZoneAwareLbConfig do
@@ -191,12 +191,12 @@ defmodule Envoy.Api.V2.Cluster.CommonLbConfig.ZoneAwareLbConfig do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          routing_enabled: Envoy.Api.V2.Core.Percent.t(),
+          routing_enabled: Envoy.Type.Percent.t(),
           min_cluster_size: Google.Protobuf.UInt64Value.t()
         }
   defstruct [:routing_enabled, :min_cluster_size]
 
-  field :routing_enabled, 1, type: Envoy.Api.V2.Core.Percent
+  field :routing_enabled, 1, type: Envoy.Type.Percent
   field :min_cluster_size, 2, type: Google.Protobuf.UInt64Value
 end
 
@@ -256,13 +256,11 @@ defmodule Envoy.Api.V2.ClusterDiscoveryService.Service do
   @moduledoc false
   use GRPC.Service, name: "envoy.api.v2.ClusterDiscoveryService"
 
-  rpc(
-    :StreamClusters,
-    stream(Envoy.Api.V2.DiscoveryRequest),
-    stream(Envoy.Api.V2.DiscoveryResponse)
-  )
+  rpc :StreamClusters,
+      stream(Envoy.Api.V2.DiscoveryRequest),
+      stream(Envoy.Api.V2.DiscoveryResponse)
 
-  rpc(:FetchClusters, Envoy.Api.V2.DiscoveryRequest, Envoy.Api.V2.DiscoveryResponse)
+  rpc :FetchClusters, Envoy.Api.V2.DiscoveryRequest, Envoy.Api.V2.DiscoveryResponse
 end
 
 defmodule Envoy.Api.V2.ClusterDiscoveryService.Stub do
