@@ -204,12 +204,7 @@ defmodule Relay.Marathon.AdapterTest do
     end
 
     test "https virtual host" do
-      app = %{
-        @test_app
-        | labels: @test_app.labels |> Map.put("HAPROXY_0_REDIRECT_TO_HTTPS", "false")
-      }
-
-      assert [virtual_host] = Adapter.app_virtual_hosts(:https, app)
+      assert [virtual_host] = Adapter.app_virtual_hosts(:https, @test_app)
 
       assert %VirtualHost{
                name: "https_/mc2_0",
