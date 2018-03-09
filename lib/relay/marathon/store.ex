@@ -143,14 +143,14 @@ defmodule Relay.Marathon.Store do
     _ =
       case old_app do
         %App{version: existing_version} when version > existing_version ->
-          Logger.debug("App '#{id}' updated: #{existing_version} -> #{version}")
+          _ = Logger.debug("App '#{id}' updated: #{existing_version} -> #{version}")
           notify_updated_app()
 
         %App{version: existing_version} ->
           Logger.debug("App '#{id}' unchanged: #{version} <= #{existing_version}")
 
         nil ->
-          Logger.info("App '#{id}' with version #{version} added")
+          _ = Logger.info("App '#{id}' with version #{version} added")
           notify_updated_app()
       end
 
@@ -163,7 +163,7 @@ defmodule Relay.Marathon.Store do
     _ =
       case app do
         %App{version: version} ->
-          Logger.info("App '#{id}' with version #{version} deleted")
+          _ = Logger.info("App '#{id}' with version #{version} deleted")
           notify_updated_app()
 
         nil ->
@@ -185,7 +185,7 @@ defmodule Relay.Marathon.Store do
         _ =
           case old_task do
             %Task{version: existing_version} when version > existing_version ->
-              Logger.debug("Task '#{id}' updated: #{existing_version} -> #{version}")
+              _ = Logger.debug("Task '#{id}' updated: #{existing_version} -> #{version}")
               notify_updated_task()
 
             %Task{version: existing_version} ->
@@ -212,7 +212,7 @@ defmodule Relay.Marathon.Store do
     _ =
       case task do
         %Task{version: version} ->
-          Logger.info("Task '#{id}' with version #{version} deleted")
+          _ = Logger.info("Task '#{id}' with version #{version} deleted")
           notify_updated_task()
 
         nil ->
