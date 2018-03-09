@@ -154,7 +154,7 @@ defmodule Relay.Marathon.Adapter do
   - RouteAction: `options.route_opts.action_opts`
   - RouteMatch: `options.route_opts.match_opts`
   """
-  @spec app_virtual_hosts(atom, App.t, keyword) :: VirtualHost.t
+  @spec app_virtual_hosts(atom, App.t, keyword) :: [VirtualHost.t]
   def app_virtual_hosts(
         listener,
         %App{port_indices_in_group: port_indices_in_group} = app,
