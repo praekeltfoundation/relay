@@ -88,6 +88,25 @@ defmodule Relay.Marathon.NetworkingTest do
       assert Networking.networking_mode(app) == :host
     end
 
+    test "host networking with Docker container w/o network (Marathon < 1.5)" do
+      # At least with DC/OS 1.9, container.docker.network seems to always be
+      # null with host networking.
+      app = @test_app |> Map.put("container", %{
+        "type" => "DOCKER",
+        "volumes" => [],
+        "docker" => %{
+          "image" => "python:3-alpine3.7",
+          "network" => nil,
+          "portMappings" => [],
+          "privileged" => false,
+          "parameters" => [],
+          "forcePullImage" => false
+        }
+      })
+
+      assert Networking.networking_mode(app) == :host
+    end
+
     test "container/bridge networking with Docker container (Marathon < 1.5)" do
       app = @test_app |> Map.put("container", %{
         "type" => "DOCKER",
