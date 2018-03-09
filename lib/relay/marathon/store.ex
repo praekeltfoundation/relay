@@ -144,15 +144,14 @@ defmodule Relay.Marathon.Store do
       case old_app do
         %App{version: existing_version} when version > existing_version ->
           Logger.debug("App '#{id}' updated: #{existing_version} -> #{version}")
-
-        # Notify update!
+          notify_updated_app()
 
         %App{version: existing_version} ->
           Logger.debug("App '#{id}' unchanged: #{version} <= #{existing_version}")
 
         nil ->
           Logger.info("App '#{id}' with version #{version} added")
-          # Notify update!
+          notify_updated_app()
       end
 
     {:reply, :ok, new_state}
@@ -165,8 +164,7 @@ defmodule Relay.Marathon.Store do
       case app do
         %App{version: version} ->
           Logger.info("App '#{id}' with version #{version} deleted")
-
-        # Notify update!
+          notify_updated_app()
 
         nil ->
           Logger.debug("App '#{id}' not present/already deleted")
@@ -188,8 +186,7 @@ defmodule Relay.Marathon.Store do
           case old_task do
             %Task{version: existing_version} when version > existing_version ->
               Logger.debug("Task '#{id}' updated: #{existing_version} -> #{version}")
-
-            # Notify update!
+              notify_updated_task()
 
             %Task{version: existing_version} ->
               Logger.debug("Task '#{id}' unchanged: #{version} <= #{existing_version}")
@@ -216,8 +213,7 @@ defmodule Relay.Marathon.Store do
       case task do
         %Task{version: version} ->
           Logger.info("Task '#{id}' with version #{version} deleted")
-
-        # Notify update!
+          notify_updated_task()
 
         nil ->
           Logger.debug("Task '#{id}' not present/already deleted")
@@ -228,4 +224,12 @@ defmodule Relay.Marathon.Store do
 
   # For testing only
   def handle_call(:_get_state, _from, state), do: {:reply, {:ok, state}, state}
+
+  defp notify_updated_app do
+    Logger.debug("An app was updated, we should update CDS and RDS...")
+  end
+
+  defp notify_updated_task do
+    Logger.debug("A task was updated, we should updated EDS...")
+  end
 end
