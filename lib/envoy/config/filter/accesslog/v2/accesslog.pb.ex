@@ -76,7 +76,8 @@ defmodule Envoy.Config.Filter.Accesslog.V2.ResponseFlags do
           no_route_found: boolean,
           delay_injected: boolean,
           fault_injected: boolean,
-          rate_limited: boolean
+          rate_limited: boolean,
+          unauthorized_details: Envoy.Config.Filter.Accesslog.V2.ResponseFlags.Unauthorized.t()
         }
   defstruct [
     :failed_local_healthcheck,
@@ -90,7 +91,8 @@ defmodule Envoy.Config.Filter.Accesslog.V2.ResponseFlags do
     :no_route_found,
     :delay_injected,
     :fault_injected,
-    :rate_limited
+    :rate_limited,
+    :unauthorized_details
   ]
 
   field :failed_local_healthcheck, 1, type: :bool
@@ -105,6 +107,31 @@ defmodule Envoy.Config.Filter.Accesslog.V2.ResponseFlags do
   field :delay_injected, 10, type: :bool
   field :fault_injected, 11, type: :bool
   field :rate_limited, 12, type: :bool
+
+  field :unauthorized_details, 13,
+    type: Envoy.Config.Filter.Accesslog.V2.ResponseFlags.Unauthorized
+end
+
+defmodule Envoy.Config.Filter.Accesslog.V2.ResponseFlags.Unauthorized do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          reason: integer
+        }
+  defstruct [:reason]
+
+  field :reason, 1,
+    type: Envoy.Config.Filter.Accesslog.V2.ResponseFlags.Unauthorized.Reason,
+    enum: true
+end
+
+defmodule Envoy.Config.Filter.Accesslog.V2.ResponseFlags.Unauthorized.Reason do
+  @moduledoc false
+  use Protobuf, enum: true, syntax: :proto3
+
+  field :REASON_UNSPECIFIED, 0
+  field :EXTERNAL_SERVICE, 1
 end
 
 defmodule Envoy.Config.Filter.Accesslog.V2.TLSProperties do
@@ -344,6 +371,7 @@ defmodule Envoy.Config.Filter.Accesslog.V2.ComparisonFilter.Op do
 
   field :EQ, 0
   field :GE, 1
+  field :LE, 2
 end
 
 defmodule Envoy.Config.Filter.Accesslog.V2.StatusCodeFilter do
@@ -389,11 +417,15 @@ defmodule Envoy.Config.Filter.Accesslog.V2.RuntimeFilter do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          runtime_key: String.t()
+          runtime_key: String.t(),
+          percent_sampled: Envoy.Type.FractionalPercent.t(),
+          use_independent_randomness: boolean
         }
-  defstruct [:runtime_key]
+  defstruct [:runtime_key, :percent_sampled, :use_independent_randomness]
 
   field :runtime_key, 1, type: :string
+  field :percent_sampled, 2, type: Envoy.Type.FractionalPercent
+  field :use_independent_randomness, 3, type: :bool
 end
 
 defmodule Envoy.Config.Filter.Accesslog.V2.AndFilter do

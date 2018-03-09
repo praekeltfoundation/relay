@@ -37,11 +37,6 @@ defmodule Relay.MixProject do
   defp deps do
     [
       {:grpc, github: "tony612/grpc-elixir"},
-      # lager_logger stops the Eternal Logging System War.
-      {:lager_logger, "~> 1.0"},
-      # chatterbox (through grpc) specifies lager from github, which conflicts
-      # with version lager_logger wants. Overriding both of them fixes that.
-      {:lager, ">= 3.2.4", override: true},
 
       # 2017-12-13: The latest hackney release (1.10.1) has a bug in async
       # request cleanup: https://github.com/benoitc/hackney/issues/447 The
