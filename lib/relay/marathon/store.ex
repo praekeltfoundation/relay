@@ -1,8 +1,9 @@
 defmodule Relay.Marathon.Store do
   alias Relay.Marathon.{App, Task}
 
+  use LogWrapper, as: Log
+
   use GenServer
-  require Logger
 
   defmodule State do
     defstruct apps: %{}, tasks: %{}, app_tasks: %{}
@@ -140,19 +141,18 @@ defmodule Relay.Marathon.Store do
   def handle_call({:update_app, %App{id: id, version: version} = app}, _from, state) do
     {old_app, new_state} = State.get_and_update_app(state, app)
 
-    _ =
-      case old_app do
-        %App{version: existing_version} when version > existing_version ->
-          _ = Logger.debug("App '#{id}' updated: #{existing_version} -> #{version}")
-          notify_updated_app()
+    case old_app do
+      %App{version: existing_version} when version > existing_version ->
+        Log.debug("App '#{id}' updated: #{existing_version} -> #{version}")
+        notify_updated_app()
 
-        %App{version: existing_version} ->
-          Logger.debug("App '#{id}' unchanged: #{version} <= #{existing_version}")
+      %App{version: existing_version} ->
+        Log.debug("App '#{id}' unchanged: #{version} <= #{existing_version}")
 
-        nil ->
-          _ = Logger.info("App '#{id}' with version #{version} added")
-          notify_updated_app()
-      end
+      nil ->
+        Log.info("App '#{id}' with version #{version} added")
+        notify_updated_app()
+    end
 
     {:reply, :ok, new_state}
   end
@@ -160,15 +160,14 @@ defmodule Relay.Marathon.Store do
   def handle_call({:delete_app, id}, _from, state) do
     {app, new_state} = State.pop_app(state, id)
 
-    _ =
-      case app do
-        %App{version: version} ->
-          _ = Logger.info("App '#{id}' with version #{version} deleted")
-          notify_updated_app()
+    case app do
+      %App{version: version} ->
+        Log.info("App '#{id}' with version #{version} deleted")
+        notify_updated_app()
 
-        nil ->
-          Logger.debug("App '#{id}' not present/already deleted")
-      end
+      nil ->
+        Log.debug("App '#{id}' not present/already deleted")
+    end
 
     {:reply, :ok, new_state}
   end
@@ -182,24 +181,23 @@ defmodule Relay.Marathon.Store do
       try do
         {old_task, new_state} = State.get_and_update_task!(state, task)
 
-        _ =
-          case old_task do
-            %Task{version: existing_version} when version > existing_version ->
-              _ = Logger.debug("Task '#{id}' updated: #{existing_version} -> #{version}")
-              notify_updated_task()
+        case old_task do
+          %Task{version: existing_version} when version > existing_version ->
+            Log.debug("Task '#{id}' updated: #{existing_version} -> #{version}")
+            notify_updated_task()
 
-            %Task{version: existing_version} ->
-              Logger.debug("Task '#{id}' unchanged: #{version} <= #{existing_version}")
+          %Task{version: existing_version} ->
+            Log.debug("Task '#{id}' unchanged: #{version} <= #{existing_version}")
 
-            nil ->
-              _ = Logger.info("Task '#{id}' with version #{version} added")
-              notify_updated_task()
-          end
+          nil ->
+            Log.info("Task '#{id}' with version #{version} added")
+            notify_updated_task()
+        end
 
         new_state
       rescue
         KeyError ->
-          _ = Logger.warn("Unable to find app '#{app_id}' for task '#{id}'. Task update ignored.")
+          Log.warn("Unable to find app '#{app_id}' for task '#{id}'. Task update ignored.")
           state
       end
 
@@ -209,15 +207,14 @@ defmodule Relay.Marathon.Store do
   def handle_call({:delete_task, id}, _from, state) do
     {task, new_state} = State.pop_task(state, id)
 
-    _ =
-      case task do
-        %Task{version: version} ->
-          _ = Logger.info("Task '#{id}' with version #{version} deleted")
-          notify_updated_task()
+    case task do
+      %Task{version: version} ->
+        Log.info("Task '#{id}' with version #{version} deleted")
+        notify_updated_task()
 
-        nil ->
-          Logger.debug("Task '#{id}' not present/already deleted")
-      end
+      nil ->
+        Log.debug("Task '#{id}' not present/already deleted")
+    end
 
     {:reply, :ok, new_state}
   end
@@ -226,10 +223,10 @@ defmodule Relay.Marathon.Store do
   def handle_call(:_get_state, _from, state), do: {:reply, {:ok, state}, state}
 
   defp notify_updated_app do
-    Logger.debug("An app was updated, we should update CDS and RDS...")
+    Log.debug("An app was updated, we should update CDS and RDS...")
   end
 
   defp notify_updated_task do
-    Logger.debug("A task was updated, we should updated EDS...")
+    Log.debug("A task was updated, we should updated EDS...")
   end
 end
