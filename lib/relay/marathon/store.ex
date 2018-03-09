@@ -6,13 +6,14 @@ defmodule Relay.Marathon.Store do
 
   defmodule State do
     defstruct apps: %{}, tasks: %{}, app_tasks: %{}
-    @type t :: %__MODULE__{
-      apps: %{optional(String.t) => App.t},
-      tasks: %{optional(String.t) => Task.t},
-      app_tasks: %{optional(String.t) => String.t}
-    }
 
-    @spec get_and_update_app(t, App.t) :: {App.t | nil, t}
+    @type t :: %__MODULE__{
+            apps: %{optional(String.t()) => App.t()},
+            tasks: %{optional(String.t()) => Task.t()},
+            app_tasks: %{optional(String.t()) => String.t()}
+          }
+
+    @spec get_and_update_app(t, App.t()) :: {App.t() | nil, t}
     def get_and_update_app(%__MODULE__{apps: apps} = state, %App{id: id, version: version} = app) do
       case Map.get(apps, id) do
         # App is newer than existing app, update the app
@@ -29,15 +30,15 @@ defmodule Relay.Marathon.Store do
       end
     end
 
-    @spec put_app(t, App.t) :: t
+    @spec put_app(t, App.t()) :: t
     defp put_app(%__MODULE__{apps: apps, app_tasks: app_tasks} = state, %App{id: id} = app),
       do: %{state | apps: Map.put(apps, id, app), app_tasks: Map.put(app_tasks, id, MapSet.new())}
 
-    @spec replace_app!(t, App.t) :: t
+    @spec replace_app!(t, App.t()) :: t
     defp replace_app!(%__MODULE__{apps: apps} = state, %App{id: id} = app),
       do: %{state | apps: Map.replace!(apps, id, app)}
 
-    @spec pop_app(t, String.t) :: {App.t | nil, t}
+    @spec pop_app(t, String.t()) :: {App.t() | nil, t}
     def pop_app(%__MODULE__{apps: apps, tasks: tasks, app_tasks: app_tasks} = state, id) do
       case Map.pop(apps, id) do
         {%App{} = app, new_apps} ->
@@ -51,8 +52,11 @@ defmodule Relay.Marathon.Store do
       end
     end
 
-    @spec get_and_update_task!(t, Task.t) :: {Task.t | nil, t}
-    def get_and_update_task!(%__MODULE__{tasks: tasks} = state, %Task{id: id, version: version} = task) do
+    @spec get_and_update_task!(t, Task.t()) :: {Task.t() | nil, t}
+    def get_and_update_task!(
+          %__MODULE__{tasks: tasks} = state,
+          %Task{id: id, version: version} = task
+        ) do
       case Map.get(tasks, id) do
         # Task is newer than existing task, update the task
         %Task{version: existing_version} = existing_task when version > existing_version ->
@@ -68,7 +72,7 @@ defmodule Relay.Marathon.Store do
       end
     end
 
-    @spec put_task!(t, Task.t) :: t
+    @spec put_task!(t, Task.t()) :: t
     defp put_task!(
            %__MODULE__{tasks: tasks, app_tasks: app_tasks} = state,
            %Task{id: id, app_id: app_id} = task
@@ -80,11 +84,11 @@ defmodule Relay.Marathon.Store do
       }
     end
 
-    @spec replace_task!(t, Task.t) :: t
+    @spec replace_task!(t, Task.t()) :: t
     defp replace_task!(%__MODULE__{tasks: tasks} = state, %Task{id: id} = task),
       do: %{state | tasks: Map.replace!(tasks, id, task)}
 
-    @spec pop_task(t, String.t) :: {Task.t | nil, t}
+    @spec pop_task(t, String.t()) :: {Task.t() | nil, t}
     def pop_task(%__MODULE__{tasks: tasks, app_tasks: app_tasks} = state, id) do
       case Map.pop(tasks, id) do
         {%Task{app_id: app_id} = task, new_tasks} ->
@@ -98,7 +102,7 @@ defmodule Relay.Marathon.Store do
     end
   end
 
-  @spec start_link(keyword) :: GenServer.on_start
+  @spec start_link(keyword) :: GenServer.on_start()
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, :ok, opts)
   end
@@ -107,26 +111,26 @@ defmodule Relay.Marathon.Store do
   Update an app in the Store. The app is only added if its version is newer than
   any existing app.
   """
-  @spec update_app(GenServer.server, App.t) :: :ok
+  @spec update_app(GenServer.server(), App.t()) :: :ok
   def update_app(store, %App{} = app), do: GenServer.call(store, {:update_app, app})
 
   @doc """
   Delete an app from the Store. All tasks for the app will also be removed.
   """
-  @spec delete_app(GenServer.server, String.t) :: :ok
+  @spec delete_app(GenServer.server(), String.t()) :: :ok
   def delete_app(store, app_id), do: GenServer.call(store, {:delete_app, app_id})
 
   @doc """
   Update a task in the Store. The task is only added if its version is newer
   than any existing task.
   """
-  @spec update_task(GenServer.server, Task.t) :: :ok
+  @spec update_task(GenServer.server(), Task.t()) :: :ok
   def update_task(store, %Task{} = task), do: GenServer.call(store, {:update_task, task})
 
   @doc """
   Delete a task from the Store.
   """
-  @spec delete_task(GenServer.server, String.t) :: :ok
+  @spec delete_task(GenServer.server(), String.t()) :: :ok
   def delete_task(store, task_id), do: GenServer.call(store, {:delete_task, task_id})
 
   def init(_arg) do
@@ -135,11 +139,13 @@ defmodule Relay.Marathon.Store do
 
   def handle_call({:update_app, %App{id: id, version: version} = app}, _from, state) do
     {old_app, new_state} = State.get_and_update_app(state, app)
+
     _ =
       case old_app do
-        %App{version: existing_version} when version > existing_version  ->
+        %App{version: existing_version} when version > existing_version ->
           Logger.debug("App '#{id}' updated: #{existing_version} -> #{version}")
-          # Notify update!
+
+        # Notify update!
 
         %App{version: existing_version} ->
           Logger.debug("App '#{id}' unchanged: #{version} <= #{existing_version}")
@@ -154,11 +160,13 @@ defmodule Relay.Marathon.Store do
 
   def handle_call({:delete_app, id}, _from, state) do
     {app, new_state} = State.pop_app(state, id)
+
     _ =
       case app do
         %App{version: version} ->
           Logger.info("App '#{id}' with version #{version} deleted")
-          # Notify update!
+
+        # Notify update!
 
         nil ->
           Logger.debug("App '#{id}' not present/already deleted")
@@ -167,15 +175,21 @@ defmodule Relay.Marathon.Store do
     {:reply, :ok, new_state}
   end
 
-  def handle_call({:update_task, %Task{id: id, app_id: app_id, version: version} = task}, _from, state) do
+  def handle_call(
+        {:update_task, %Task{id: id, app_id: app_id, version: version} = task},
+        _from,
+        state
+      ) do
     new_state =
       try do
         {old_task, new_state} = State.get_and_update_task!(state, task)
+
         _ =
           case old_task do
-            %Task{version: existing_version} when version > existing_version  ->
+            %Task{version: existing_version} when version > existing_version ->
               Logger.debug("Task '#{id}' updated: #{existing_version} -> #{version}")
-              # Notify update!
+
+            # Notify update!
 
             %Task{version: existing_version} ->
               Logger.debug("Task '#{id}' unchanged: #{version} <= #{existing_version}")
@@ -197,11 +211,13 @@ defmodule Relay.Marathon.Store do
 
   def handle_call({:delete_task, id}, _from, state) do
     {task, new_state} = State.pop_task(state, id)
+
     _ =
       case task do
         %Task{version: version} ->
           Logger.info("Task '#{id}' with version #{version} deleted")
-          # Notify update!
+
+        # Notify update!
 
         nil ->
           Logger.debug("Task '#{id}' not present/already deleted")
