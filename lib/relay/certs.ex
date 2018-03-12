@@ -18,15 +18,28 @@ defmodule Relay.Certs do
   end
 
   @doc """
-  Extracts hostnames from all end-entity certs in the given PEM data.
+  Extracts hostnames from all end-entity certs in the given PEM data. In order
+  to support self-signed certs (which may look a lot like CA certs), we assume
+  that if there's only one cert in the PEM data it's the one we want.
   """
   @spec get_end_entity_hostnames(binary | [:public_key.pem_entry]) :: [String.t]
   def get_end_entity_hostnames(pem_data) when is_binary(pem_data),
     do: get_end_entity_hostnames(:public_key.pem_decode(pem_data))
 
-  def get_end_entity_hostnames(pem_things) do
-    :relay_pk_utils.get_end_entity_certs(pem_things)
+  def get_end_entity_hostnames(pem_entries) do
+    pem_entries
+    |> filter_certs()
     |> Enum.flat_map(&get_hostnames/1)
     |> Enum.uniq()
   end
+
+  defp filter_certs(pem_entries) do
+    case Enum.filter(pem_entries, &is_cert/1) do
+      [cert] -> [cert]
+      certs -> :relay_pk_utils.get_end_entity_certs(certs)
+    end
+  end
+
+  defp is_cert({:Certificate, _, _}), do: true
+  defp is_cert(_), do: false
 end
