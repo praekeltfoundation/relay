@@ -138,7 +138,7 @@ defmodule Relay.Demo do
   end
 
   def routes do
-    [Adapter.apps_route_configuration(:http, [@demo_app])]
+    Adapter.apps_route_configurations([@demo_app])
   end
 
   def endpoints do

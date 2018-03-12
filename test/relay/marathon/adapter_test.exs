@@ -315,22 +315,29 @@ defmodule Relay.Marathon.AdapterTest do
     end
   end
 
-  describe "apps_route_configuration/3" do
+  describe "apps_route_configurations/2" do
     test "simple app" do
-      route_configuration = Adapter.apps_route_configuration(:http, [@test_app])
+      assert [http_config, https_config] = Adapter.apps_route_configurations([@test_app])
 
       assert %RouteConfiguration{
                name: "http",
                virtual_hosts: [%VirtualHost{name: "http_/mc2_0"}]
-             } = route_configuration
+             } = http_config
 
-      assert Protobuf.Validator.valid?(route_configuration)
+      assert %RouteConfiguration{
+               name: "https",
+               virtual_hosts: [%VirtualHost{name: "https_/mc2_0"}]
+             } = https_config
+
+      assert Protobuf.Validator.valid?(http_config)
+      assert Protobuf.Validator.valid?(https_config)
     end
 
     test "multiple apps" do
       test_app2 = %{@test_app | id: "/mc3"}
 
-      route_configuration = Adapter.apps_route_configuration(:http, [@test_app, test_app2])
+      assert [http_config, https_config] =
+               Adapter.apps_route_configurations([@test_app, test_app2])
 
       assert %RouteConfiguration{
                name: "http",
@@ -338,30 +345,44 @@ defmodule Relay.Marathon.AdapterTest do
                  %VirtualHost{name: "http_/mc2_0"},
                  %VirtualHost{name: "http_/mc3_0"}
                ]
-             } = route_configuration
+             } = http_config
 
-      assert Protobuf.Validator.valid?(route_configuration)
+      assert %RouteConfiguration{
+               name: "https",
+               virtual_hosts: [
+                 %VirtualHost{name: "https_/mc2_0"},
+                 %VirtualHost{name: "https_/mc3_0"}
+               ]
+             } = https_config
+
+      assert Protobuf.Validator.valid?(http_config)
+      assert Protobuf.Validator.valid?(https_config)
     end
 
     test "custom options" do
       alias Envoy.Api.V2.Core.{HeaderValue, HeaderValueOption}
       alias Google.Protobuf.BoolValue
 
-      route_configuration =
-        Adapter.apps_route_configuration(
-          :http,
-          [@test_app],
-          name: "router",
-          validate_clusters: BoolValue.new(value: true),
-          virtual_host_opts: [
-            response_headers_to_add: [
-              HeaderValueOption.new(
-                header:
-                  HeaderValue.new(key: "Strict-Transport-Security", value: "max-age=31536000")
-              )
-            ]
-          ]
-        )
+      assert [http_config, https_config] =
+               Adapter.apps_route_configurations(
+                 [@test_app],
+                 http_opts: [
+                   name: "router",
+                   validate_clusters: BoolValue.new(value: true),
+                   virtual_host_opts: [
+                     response_headers_to_add: [
+                       HeaderValueOption.new(
+                         header:
+                           HeaderValue.new(
+                             key: "Strict-Transport-Security",
+                             value: "max-age=31536000"
+                           )
+                       )
+                     ]
+                   ]
+                 ],
+                 https_opts: [name: "tls-router"]
+               )
 
       assert %RouteConfiguration{
                name: "router",
@@ -378,9 +399,12 @@ defmodule Relay.Marathon.AdapterTest do
                  }
                ],
                validate_clusters: %BoolValue{value: true}
-             } = route_configuration
+             } = http_config
 
-      assert Protobuf.Validator.valid?(route_configuration)
+      assert %RouteConfiguration{name: "tls-router"} = https_config
+
+      assert Protobuf.Validator.valid?(http_config)
+      assert Protobuf.Validator.valid?(https_config)
     end
   end
 end
