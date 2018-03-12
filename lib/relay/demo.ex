@@ -138,13 +138,7 @@ defmodule Relay.Demo do
   end
 
   def routes do
-    alias Envoy.Api.V2.RouteConfiguration
-    [
-      RouteConfiguration.new(
-        name: "http",
-        virtual_hosts: Adapter.app_virtual_hosts(:http, @demo_app)
-      )
-    ]
+    Adapter.apps_route_configurations([@demo_app])
   end
 
   def endpoints do

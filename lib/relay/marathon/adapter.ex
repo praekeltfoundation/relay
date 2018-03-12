@@ -1,7 +1,7 @@
 defmodule Relay.Marathon.Adapter do
   alias Relay.Marathon.{App, Task, Networking}
 
-  alias Envoy.Api.V2.{Cluster, ClusterLoadAssignment}
+  alias Envoy.Api.V2.{Cluster, ClusterLoadAssignment, RouteConfiguration}
   alias Envoy.Api.V2.Core.{Address, ConfigSource, Locality, SocketAddress}
   alias Envoy.Api.V2.Endpoint.{Endpoint, LbEndpoint, LocalityLbEndpoints}
   alias Envoy.Api.V2.Route.{RedirectAction, Route, RouteAction, RouteMatch, VirtualHost}
@@ -13,6 +13,8 @@ defmodule Relay.Marathon.Adapter do
 
   @default_cluster_connect_timeout Duration.new(seconds: 5)
   @default_locality Locality.new(region: "default")
+
+  @listeners [:http, :https]
 
   @doc """
   Create Clusters for the given app. The Clusters will have the minimum amount
@@ -144,6 +146,40 @@ defmodule Relay.Marathon.Adapter do
   end
 
   @doc """
+  Create RouteConfigurations for the given apps. The RouteConfigurations will
+  have the minimum amount of options set.
+
+  Additional options can be specified using `options` and options for nested
+  types are nested within that:
+  - RouteConfiguration: {`http_opts`|`https_opts`}
+  - VirtualHost: `{`http_opts`|`https_opts`}.virtual_host_opts`
+  - Route: `{`http_opts`|`https_opts`}.virtual_host_opts.route_opts`
+  - RouteAction: `{`http_opts`|`https_opts`}.virtual_host_opts.route_opts.action_opts`
+  - RouteMatch: `{`http_opts`|`https_opts`}.virtual_host_opts.route_opts.match_opts`
+  """
+  @spec apps_route_configurations([App.t], keyword) :: [RouteConfiguration.t]
+  def apps_route_configurations(apps, options \\ []) do
+    Enum.map(@listeners, fn listener ->
+      {config_opts, _options} = Keyword.pop(options, :"#{listener}_opts", [])
+
+      apps_route_configuration(listener, apps, config_opts)
+    end)
+  end
+
+  @spec apps_route_configuration(atom, [App.t], keyword) :: RouteConfiguration.t
+  defp apps_route_configuration(listener, apps, options) do
+    {name, options} = Keyword.pop(options, :name, Atom.to_string(listener))
+    {virtual_host_opts, options} = Keyword.pop(options, :virtual_host_opts, [])
+
+    RouteConfiguration.new(
+      [
+        name: name,
+        virtual_hosts: apps |> Enum.flat_map(&app_virtual_hosts(listener, &1, virtual_host_opts))
+      ] ++ options
+    )
+  end
+
+  @doc """
   Create VirtualHosts for the given listener and app. The VirtualHosts will have
   the minimum amount of options set.
 
@@ -160,8 +196,9 @@ defmodule Relay.Marathon.Adapter do
         %App{port_indices_in_group: port_indices_in_group} = app,
         options \\ []
       ) do
-    if not listener in [:http, :https],
-      do: raise(ArgumentError, "only :http and :https listeners supported")
+    if not listener in @listeners,
+      do: raise(ArgumentError,
+        "Unknown listener '#{listener}'. Known listeners: #{Enum.join(@listeners, ", ")}")
 
     port_indices_in_group
     |> Enum.map(&app_port_virtual_host(listener, app, &1, options))
