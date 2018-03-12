@@ -14,6 +14,26 @@ defmodule Relay.Marathon.Store do
             app_tasks: %{optional(String.t()) => String.t()}
           }
 
+    @spec get_apps(t) :: [App.t()]
+    def get_apps(%__MODULE__{apps: apps}) do
+      apps
+      |> Map.values()
+      |> Enum.sort(fn %App{id: id1}, %App{id: id2} -> id1 < id2 end)
+    end
+
+    @spec get_apps_and_tasks(t) :: [{App.t(), [Task.t()]}]
+    def get_apps_and_tasks(%__MODULE__{} = state) do
+      get_apps(state)
+      |> Enum.map(fn %App{id: app_id} = app ->
+        tasks =
+          state.app_tasks[app_id]
+          |> Enum.sort()
+          |> Enum.map(fn task_id -> state.tasks[task_id] end)
+
+        {app, tasks}
+      end)
+    end
+
     @spec get_and_update_app(t, App.t()) :: {App.t() | nil, t}
     def get_and_update_app(%__MODULE__{apps: apps} = state, %App{id: id, version: version} = app) do
       case Map.get(apps, id) do
