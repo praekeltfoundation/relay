@@ -3,7 +3,7 @@ defmodule Relay.Marathon.AdapterTest do
 
   alias Relay.Marathon.{Adapter, App, Task}
 
-  alias Envoy.Api.V2.{Cluster, ClusterLoadAssignment}
+  alias Envoy.Api.V2.{Cluster, ClusterLoadAssignment, RouteConfiguration}
   alias Envoy.Api.V2.Core.{Address, ApiConfigSource, ConfigSource, Locality, SocketAddress}
   alias Envoy.Api.V2.Endpoint.{Endpoint, LbEndpoint, LocalityLbEndpoints}
   alias Envoy.Api.V2.Route.{RedirectAction, Route, RouteAction, RouteMatch, VirtualHost}
@@ -81,12 +81,12 @@ defmodule Relay.Marathon.AdapterTest do
       lb_policy = Cluster.LbPolicy.value(:MAGLEV)
 
       assert [cluster] =
-        Adapter.app_clusters(
-          @test_app,
-          @test_config_source,
-          connect_timeout: connect_timeout,
-          lb_policy: lb_policy
-        )
+               Adapter.app_clusters(
+                 @test_app,
+                 @test_config_source,
+                 connect_timeout: connect_timeout,
+                 lb_policy: lb_policy
+               )
 
       assert %Cluster{
                name: "/mc2_0",
@@ -152,17 +152,17 @@ defmodule Relay.Marathon.AdapterTest do
       alias Google.Protobuf.{UInt32Value, UInt64Value}
 
       assert [cla] =
-        Adapter.app_cluster_load_assignments(
-          @test_app,
-          [@test_task],
-          policy: ClusterLoadAssignment.Policy.new(drop_overload: 5.0),
-          locality_lb_endpoints_opts: [
-            load_balancing_weight: UInt64Value.new(value: 42),
-            lb_endpoint_opts: [
-              load_balancing_weight: UInt32Value.new(value: 13)
-            ]
-          ]
-        )
+               Adapter.app_cluster_load_assignments(
+                 @test_app,
+                 [@test_task],
+                 policy: ClusterLoadAssignment.Policy.new(drop_overload: 5.0),
+                 locality_lb_endpoints_opts: [
+                   load_balancing_weight: UInt64Value.new(value: 42),
+                   lb_endpoint_opts: [
+                     load_balancing_weight: UInt32Value.new(value: 13)
+                   ]
+                 ]
+               )
 
       assert %ClusterLoadAssignment{
                policy: %ClusterLoadAssignment.Policy{drop_overload: 5.0},
@@ -231,28 +231,33 @@ defmodule Relay.Marathon.AdapterTest do
       }
 
       assert [virtual_host] =
-        Adapter.app_virtual_hosts(
-          :http,
-          app,
-          response_headers_to_add: [
-            HeaderValueOption.new(
-              header: HeaderValue.new(key: "Strict-Transport-Security", value: "max-age=31536000")
-            )
-          ],
-          route_opts: [
-            decorator: Decorator.new(operation: "mytrace"),
-            action_opts: [
-              retry_policy: RouteAction.RetryPolicy.new(num_retries: UInt32Value.new(value: 3))
-            ],
-            match_opts: [
-              runtime:
-                RuntimeUInt32.new(
-                  runtime_key: "routing.traffic_shift.helloworld",
-                  default_value: 50
-                )
-            ]
-          ]
-        )
+               Adapter.app_virtual_hosts(
+                 :http,
+                 app,
+                 response_headers_to_add: [
+                   HeaderValueOption.new(
+                     header:
+                       HeaderValue.new(
+                         key: "Strict-Transport-Security",
+                         value: "max-age=31536000"
+                       )
+                   )
+                 ],
+                 route_opts: [
+                   decorator: Decorator.new(operation: "mytrace"),
+                   action_opts: [
+                     retry_policy:
+                       RouteAction.RetryPolicy.new(num_retries: UInt32Value.new(value: 3))
+                   ],
+                   match_opts: [
+                     runtime:
+                       RuntimeUInt32.new(
+                         runtime_key: "routing.traffic_shift.helloworld",
+                         default_value: 50
+                       )
+                   ]
+                 ]
+               )
 
       assert %VirtualHost{
                response_headers_to_add: [
@@ -307,6 +312,75 @@ defmodule Relay.Marathon.AdapterTest do
       assert_raise ArgumentError, "only :http and :https listeners supported", fn ->
         Adapter.app_virtual_hosts(:ftp, @test_app)
       end
+    end
+  end
+
+  describe "apps_route_configuration/3" do
+    test "simple app" do
+      route_configuration = Adapter.apps_route_configuration(:http, [@test_app])
+
+      assert %RouteConfiguration{
+               name: "http",
+               virtual_hosts: [%VirtualHost{name: "http_/mc2_0"}]
+             } = route_configuration
+
+      assert Protobuf.Validator.valid?(route_configuration)
+    end
+
+    test "multiple apps" do
+      test_app2 = %{@test_app | id: "/mc3"}
+
+      route_configuration = Adapter.apps_route_configuration(:http, [@test_app, test_app2])
+
+      assert %RouteConfiguration{
+               name: "http",
+               virtual_hosts: [
+                 %VirtualHost{name: "http_/mc2_0"},
+                 %VirtualHost{name: "http_/mc3_0"}
+               ]
+             } = route_configuration
+
+      assert Protobuf.Validator.valid?(route_configuration)
+    end
+
+    test "custom options" do
+      alias Envoy.Api.V2.Core.{HeaderValue, HeaderValueOption}
+      alias Google.Protobuf.BoolValue
+
+      route_configuration =
+        Adapter.apps_route_configuration(
+          :http,
+          [@test_app],
+          name: "router",
+          validate_clusters: BoolValue.new(value: true),
+          virtual_host_opts: [
+            response_headers_to_add: [
+              HeaderValueOption.new(
+                header:
+                  HeaderValue.new(key: "Strict-Transport-Security", value: "max-age=31536000")
+              )
+            ]
+          ]
+        )
+
+      assert %RouteConfiguration{
+               name: "router",
+               virtual_hosts: [
+                 %VirtualHost{
+                   response_headers_to_add: [
+                     %HeaderValueOption{
+                       header: %HeaderValue{
+                         key: "Strict-Transport-Security",
+                         value: "max-age=31536000"
+                       }
+                     }
+                   ]
+                 }
+               ],
+               validate_clusters: %BoolValue{value: true}
+             } = route_configuration
+
+      assert Protobuf.Validator.valid?(route_configuration)
     end
   end
 end

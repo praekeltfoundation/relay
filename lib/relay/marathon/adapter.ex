@@ -1,7 +1,7 @@
 defmodule Relay.Marathon.Adapter do
   alias Relay.Marathon.{App, Task, Networking}
 
-  alias Envoy.Api.V2.{Cluster, ClusterLoadAssignment}
+  alias Envoy.Api.V2.{Cluster, ClusterLoadAssignment, RouteConfiguration}
   alias Envoy.Api.V2.Core.{Address, ConfigSource, Locality, SocketAddress}
   alias Envoy.Api.V2.Endpoint.{Endpoint, LbEndpoint, LocalityLbEndpoints}
   alias Envoy.Api.V2.Route.{RedirectAction, Route, RouteAction, RouteMatch, VirtualHost}
@@ -141,6 +141,34 @@ defmodule Relay.Marathon.Adapter do
   defp socket_address(address, port) do
     sock = SocketAddress.new(address: address, port_specifier: {:port_value, port})
     Address.new(address: {:socket_address, sock})
+  end
+
+  @doc """
+  Create a RouteConfiguration for the given listener and apps. The
+  RouteConfiguration will have the minimum amount of options set.
+
+  Additional options can be specified using `options` and options for nested
+  types are nested within that:
+  - RouteConfiguration: `options`
+  - VirtualHost: `options.virtual_host_opts`
+  - Route: `options.virtual_host_opts.route_opts`
+  - RouteAction: `options.virtual_host_opts.route_opts.action_opts`
+  - RouteMatch: `options.virtual_host_opts.route_opts.match_opts`
+  """
+  @spec apps_route_configuration(atom, [App.t], keyword) :: RouteConfiguration.t
+  def apps_route_configuration(listener, apps, options \\ []) do
+    if not listener in [:http, :https],
+      do: raise(ArgumentError, "only :http and :https listeners supported")
+
+    {name, options} = Keyword.pop(options, :name, Atom.to_string(listener))
+    {virtual_host_opts, options} = Keyword.pop(options, :virtual_host_opts, [])
+
+    RouteConfiguration.new(
+      [
+        name: name,
+        virtual_hosts: apps |> Enum.flat_map(&app_virtual_hosts(listener, &1, virtual_host_opts))
+      ] ++ options
+    )
   end
 
   @doc """
