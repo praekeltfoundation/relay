@@ -15,16 +15,26 @@ defmodule Relay.Marathon.Adapter do
   @default_locality Locality.new(region: "default")
 
   @doc """
-  Create a Cluster for the given app and port index. The Cluster will have the
-  minimum amount of options set but will be a Cluster with EDS endpoint
-  discovery. Additional options can be specified using `options`.
+  Create Clusters for the given app. The Clusters will have the minimum amount
+  of options set but will be Clusters with EDS endpoint discovery. Additional
+  options can be specified using `options`.
   """
+  @spec app_clusters(App.t, ConfigSource.t, keyword) :: [Cluster.t]
+  def app_clusters(
+        %App{port_indices_in_group: port_indices_in_group} = app,
+        %ConfigSource{} = eds_config_source,
+        options \\ []
+      ) do
+    port_indices_in_group
+    |> Enum.map(&app_port_cluster(app, &1, eds_config_source, options))
+  end
+
   @spec app_port_cluster(App.t, non_neg_integer, ConfigSource.t, keyword) :: Cluster.t
-  def app_port_cluster(
+  defp app_port_cluster(
         %App{id: app_id},
         port_index,
         %ConfigSource{} = eds_config_source,
-        options \\ []
+        options
       ) do
     service_name = "#{app_id}_#{port_index}"
     {max_size, options} = max_obj_name_length(options)
@@ -70,8 +80,8 @@ defmodule Relay.Marathon.Adapter do
   end
 
   @doc """
-  Create a ClusterLoadAssignment for the given app, tasks, and port index. The
-  ClusterLoadAssignment will have the minimum amount of options set.
+  Create ClusterLoadAssignments for the given app and tasks. The
+  ClusterLoadAssignments will have the minimum amount of options set.
 
   Additional options can be specified using `options` and options for nested
   types are nested within that:
@@ -79,9 +89,19 @@ defmodule Relay.Marathon.Adapter do
   - LocalityLbEndpoints: `options.locality_lb_endpoints_opts`
   - LbEndpoint: `options.locality_lb_endpoints_opts.lb_endpoint_opts`
   """
+  @spec app_cluster_load_assignments(App.t, [Task.t], keyword) :: [ClusterLoadAssignment.t]
+  def app_cluster_load_assignments(
+        %App{port_indices_in_group: port_indices_in_group} = app,
+        tasks,
+        options \\ []
+      ) do
+    port_indices_in_group
+    |> Enum.map(&app_port_cluster_load_assignment(app, tasks, &1, options))
+  end
+
   @spec app_port_cluster_load_assignment(App.t, [Task.t], non_neg_integer, keyword) ::
           ClusterLoadAssignment.t
-  def app_port_cluster_load_assignment(%App{id: app_id}, tasks, port_index, options \\ []) do
+  defp app_port_cluster_load_assignment(%App{id: app_id}, tasks, port_index, options) do
     {llbe_opts, options} = Keyword.pop(options, :locality_lb_endpoints_opts, [])
 
     ClusterLoadAssignment.new(
@@ -124,8 +144,8 @@ defmodule Relay.Marathon.Adapter do
   end
 
   @doc """
-  Create a VirtualHost for the given listener, app, and port index. The
-  VirtualHost will have the minimum amount of options set.
+  Create VirtualHosts for the given listener and app. The VirtualHosts will have
+  the minimum amount of options set.
 
   Additional options can be specified using `options` and options for nested
   types are nested within that:
@@ -134,11 +154,21 @@ defmodule Relay.Marathon.Adapter do
   - RouteAction: `options.route_opts.action_opts`
   - RouteMatch: `options.route_opts.match_opts`
   """
-  @spec app_port_virtual_host(atom, App.t, non_neg_integer, keyword) :: VirtualHost.t
-  def app_port_virtual_host(listener, %App{id: app_id} = app, port_index, options \\ []) do
+  @spec app_virtual_hosts(atom, App.t, keyword) :: [VirtualHost.t]
+  def app_virtual_hosts(
+        listener,
+        %App{port_indices_in_group: port_indices_in_group} = app,
+        options \\ []
+      ) do
     if not listener in [:http, :https],
       do: raise(ArgumentError, "only :http and :https listeners supported")
 
+    port_indices_in_group
+    |> Enum.map(&app_port_virtual_host(listener, app, &1, options))
+  end
+
+  @spec app_port_virtual_host(atom, App.t, non_neg_integer, keyword) :: VirtualHost.t
+  defp app_port_virtual_host(listener, %App{id: app_id} = app, port_index, options) do
     {route_opts, options} = Keyword.pop(options, :route_opts, [])
 
     VirtualHost.new(

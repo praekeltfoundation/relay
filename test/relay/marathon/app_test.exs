@@ -146,7 +146,7 @@ defmodule Relay.Marathon.AppTest do
   }
 
   test "from definition" do
-    assert App.from_definition(@test_app) == %App{
+    assert App.from_definition(@test_app, "external") == %App{
       id: "/mc2",
       labels: %{
         "HAPROXY_0_REDIRECT_TO_HTTPS" => "true",
@@ -156,29 +156,29 @@ defmodule Relay.Marathon.AppTest do
       },
       networking_mode: :"container/bridge",
       ports_list: [80],
+      port_indices_in_group: [0],
       version: "2017-11-08T15:06:31.066Z"
     }
   end
 
   test "from event" do
-    assert App.from_event(@test_event) == %App{
+    assert App.from_event(@test_event, "external") == %App{
       id: "/jamie-event-test",
       labels: %{},
       networking_mode: :host,
       ports_list: [0],
+      port_indices_in_group: [],
       version: "2018-03-02T09:31:54.763Z"
     }
   end
 
   test "port indices in group" do
-    app = App.from_definition(@test_app)
-
-    assert App.port_indices_in_group(app, "internal") == []
-    assert App.port_indices_in_group(app, "external") == [0]
+    assert %App{port_indices_in_group: []} = App.from_definition(@test_app, "internal")
+    assert %App{port_indices_in_group: [0]} = App.from_definition(@test_app, "external")
   end
 
   test "label getters" do
-    app = App.from_definition(@test_app)
+    app = App.from_definition(@test_app, "external")
 
     assert App.marathon_lb_vhost(app, 0) == ["mc2.example.org"]
     assert App.marathon_lb_vhost(app, 1) == []

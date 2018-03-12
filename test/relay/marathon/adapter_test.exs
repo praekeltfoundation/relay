@@ -20,6 +20,7 @@ defmodule Relay.Marathon.AdapterTest do
     },
     networking_mode: :"container/bridge",
     ports_list: [80],
+    port_indices_in_group: [0],
     version: "2017-11-08T15:06:31.066Z"
   }
 
@@ -56,10 +57,10 @@ defmodule Relay.Marathon.AdapterTest do
     end
   end
 
-  describe "app_port_cluster/4" do
+  describe "app_clusters/3" do
     test "simple cluster" do
       eds_type = Cluster.DiscoveryType.value(:EDS)
-      cluster = Adapter.app_port_cluster(@test_app, 0, @test_config_source)
+      assert [cluster] = Adapter.app_clusters(@test_app, @test_config_source)
 
       assert %Cluster{
                name: "/mc2_0",
@@ -79,10 +80,9 @@ defmodule Relay.Marathon.AdapterTest do
       connect_timeout = Duration.new(seconds: 10)
       lb_policy = Cluster.LbPolicy.value(:MAGLEV)
 
-      cluster =
-        Adapter.app_port_cluster(
+      assert [cluster] =
+        Adapter.app_clusters(
           @test_app,
-          0,
           @test_config_source,
           connect_timeout: connect_timeout,
           lb_policy: lb_policy
@@ -105,22 +105,22 @@ defmodule Relay.Marathon.AdapterTest do
     test "cluster with long name" do
       app = %{@test_app | id: "/organisation/my_long_group_name/subgroup3456/application2934"}
 
-      assert %Cluster{name: "[...]ation/my_long_group_name/subgroup3456/application2934_0"} =
-               Adapter.app_port_cluster(app, 0, @test_config_source)
+      assert [%Cluster{name: "[...]ation/my_long_group_name/subgroup3456/application2934_0"}] =
+               Adapter.app_clusters(app, @test_config_source)
     end
 
     test "custom max_obj_name_length" do
       app = %{@test_app | id: "/myslightlylongname"}
-      cluster = Adapter.app_port_cluster(app, 0, @test_config_source, max_obj_name_length: 10)
+      assert [cluster] = Adapter.app_clusters(app, @test_config_source, max_obj_name_length: 10)
 
       assert %Cluster{name: "[...]ame_0"} = cluster
       assert Protobuf.Validator.valid?(cluster)
     end
   end
 
-  describe "app_port_cluster_load_assignment/4" do
+  describe "app_cluster_load_assignments/3" do
     test "simple cluster load assignment" do
-      cla = Adapter.app_port_cluster_load_assignment(@test_app, [@test_task], 0)
+      assert [cla] = Adapter.app_cluster_load_assignments(@test_app, [@test_task])
 
       assert %ClusterLoadAssignment{
                cluster_name: "/mc2_0",
@@ -151,11 +151,10 @@ defmodule Relay.Marathon.AdapterTest do
     test "cluster load assignment with options" do
       alias Google.Protobuf.{UInt32Value, UInt64Value}
 
-      cla =
-        Adapter.app_port_cluster_load_assignment(
+      assert [cla] =
+        Adapter.app_cluster_load_assignments(
           @test_app,
           [@test_task],
-          0,
           policy: ClusterLoadAssignment.Policy.new(drop_overload: 5.0),
           locality_lb_endpoints_opts: [
             load_balancing_weight: UInt64Value.new(value: 42),
@@ -181,14 +180,14 @@ defmodule Relay.Marathon.AdapterTest do
     end
   end
 
-  describe "app_port_virtual_host/3" do
+  describe "app_virtual_hosts/3" do
     test "http virtual host" do
       app = %{
         @test_app
         | labels: @test_app.labels |> Map.put("HAPROXY_0_REDIRECT_TO_HTTPS", "false")
       }
 
-      virtual_host = Adapter.app_port_virtual_host(:http, app, 0)
+      assert [virtual_host] = Adapter.app_virtual_hosts(:http, app)
 
       assert %VirtualHost{
                name: "http_/mc2_0",
@@ -205,12 +204,7 @@ defmodule Relay.Marathon.AdapterTest do
     end
 
     test "https virtual host" do
-      app = %{
-        @test_app
-        | labels: @test_app.labels |> Map.put("HAPROXY_0_REDIRECT_TO_HTTPS", "false")
-      }
-
-      virtual_host = Adapter.app_port_virtual_host(:https, app, 0)
+      assert [virtual_host] = Adapter.app_virtual_hosts(:https, @test_app)
 
       assert %VirtualHost{
                name: "https_/mc2_0",
@@ -236,11 +230,10 @@ defmodule Relay.Marathon.AdapterTest do
         | labels: @test_app.labels |> Map.put("HAPROXY_0_REDIRECT_TO_HTTPS", "false")
       }
 
-      virtual_host =
-        Adapter.app_port_virtual_host(
+      assert [virtual_host] =
+        Adapter.app_virtual_hosts(
           :http,
           app,
-          0,
           response_headers_to_add: [
             HeaderValueOption.new(
               header: HeaderValue.new(key: "Strict-Transport-Security", value: "max-age=31536000")
@@ -294,7 +287,7 @@ defmodule Relay.Marathon.AdapterTest do
     end
 
     test "http to https redirect" do
-      virtual_host = Adapter.app_port_virtual_host(:http, @test_app, 0)
+      assert [virtual_host] = Adapter.app_virtual_hosts(:http, @test_app)
 
       assert %VirtualHost{
                name: "http_/mc2_0",
@@ -312,7 +305,7 @@ defmodule Relay.Marathon.AdapterTest do
 
     test "other listeners rejected" do
       assert_raise ArgumentError, "only :http and :https listeners supported", fn ->
-        Adapter.app_port_virtual_host(:ftp, @test_app, 0)
+        Adapter.app_virtual_hosts(:ftp, @test_app)
       end
     end
   end
