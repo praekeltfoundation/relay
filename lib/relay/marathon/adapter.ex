@@ -198,7 +198,7 @@ defmodule Relay.Marathon.Adapter do
       ) do
     if not listener in @listeners,
       do: raise(ArgumentError,
-        "Unknown listener '#{listener}'. Known listeners: #{Enum.join(@listeners, ", ")}.")
+        "Unknown listener '#{listener}'. Known listeners: #{Enum.join(@listeners, ", ")}")
 
     port_indices_in_group
     |> Enum.map(&app_port_virtual_host(listener, app, &1, options))
