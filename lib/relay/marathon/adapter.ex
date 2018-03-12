@@ -159,8 +159,7 @@ defmodule Relay.Marathon.Adapter do
   """
   @spec apps_route_configurations([App.t], keyword) :: [RouteConfiguration.t]
   def apps_route_configurations(apps, options \\ []) do
-    @listeners
-    |> Enum.map(fn listener ->
+    Enum.map(@listeners, fn listener ->
       {config_opts, _options} = Keyword.pop(options, :"#{listener}_opts", [])
 
       apps_route_configuration(listener, apps, config_opts)
@@ -198,7 +197,8 @@ defmodule Relay.Marathon.Adapter do
         options \\ []
       ) do
     if not listener in @listeners,
-      do: raise(ArgumentError, "only :http and :https listeners supported")
+      do: raise(ArgumentError,
+        "Unknown listener '#{listener}'. Known listeners: #{Enum.join(@listeners, ", ")}.")
 
     port_indices_in_group
     |> Enum.map(&app_port_virtual_host(listener, app, &1, options))

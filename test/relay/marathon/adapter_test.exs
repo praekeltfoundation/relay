@@ -309,7 +309,7 @@ defmodule Relay.Marathon.AdapterTest do
     end
 
     test "other listeners rejected" do
-      assert_raise ArgumentError, "only :http and :https listeners supported", fn ->
+      assert_raise ArgumentError, "Unknown listener 'ftp'. Known listeners: http, https", fn ->
         Adapter.app_virtual_hosts(:ftp, @test_app)
       end
     end
