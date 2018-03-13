@@ -4,8 +4,9 @@ defmodule RelayTest do
   alias Relay.{Demo, Store}
 
   alias Envoy.Api.V2.{DiscoveryRequest, DiscoveryResponse}
+  alias Envoy.Api.V2.ClusterDiscoveryService.Stub, as: CDSStub
   alias Envoy.Api.V2.ListenerDiscoveryService.Stub, as: LDSStub
-  alias Envoy.Api.V2.Listener
+  alias Envoy.Api.V2.{Cluster, Listener}
 
   @port 12345
 
@@ -15,14 +16,27 @@ defmodule RelayTest do
     Application.put_env(:relay, :port, @port)
   end
 
-  defp stream_lds() do
+  defp stream_xds() do
     {:ok, channel} = GRPC.Stub.connect("127.0.0.1:#{@port}")
-    channel |> LDSStub.stream_listeners()
+    %{
+      cds: channel |> CDSStub.stream_clusters(),
+      lds: channel |> LDSStub.stream_listeners(),
+    }
   end
 
-  defp assert_lds_response(stream, version_info, listeners) do
-    result_stream = GRPC.Stub.recv(stream)
-    GRPC.Stub.stream_send(stream, DiscoveryRequest.new())
+  defp assert_cds_response(streams, version_info, clusters) do
+    result_stream = GRPC.Stub.recv(streams[:cds])
+    GRPC.Stub.stream_send(streams[:cds], DiscoveryRequest.new())
+
+    assert [response] = Enum.take(result_stream, 1)
+    assert %DiscoveryResponse{version_info: ^version_info, resources: resources} = response
+
+    assert resources |> Enum.map(fn any_res -> Cluster.decode(any_res.value) end) == clusters
+  end
+
+  defp assert_lds_response(streams, version_info, listeners) do
+    result_stream = GRPC.Stub.recv(streams[:lds])
+    GRPC.Stub.stream_send(streams[:lds], DiscoveryRequest.new())
 
     assert [response] = Enum.take(result_stream, 1)
     assert %DiscoveryResponse{version_info: ^version_info, resources: resources} = response
@@ -31,7 +45,7 @@ defmodule RelayTest do
   end
 
   test "starting the application starts everything" do
-    procs = [GRPC.Server.Supervisor, Relay.Supervisor, Store, Demo]
+    procs = [GRPC.Server.Supervisor, Relay.Supervisor, Store, Demo.Marathon]
 
     # The various processes aren't running before we start the application
     procs |> Enum.each(fn(id) ->
@@ -45,8 +59,9 @@ defmodule RelayTest do
       assert Process.alive?(Process.whereis(id))
     end)
 
-    stream = stream_lds()
-    assert_lds_response(stream, "1", Demo.listeners())
+    streams = stream_xds()
+    assert_cds_response(streams, "1", Demo.Marathon.clusters())
+    assert_lds_response(streams, "1", Demo.Certs.listeners())
   end
 
   test "demo app sends multiple updates" do
@@ -56,15 +71,17 @@ defmodule RelayTest do
     # between if desired
     t0 = Time.utc_now()
     # Initial update
-    stream = stream_lds()
-    assert_lds_response(stream, "1", Demo.listeners())
+    streams = stream_xds()
+    assert_cds_response(streams, "1", Demo.Marathon.clusters())
+    assert_lds_response(streams, "1", Demo.Certs.listeners())
     # Ad-hoc update
-    Demo.update_state()
-    assert_lds_response(stream, "2", Demo.listeners())
+    Demo.Marathon.update_state()
+    assert_cds_response(streams, "2", Demo.Marathon.clusters())
     t1 = Time.utc_now()
     assert Time.diff(t1, t0, :milliseconds) < 1_000
     # Scheduled update
-    assert_lds_response(stream, "3", Demo.listeners())
+    assert_cds_response(streams, "3", Demo.Marathon.clusters())
+    assert_lds_response(streams, "2", Demo.Certs.listeners())
     t2 = Time.utc_now()
     assert Time.diff(t2, t0, :milliseconds) < 1_500
   end

@@ -1,28 +1,5 @@
-defmodule Relay.Demo do
+defmodule Relay.Demo.Certs do
   alias Relay.Store
-  alias Relay.Marathon.{Adapter, App, Task}
-
-  @demo_app %App{
-    id: "/demo",
-    labels: %{
-      "HAPROXY_0_REDIRECT_TO_HTTPS" => "false",
-      "HAPROXY_0_VHOST" => "example.com",
-      "HAPROXY_GROUP" => "external",
-      "MARATHON_ACME_0_DOMAIN" => "example.com"
-    },
-    networking_mode: :"container/bridge",
-    ports_list: [80],
-    port_indices_in_group: [0],
-    version: "2017-11-08T15:06:31.066Z"
-  }
-
-  @demo_task %Task{
-    address: "127.0.0.1",
-    app_id: "/demo",
-    id: "demo.be753491-1325-11e8-b5d6-4686525b33db",
-    ports: [8081],
-    version: "2017-11-09T08:43:59.890Z"
-  }
 
   use GenServer
 
@@ -57,17 +34,8 @@ defmodule Relay.Demo do
 
   defp update_state(state) do
     v = "#{state.version}"
-    Store.update(Store, :cds, v, clusters())
     Store.update(Store, :lds, v, listeners())
-    Store.update(Store, :rds, v, routes())
-    Store.update(Store, :eds, v, endpoints())
     %{state | version: state.version + 1}
-  end
-
-  defp socket_address(address, port) do
-    alias Envoy.Api.V2.Core.{Address, SocketAddress}
-    sock = SocketAddress.new(address: address, port_specifier: {:port_value, port})
-    Address.new(address: {:socket_address, sock})
   end
 
   defp own_api_config_source do
@@ -86,8 +54,10 @@ defmodule Relay.Demo do
     )})
   end
 
-  def clusters do
-    Adapter.app_clusters(@demo_app, own_api_config_source())
+  defp socket_address(address, port) do
+    alias Envoy.Api.V2.Core.{Address, SocketAddress}
+    sock = SocketAddress.new(address: address, port_specifier: {:port_value, port})
+    Address.new(address: {:socket_address, sock})
   end
 
   defp router_filter do
@@ -135,13 +105,5 @@ defmodule Relay.Demo do
         ]
       )
     ]
-  end
-
-  def routes do
-    Adapter.apps_route_configurations([@demo_app])
-  end
-
-  def endpoints do
-    Adapter.app_cluster_load_assignments(@demo_app, [@demo_task])
   end
 end

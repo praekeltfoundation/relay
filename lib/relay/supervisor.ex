@@ -36,7 +36,8 @@ defmodule Relay.Supervisor do
       ]
       opts = [adapter: Relay.GRPCAdapter]
       children = [
-        {Relay.Demo, []},
+        {Relay.Demo.Marathon, []},
+        {Relay.Demo.Certs, []},
         supervisor(GRPC.Server.Supervisor, [{services, port, opts}])
       ]
 
