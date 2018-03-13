@@ -60,4 +60,10 @@ defmodule Relay.CertsTest do
     hostnames = Certs.get_end_entity_hostnames(read_cert!("demo.pem"))
     assert ["demo.example.com", "demo.example.net"] = Enum.sort(hostnames)
   end
+
+  test ":relay_pk_utils.get_end_entity_certs" do
+    # This tests an edge case that isn't exercised through Relay.Certs.
+    [key, cert, cacert] = :public_key.pem_decode(read_cert!("localhost.pem"))
+    assert [^cert] = :relay_pk_utils.get_end_entity_certs([key, cert, cacert])
+  end
 end

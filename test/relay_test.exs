@@ -74,14 +74,18 @@ defmodule RelayTest do
     streams = stream_xds()
     assert_cds_response(streams, "1", Demo.Marathon.clusters())
     assert_lds_response(streams, "1", Demo.Certs.listeners())
-    # Ad-hoc update
+    # Ad-hoc updates
     Demo.Marathon.update_state()
     assert_cds_response(streams, "2", Demo.Marathon.clusters())
+    Demo.Certs.update_state()
+    assert_lds_response(streams, "2", Demo.Certs.listeners())
+    Demo.Marathon.update_state()
+    assert_cds_response(streams, "3", Demo.Marathon.clusters())
     t1 = Time.utc_now()
     assert Time.diff(t1, t0, :milliseconds) < 1_000
     # Scheduled update
-    assert_cds_response(streams, "3", Demo.Marathon.clusters())
-    assert_lds_response(streams, "2", Demo.Certs.listeners())
+    assert_cds_response(streams, "4", Demo.Marathon.clusters())
+    assert_lds_response(streams, "3", Demo.Certs.listeners())
     t2 = Time.utc_now()
     assert Time.diff(t2, t0, :milliseconds) < 1_500
   end
