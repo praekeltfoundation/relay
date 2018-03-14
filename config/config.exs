@@ -28,3 +28,21 @@ use Mix.Config
 # here (which is why it is important to import them last).
 #
 #     import_config "#{Mix.env}.exs"
+
+config :relay, [
+  port: 5000,
+  cluster_name: "xds_cluster",
+  marathon: [
+    urls: ["http://localhost:8080"],
+    events_timeout: 60_000
+  ],
+
+  marathon_lb: [
+    group: "external"
+  ],
+
+  marathon_acme: [
+    app_id: "/marathon-acme",
+    port_index: 0
+  ]
+]

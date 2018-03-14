@@ -47,6 +47,8 @@ defmodule Relay.MixProject do
 
       {:poison, "~> 3.1"},
 
+      {:conform, "~> 2.2"},
+
       # Test deps.
       {:sse_test_server,
        git: "https://github.com/praekeltfoundation/sse_test_server.git",
