@@ -1,4 +1,4 @@
-defmodule Relay.Demo do
+defmodule Relay.Demo.Marathon do
   alias Relay.Store
   alias Relay.Marathon.{Adapter, App, Task}
 
@@ -58,16 +58,9 @@ defmodule Relay.Demo do
   defp update_state(state) do
     v = "#{state.version}"
     Store.update(Store, :cds, v, clusters())
-    Store.update(Store, :lds, v, listeners())
     Store.update(Store, :rds, v, routes())
     Store.update(Store, :eds, v, endpoints())
     %{state | version: state.version + 1}
-  end
-
-  defp socket_address(address, port) do
-    alias Envoy.Api.V2.Core.{Address, SocketAddress}
-    sock = SocketAddress.new(address: address, port_specifier: {:port_value, port})
-    Address.new(address: {:socket_address, sock})
   end
 
   defp own_api_config_source do
@@ -88,53 +81,6 @@ defmodule Relay.Demo do
 
   def clusters do
     Adapter.app_clusters(@demo_app, own_api_config_source())
-  end
-
-  defp router_filter do
-    alias Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpFilter
-    alias Envoy.Config.Filter.Http.Router.V2.Router
-    alias Envoy.Config.Filter.Accesslog.V2.{AccessLog, FileAccessLog}
-    import Relay.ProtobufUtil
-    HttpFilter.new(
-      name: "envoy.router",
-      config: mkstruct(Router.new(upstream_log: [
-        AccessLog.new(
-          name: "envoy.file_access_log",
-          config: mkstruct(FileAccessLog.new(path: "upstream.log")))
-      ]))
-    )
-  end
-
-  defp default_http_conn_manager_filter(name) do
-    alias Envoy.Api.V2.Listener.Filter
-    alias Envoy.Config.Filter.Network.HttpConnectionManager.V2.{HttpConnectionManager, Rds}
-    import Relay.ProtobufUtil
-    Filter.new(
-      name: "envoy.http_connection_manager",
-      config: mkstruct(HttpConnectionManager.new(
-        codec_type: HttpConnectionManager.CodecType.value(:AUTO),
-        route_specifier: {:rds, Rds.new(
-          config_source: own_api_config_source(), route_config_name: "http")},
-        stat_prefix: name,
-        http_filters: [router_filter()]))
-      )
-  end
-
-  def listeners do
-    alias Envoy.Api.V2.Listener
-
-    [
-      Listener.new(
-        name: "http",
-        address: socket_address("0.0.0.0", 8080),
-        filter_chains: [
-          Listener.FilterChain.new(
-            filter_chain_match: Listener.FilterChainMatch.new(),
-            filters: [default_http_conn_manager_filter("http")]
-          ),
-        ]
-      )
-    ]
   end
 
   def routes do

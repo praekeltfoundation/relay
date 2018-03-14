@@ -5,8 +5,9 @@ defmodule Relay.SupervisorTest do
   alias Relay.Supervisor.FrontendSupervisor
 
   alias Envoy.Api.V2.{DiscoveryRequest, DiscoveryResponse}
+  alias Envoy.Api.V2.ClusterDiscoveryService.Stub, as: CDSStub
   alias Envoy.Api.V2.ListenerDiscoveryService.Stub, as: LDSStub
-  alias Envoy.Api.V2.Listener
+  alias Envoy.Api.V2.{Cluster, Listener}
 
   import ExUnit.CaptureLog
 
@@ -22,7 +23,21 @@ defmodule Relay.SupervisorTest do
   end
 
   defp assert_example_response do
-    assert_lds_response("1", Demo.listeners())
+    assert_cds_response("1", Demo.Marathon.clusters())
+    assert_lds_response("1", Demo.Certs.listeners())
+  end
+
+  defp assert_cds_response(version_info, clusters) do
+    {:ok, channel} = GRPC.Stub.connect("127.0.0.1:#{@port}")
+    stream = channel |> CDSStub.stream_clusters()
+    GRPC.Stub.stream_send(stream, DiscoveryRequest.new())
+
+    result_stream = GRPC.Stub.recv(stream)
+
+    assert [response] = Enum.take(result_stream, 1)
+    assert %DiscoveryResponse{version_info: ^version_info, resources: resources} = response
+
+    assert resources |> Enum.map(fn any_res -> Cluster.decode(any_res.value) end) == clusters
   end
 
   defp assert_lds_response(version_info, listeners) do
@@ -110,7 +125,8 @@ defmodule Relay.SupervisorTest do
 
     # Monitor the server and demo
     server_ref = Process.whereis(GRPC.Server.Supervisor) |> Process.monitor()
-    demo_ref = Process.whereis(Demo) |> Process.monitor()
+    demo_certs_ref = Process.whereis(Demo.Certs) |> Process.monitor()
+    demo_marathon_ref = Process.whereis(Demo.Marathon) |> Process.monitor()
 
     # Wait for all the initial interation to finish
     Process.sleep(50)
@@ -120,7 +136,8 @@ defmodule Relay.SupervisorTest do
 
     # The server and demo quit
     assert_receive {:DOWN, ^server_ref, :process, _, :shutdown}, 1_000
-    assert_receive {:DOWN, ^demo_ref, :process, _, :shutdown}, 1_000
+    assert_receive {:DOWN, ^demo_certs_ref, :process, _, :shutdown}, 1_000
+    assert_receive {:DOWN, ^demo_marathon_ref, :process, _, :shutdown}, 1_000
 
     wait_until_live()
 
@@ -132,7 +149,8 @@ defmodule Relay.SupervisorTest do
     Process.flag(:trap_exit, true)
 
     store_pid = Process.whereis(Store)
-    demo_pid = Process.whereis(Demo)
+    demo_certs_pid = Process.whereis(Demo.Certs)
+    demo_marathon_pid = Process.whereis(Demo.Marathon)
 
     grpc_pid = Process.whereis(GRPC.Server.Supervisor)
     grpc_ref = Process.monitor(grpc_pid)
@@ -150,7 +168,8 @@ defmodule Relay.SupervisorTest do
 
       # Other things still happily running
       assert Process.alive?(store_pid)
-      assert Process.alive?(demo_pid)
+      assert Process.alive?(demo_certs_pid)
+      assert Process.alive?(demo_marathon_pid)
 
       wait_until_live()
     end) =~ ~r/\[error\] GenServer #PID<\S*> terminating\n\*\* \(stop\) killed/
@@ -159,27 +178,32 @@ defmodule Relay.SupervisorTest do
     assert_example_response()
   end
 
-  test "when the Demo exits it is restarted" do
+  # We don't bother testing for Demo.Certs, because it's the same behaviour as
+  # Demo.Marathon.
+
+  test "when Demo.Marathon exits it is restarted" do
     Process.flag(:trap_exit, true)
 
     store_pid = Process.whereis(Store)
     grpc_pid = Process.whereis(GRPC.Server.Supervisor)
+    demo_certs_pid = Process.whereis(Demo.Certs)
 
-    demo_pid = Process.whereis(Demo)
-    demo_ref = Process.monitor(demo_pid)
+    demo_marathon_pid = Process.whereis(Demo.Marathon)
+    demo_marathon_ref = Process.monitor(demo_marathon_pid)
 
     # Wait for all the initial interation to finish
     Process.sleep(50)
 
     # Exit the demo process
-    demo_pid |> Process.exit(:kill)
+    demo_marathon_pid |> Process.exit(:kill)
 
     # Check the demo quit
-    assert_receive {:DOWN, ^demo_ref, :process, _, :killed}, 1_000
+    assert_receive {:DOWN, ^demo_marathon_ref, :process, _, :killed}, 1_000
 
     # Other things still happily running
     assert Process.alive?(store_pid)
     assert Process.alive?(grpc_pid)
+    assert Process.alive?(demo_certs_pid)
 
     wait_until_live()
 
