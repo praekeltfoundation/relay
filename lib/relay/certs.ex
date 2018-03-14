@@ -36,7 +36,7 @@ defmodule Relay.Certs do
   @spec get_certs(binary | [pem_entry]) :: [pem_entry]
   def get_certs(pem_data) do
     pem_decode(pem_data)
-    |> Enum.filter(fn {:Certificate, _, _} -> true; _ -> false end)
+    |> Enum.filter(fn {pem_type, _, _} -> pem_type == :Certificate end)
   end
 
   @doc """
@@ -46,7 +46,7 @@ defmodule Relay.Certs do
   @spec get_key(binary | [pem_entry]) :: {:ok, pem_entry} | :error
   def get_key(pem_data) do
     pem_decode(pem_data)
-    |> Enum.filter(fn {key_type, _, _} -> key_type in @key_types end)
+    |> Enum.filter(fn {pem_type, _, _} -> pem_type in @key_types end)
     |> Enum.fetch(0)
   end
 
@@ -63,7 +63,7 @@ defmodule Relay.Certs do
     get_certs(pem_data)
     |> get_end_entity_certs()
     |> Enum.flat_map(&get_hostnames/1)
-    |> Enum.uniq
+    |> Enum.uniq()
   end
 
   defp get_end_entity_certs([cert]), do: [cert]
