@@ -1,7 +1,8 @@
 defmodule Relay.EnvoyUtil do
-  def api_config_source(options \\ []) do
-    alias Envoy.Api.V2.Core.{ApiConfigSource, ConfigSource}
+  alias Envoy.Api.V2.Core.{ApiConfigSource, ConfigSource}
 
+  @spec api_config_source(keyword) :: ConfigSource.t
+  def api_config_source(options \\ []) do
     cluster_name = Application.fetch_env!(:relay, :cluster_name)
 
     ConfigSource.new(

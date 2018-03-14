@@ -276,6 +276,7 @@ defmodule Relay.Marathon.Adapter do
     ]
   end
 
+  @spec marathon_acme_route() :: Route.t
   defp marathon_acme_route do
     config = Application.fetch_env!(:relay, :marathon_acme)
     # TODO: Does the cluster name here need to be truncated?
