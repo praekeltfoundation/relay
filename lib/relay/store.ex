@@ -1,3 +1,22 @@
+defmodule Relay.Store.Macros do
+  defmodule StructAccess do
+    defmacro __using__([]) do
+      quote do
+        @behaviour Access
+
+        def fetch(term, key), do: Map.fetch(term, key)
+
+        def get(term, key, default), do: Map.get(term, key, default)
+
+        def get_and_update(data, key, function),
+          do: Map.get_and_update(data, key, function)
+
+        def pop(data, key), do: Map.pop(data, key)
+      end
+    end
+  end
+end
+
 defmodule Relay.Store do
   use GenServer
 
@@ -17,12 +36,37 @@ defmodule Relay.Store do
   end
 
   defmodule Resources do
-    defstruct version_info: "", resources: [], subscribers: MapSet.new()
+    use Relay.Store.Macros.StructAccess
+
+    defstruct version_info: "", resources: []
     @type t :: %__MODULE__{
       version_info: String.t,
       resources: [Cluster.t | ClusterLoadAssignment.t | Listener.t | RouteConfiguration.t],
-      subscribers: %MapSet{} # No way to type the elements of MapSet
     }
+  end
+
+  defmodule State do
+    use Relay.Store.Macros.StructAccess
+
+    defstruct resources: %{}, subscribers: %{}
+    @type t :: %__MODULE__{
+      resources: %{Relay.Store.discovery_service => Resources.t},
+      # No way to type the elements of MapSet
+      subscribers: %{Relay.Store.discovery_service => MapSet.t},
+    }
+
+    def discovery_service_map(initial_value) do
+      Relay.Store.discovery_services()
+      |> Enum.map(&{&1, initial_value})
+      |> Map.new()
+    end
+
+    def new() do
+      %__MODULE__{
+        resources: discovery_service_map(%Resources{}),
+        subscribers: discovery_service_map(%MapSet{}),
+      }
+    end
   end
 
   ## Client interface
@@ -46,9 +90,9 @@ defmodule Relay.Store do
 
   ## Server callbacks
 
-  @spec init(:ok) :: {:ok, %{discovery_service => Resources.t}}
+  @spec init(:ok) :: {:ok, State.t}
   def init(:ok) do
-    {:ok, Map.new(Enum.map(@discovery_services, fn xds -> {xds, %Resources{}} end))}
+    {:ok, State.new()}
   end
 
   defp notify_subscribers(subscribers, xds, version_info, resources),
@@ -57,11 +101,12 @@ defmodule Relay.Store do
   defp notify_subscriber(subscriber, xds, version_info, resources),
     do: send(subscriber, {xds, version_info, resources})
 
-  def handle_call({:subscribe, xds, pid}, _from, state) do
-    resources = Map.get(state, xds)
+  defp update_subscribers(state, xds, update_fun),
+    do: update_in(state, [:subscribers, xds], update_fun)
 
-    new_subscribers = MapSet.put(resources.subscribers, pid)
-    new_state = Map.put(state, xds, %{resources | subscribers: new_subscribers})
+  def handle_call({:subscribe, xds, pid}, _from, state) do
+    resources = Map.get(state.resources, xds)
+    new_state = update_subscribers(state, xds, &MapSet.put(&1, pid))
 
     # Send the current state to the new subscriber
     notify_subscriber(pid, xds, resources.version_info, resources.resources)
@@ -70,31 +115,27 @@ defmodule Relay.Store do
   end
 
   def handle_call({:unsubscribe, xds, pid}, _from, state) do
-    resources = Map.get(state, xds)
-
-    new_subscribers = MapSet.delete(resources.subscribers, pid)
-    new_state = Map.put(state, xds, %{resources | subscribers: new_subscribers})
-
+    new_state = update_subscribers(state, xds, &MapSet.delete(&1, pid))
     {:reply, :ok, new_state}
   end
 
   def handle_call({:update, xds, version_info, resources}, _from, state) do
-    xds_resources = Map.get(state, xds)
-
     new_state =
-      if xds_resources.version_info < version_info do
-        notify_subscribers(xds_resources.subscribers, xds, version_info, resources)
-
-        new_resources = %{xds_resources | version_info: version_info, resources: resources}
-        Map.put(state, xds, new_resources)
-      else
-        state
-      end
+      update_in(state, [:resources, xds], fn xds_resources ->
+        if xds_resources.version_info < version_info do
+          notify_subscribers(get_in(state, [:subscribers, xds]), xds, version_info, resources)
+          %{xds_resources | version_info: version_info, resources: resources}
+        else
+          xds_resources
+        end
+      end)
 
     {:reply, :ok, new_state}
   end
 
   # For testing only
   def handle_call({:_get_resources, xds}, _from, state),
-    do: {:reply, {:ok, Map.get(state, xds)}, state}
+    do: {:reply, {:ok, Map.get(state.resources, xds)}, state}
+  def handle_call({:_get_subscribers, xds}, _from, state),
+    do: {:reply, {:ok, Map.get(state.subscribers, xds)}, state}
 end

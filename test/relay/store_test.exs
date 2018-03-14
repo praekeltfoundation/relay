@@ -31,16 +31,21 @@ defmodule Relay.StoreTest do
     resources
   end
 
+  def get_subscribers(store, xds) do
+    {:ok, subscribers} = GenServer.call(store, {:_get_subscribers, xds})
+    subscribers
+  end
+
   xds_tests "subscribe idempotent", fn store, xds ->
-    assert get_resources(store, xds) == %Resources{subscribers: MapSet.new()}
+    assert get_subscribers(store, xds) == MapSet.new()
 
     assert Store.subscribe(store, xds, self()) == :ok
     assert_receive {^xds, "", []}, 100
-    assert get_resources(store, xds) == %Resources{subscribers: MapSet.new([self()])}
+    assert get_subscribers(store, xds) == MapSet.new([self()])
 
     assert Store.subscribe(store, xds, self()) == :ok
     assert_receive {^xds, "", []}, 100
-    assert get_resources(store, xds) == %Resources{subscribers: MapSet.new([self()])}
+    assert get_subscribers(store, xds) == MapSet.new([self()])
   end
 
   defp assert_subscribe(store, xds, version_info \\ "", resources \\ []) do
@@ -50,13 +55,13 @@ defmodule Relay.StoreTest do
 
   xds_tests "unsubscribe idempotent", fn store, xds ->
     assert_subscribe(store, xds)
-    assert get_resources(store, xds) == %Resources{subscribers: MapSet.new([self()])}
+    assert get_subscribers(store, xds) == MapSet.new([self()])
 
     assert Store.unsubscribe(store, xds, self()) == :ok
-    assert get_resources(store, xds) == %Resources{subscribers: MapSet.new()}
+    assert get_subscribers(store, xds) == MapSet.new()
 
     assert Store.unsubscribe(store, xds, self()) == :ok
-    assert get_resources(store, xds) == %Resources{subscribers: MapSet.new()}
+    assert get_subscribers(store, xds) == MapSet.new()
   end
 
   xds_tests "subscribers receive updates", fn store, xds ->
