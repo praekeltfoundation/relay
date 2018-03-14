@@ -13,7 +13,7 @@ defmodule RelayTest do
   setup do
     TestHelpers.override_log_level(:warn)
     Application.put_env(:grpc, :start_server, true)
-    Application.put_env(:relay, :port, @port)
+    Application.put_env(:relay, :port, @port, persistent: true)
   end
 
   defp stream_xds() do
