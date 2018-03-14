@@ -13,10 +13,10 @@ defmodule Relay.Marathon.AdapterTest do
   @test_app %App{
     id: "/mc2",
     labels: %{
-      "HAPROXY_0_REDIRECT_TO_HTTPS" => "true",
+      "HAPROXY_0_REDIRECT_TO_HTTPS" => "false",
       "HAPROXY_0_VHOST" => "mc2.example.org",
       "HAPROXY_GROUP" => "external",
-      "MARATHON_ACME_0_DOMAIN" => "mc2.example.org"
+      "MARATHON_ACME_0_DOMAIN" => ""
     },
     networking_mode: :"container/bridge",
     ports_list: [80],
@@ -172,10 +172,7 @@ defmodule Relay.Marathon.AdapterTest do
 
   describe "app_virtual_hosts/3" do
     test "http virtual host" do
-      app = %{
-        @test_app
-        | labels: @test_app.labels |> Map.put("HAPROXY_0_REDIRECT_TO_HTTPS", "false")
-      }
+      app = @test_app
 
       assert [virtual_host] = Adapter.app_virtual_hosts(:http, app)
 
@@ -215,15 +212,10 @@ defmodule Relay.Marathon.AdapterTest do
       alias Envoy.Api.V2.Route.Decorator
       alias Google.Protobuf.UInt32Value
 
-      app = %{
-        @test_app
-        | labels: @test_app.labels |> Map.put("HAPROXY_0_REDIRECT_TO_HTTPS", "false")
-      }
-
       assert [virtual_host] =
                Adapter.app_virtual_hosts(
                  :http,
-                 app,
+                 @test_app,
                  response_headers_to_add: [
                    HeaderValueOption.new(
                      header:
@@ -282,7 +274,12 @@ defmodule Relay.Marathon.AdapterTest do
     end
 
     test "http to https redirect" do
-      assert [virtual_host] = Adapter.app_virtual_hosts(:http, @test_app)
+      app = %{
+        @test_app
+        | labels: @test_app.labels |> Map.put("HAPROXY_0_REDIRECT_TO_HTTPS", "true")
+      }
+
+      assert [virtual_host] = Adapter.app_virtual_hosts(:http, app)
 
       assert %VirtualHost{
                name: "http_/mc2_0",
@@ -290,6 +287,34 @@ defmodule Relay.Marathon.AdapterTest do
                routes: [
                  %Route{
                    action: {:redirect, %RedirectAction{https_redirect: true}},
+                   match: %RouteMatch{path_specifier: {:prefix, "/"}}
+                 }
+               ]
+             } = virtual_host
+
+      assert Protobuf.Validator.valid?(virtual_host)
+    end
+
+    test "marathon-acme route" do
+      app = %{
+        @test_app
+        | labels: @test_app.labels |> Map.put("MARATHON_ACME_0_DOMAIN", "mc2.example.org")
+      }
+      # Change the defaults to ensure we're reading from config
+      Application.put_env(:relay, :marathon_acme, [app_id: "/ma", port_index: 1])
+
+      assert [virtual_host] = Adapter.app_virtual_hosts(:http, app)
+
+      assert %VirtualHost{
+               name: "http_/mc2_0",
+               domains: ["mc2.example.org"],
+               routes: [
+                 %Route{
+                   action: {:route, %RouteAction{cluster_specifier: {:cluster, "/ma_1"}}},
+                   match: %RouteMatch{path_specifier: {:prefix, "/.well-known/acme-challenge/"}}
+                 },
+                 %Route{
+                   action: {:route, %RouteAction{cluster_specifier: {:cluster, "/mc2_0"}}},
                    match: %RouteMatch{path_specifier: {:prefix, "/"}}
                  }
                ]

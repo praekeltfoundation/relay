@@ -246,10 +246,11 @@ defmodule Relay.Marathon.Adapter do
         ] ++ options
       )
 
-    # TODO: marathon-acme route (which will come before the primary route in
-    # the list)
-
-    [primary_route]
+    case App.marathon_acme_domain(app, port_index) do
+      # No marathon-acme domain--don't route to marathon-acme
+      [] -> [primary_route]
+      _ -> [marathon_acme_route(), primary_route]
+    end
   end
 
   defp app_port_routes(:https, %App{id: app_id}, port_index, options) do
@@ -273,5 +274,15 @@ defmodule Relay.Marathon.Adapter do
         ] ++ options
       )
     ]
+  end
+
+  defp marathon_acme_route do
+    config = Application.fetch_env!(:relay, :marathon_acme)
+    # TODO: Does the cluster name here need to be truncated?
+    cluster = "#{Keyword.fetch!(config, :app_id)}_#{Keyword.fetch!(config, :port_index)}"
+    Route.new(
+      action: {:route, RouteAction.new(cluster_specifier: {:cluster, cluster})},
+      match: RouteMatch.new(path_specifier: {:prefix, "/.well-known/acme-challenge/"})
+    )
   end
 end
