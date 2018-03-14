@@ -63,24 +63,8 @@ defmodule Relay.Demo.Marathon do
     %{state | version: state.version + 1}
   end
 
-  defp own_api_config_source do
-    alias Envoy.Api.V2.Core.{ApiConfigSource, ConfigSource, GrpcService}
-    ConfigSource.new(config_source_specifier: {:api_config_source, ApiConfigSource.new(
-      api_type: ApiConfigSource.ApiType.value(:GRPC),
-      # TODO: Make our cluster name configurable--this must match the cluster
-      # name in bootstrap.yaml
-      # TODO: I don't understand what grpc_services is for when there is a
-      # `cluster_names`. `cluster_names` is required.
-      cluster_names: ["xds_cluster"],
-      grpc_services: [
-        GrpcService.new(target_specifier:
-          {:envoy_grpc, GrpcService.EnvoyGrpc.new(cluster_name: "xds_cluster")})
-      ]
-    )})
-  end
-
   def clusters do
-    Adapter.app_clusters(@demo_app, own_api_config_source())
+    Adapter.app_clusters(@demo_app)
   end
 
   def routes do

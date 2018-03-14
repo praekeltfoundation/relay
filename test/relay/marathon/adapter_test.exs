@@ -4,7 +4,7 @@ defmodule Relay.Marathon.AdapterTest do
   alias Relay.Marathon.{Adapter, App, Task}
 
   alias Envoy.Api.V2.{Cluster, ClusterLoadAssignment, RouteConfiguration}
-  alias Envoy.Api.V2.Core.{Address, ApiConfigSource, ConfigSource, Locality, SocketAddress}
+  alias Envoy.Api.V2.Core.{Address, ConfigSource, Locality, SocketAddress}
   alias Envoy.Api.V2.Endpoint.{Endpoint, LbEndpoint, LocalityLbEndpoints}
   alias Envoy.Api.V2.Route.{RedirectAction, Route, RouteAction, RouteMatch, VirtualHost}
 
@@ -32,15 +32,6 @@ defmodule Relay.Marathon.AdapterTest do
     version: "2017-11-09T08:43:59.890Z"
   }
 
-  @test_config_source ConfigSource.new(
-                        config_source_specifier:
-                          {:api_config_source,
-                           ApiConfigSource.new(
-                             api_type: ApiConfigSource.ApiType.value(:GRPC),
-                             cluster_names: ["xds_cluster"]
-                           )}
-                      )
-
   describe "truncate_name/2" do
     test "long names truncated from beginning" do
       assert Adapter.truncate_name("helloworldmynameis", 10) == "[...]ameis"
@@ -60,13 +51,13 @@ defmodule Relay.Marathon.AdapterTest do
   describe "app_clusters/3" do
     test "simple cluster" do
       eds_type = Cluster.DiscoveryType.value(:EDS)
-      assert [cluster] = Adapter.app_clusters(@test_app, @test_config_source)
+      assert [cluster] = Adapter.app_clusters(@test_app)
 
       assert %Cluster{
                name: "/mc2_0",
                type: ^eds_type,
                eds_cluster_config: %Cluster.EdsClusterConfig{
-                 eds_config: @test_config_source,
+                 eds_config: %ConfigSource{},
                  service_name: "/mc2_0"
                },
                connect_timeout: %Duration{seconds: 5}
@@ -83,7 +74,6 @@ defmodule Relay.Marathon.AdapterTest do
       assert [cluster] =
                Adapter.app_clusters(
                  @test_app,
-                 @test_config_source,
                  connect_timeout: connect_timeout,
                  lb_policy: lb_policy
                )
@@ -92,7 +82,7 @@ defmodule Relay.Marathon.AdapterTest do
                name: "/mc2_0",
                type: ^eds_type,
                eds_cluster_config: %Cluster.EdsClusterConfig{
-                 eds_config: @test_config_source,
+                 eds_config: %ConfigSource{},
                  service_name: "/mc2_0"
                },
                connect_timeout: ^connect_timeout,
@@ -106,12 +96,12 @@ defmodule Relay.Marathon.AdapterTest do
       app = %{@test_app | id: "/organisation/my_long_group_name/subgroup3456/application2934"}
 
       assert [%Cluster{name: "[...]ation/my_long_group_name/subgroup3456/application2934_0"}] =
-               Adapter.app_clusters(app, @test_config_source)
+               Adapter.app_clusters(app)
     end
 
     test "custom max_obj_name_length" do
       app = %{@test_app | id: "/myslightlylongname"}
-      assert [cluster] = Adapter.app_clusters(app, @test_config_source, max_obj_name_length: 10)
+      assert [cluster] = Adapter.app_clusters(app, max_obj_name_length: 10)
 
       assert %Cluster{name: "[...]ame_0"} = cluster
       assert Protobuf.Validator.valid?(cluster)

@@ -1,4 +1,5 @@
 defmodule Relay.Marathon.Adapter do
+  alias Relay.EnvoyUtil
   alias Relay.Marathon.{App, Task, Networking}
 
   alias Envoy.Api.V2.{Cluster, ClusterLoadAssignment, RouteConfiguration}
@@ -21,12 +22,10 @@ defmodule Relay.Marathon.Adapter do
   of options set but will be Clusters with EDS endpoint discovery. Additional
   options can be specified using `options`.
   """
-  @spec app_clusters(App.t, ConfigSource.t, keyword) :: [Cluster.t]
-  def app_clusters(
-        %App{port_indices_in_group: port_indices_in_group} = app,
-        %ConfigSource{} = eds_config_source,
-        options \\ []
-      ) do
+  @spec app_clusters(App.t, keyword) :: [Cluster.t]
+  def app_clusters(%App{port_indices_in_group: port_indices_in_group} = app, options \\ []) do
+    eds_config_source = EnvoyUtil.api_config_source()
+
     port_indices_in_group
     |> Enum.map(&app_port_cluster(app, &1, eds_config_source, options))
   end
