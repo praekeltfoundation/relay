@@ -1,5 +1,5 @@
 defmodule Relay.Demo.Certs do
-  alias Relay.{Certs, Store}
+  alias Relay.{Certs, EnvoyUtil, Store}
 
   @demo_pem """
   -----BEGIN RSA PRIVATE KEY-----
@@ -87,22 +87,6 @@ defmodule Relay.Demo.Certs do
     %{state | version: state.version + 1}
   end
 
-  defp own_api_config_source do
-    alias Envoy.Api.V2.Core.{ApiConfigSource, ConfigSource, GrpcService}
-    ConfigSource.new(config_source_specifier: {:api_config_source, ApiConfigSource.new(
-      api_type: ApiConfigSource.ApiType.value(:GRPC),
-      # TODO: Make our cluster name configurable--this must match the cluster
-      # name in bootstrap.yaml
-      # TODO: I don't understand what grpc_services is for when there is a
-      # `cluster_names`. `cluster_names` is required.
-      cluster_names: ["xds_cluster"],
-      grpc_services: [
-        GrpcService.new(target_specifier:
-          {:envoy_grpc, GrpcService.EnvoyGrpc.new(cluster_name: "xds_cluster")})
-      ]
-    )})
-  end
-
   defp socket_address(address, port) do
     alias Envoy.Api.V2.Core.{Address, SocketAddress}
     sock = SocketAddress.new(address: address, port_specifier: {:port_value, port})
@@ -133,7 +117,7 @@ defmodule Relay.Demo.Certs do
       config: mkstruct(HttpConnectionManager.new(
         codec_type: HttpConnectionManager.CodecType.value(:AUTO),
         route_specifier: {:rds, Rds.new(
-          config_source: own_api_config_source(), route_config_name: name)},
+          config_source: EnvoyUtil.api_config_source(), route_config_name: name)},
         stat_prefix: name,
         http_filters: [router_filter()]))
       )
