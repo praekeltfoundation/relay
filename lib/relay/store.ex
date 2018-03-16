@@ -1,22 +1,3 @@
-defmodule Relay.Store.Macros do
-  defmodule StructAccess do
-    defmacro __using__([]) do
-      quote do
-        @behaviour Access
-
-        def fetch(term, key), do: Map.fetch(term, key)
-
-        def get(term, key, default), do: Map.get(term, key, default)
-
-        def get_and_update(data, key, function),
-          do: Map.get_and_update(data, key, function)
-
-        def pop(data, key), do: Map.pop(data, key)
-      end
-    end
-  end
-end
-
 defmodule Relay.Store do
   use GenServer
 
@@ -31,42 +12,60 @@ defmodule Relay.Store do
   # The dest types supported by Kernel.send/2
   @type subscriber :: pid | port | atom | {atom, node}
 
-  def start_link(opts \\ []) do
-    GenServer.start_link(__MODULE__, :ok, opts)
-  end
-
-  defmodule Resources do
-    use Relay.Store.Macros.StructAccess
-
-    defstruct version_info: "", resources: []
-    @type t :: %__MODULE__{
-      version_info: String.t,
-      resources: [Cluster.t | ClusterLoadAssignment.t | Listener.t | RouteConfiguration.t],
-    }
-  end
+  @type resources :: [Cluster.t | ClusterLoadAssignment.t | Listener.t | RouteConfiguration.t]
 
   defmodule State do
-    use Relay.Store.Macros.StructAccess
-
-    defstruct resources: %{}, subscribers: %{}
-    @type t :: %__MODULE__{
-      resources: %{Relay.Store.discovery_service => Resources.t},
-      # No way to type the elements of MapSet
-      subscribers: %{Relay.Store.discovery_service => MapSet.t},
-    }
-
-    def discovery_service_map(initial_value) do
-      Relay.Store.discovery_services()
-      |> Enum.map(&{&1, initial_value})
-      |> Map.new()
-    end
+    defstruct [:resources, :subscribers]
+    @type t :: %__MODULE__{resources: :ets.tab, subscribers: :ets.tab}
 
     def new() do
+      # FIXME: resources are not discovery services.
       %__MODULE__{
-        resources: discovery_service_map(%Resources{}),
-        subscribers: discovery_service_map(%MapSet{}),
+        resources: mktable(:resources, Relay.Store.discovery_services(), &{&1, "", []}),
+        subscribers: mktable(:subscribers, Relay.Store.discovery_services(), &{&1, %MapSet{}}),
       }
     end
+
+    defp mktable(name, keys, value_fun) do
+      tbl = :ets.new(name, [:set, :protected])
+      Enum.each(keys, &:ets.insert(tbl, value_fun.(&1)))
+      tbl
+    end
+
+
+    # Resources
+    def get_resources(state, rtype) do
+      [{^rtype, version, resources}] = :ets.lookup(state.resources, rtype)
+      {version, resources}
+    end
+
+    def update_resources(state, rtype, version, resources) do
+      {cur_version, _} = get_resources(state, rtype)
+      update = version > cur_version
+      if update, do: :ets.insert(state.resources, {rtype, version, resources})
+      update
+    end
+
+    # Subscribers
+    def get_subscribers(state, xds) do
+      [{^xds, subs}] = :ets.lookup(state.subscribers, xds)
+      subs
+    end
+
+    def subscribe(state, xds, pid),
+      do: update_subs(state, xds, &MapSet.put(&1, pid))
+
+    def unsubscribe(state, xds, pid),
+      do: update_subs(state, xds, &MapSet.delete(&1, pid))
+
+    defp update_subs(state, xds, update_fun) do
+      subs = get_subscribers(state, xds)
+      :ets.insert(state.subscribers, {xds, update_fun.(subs)})
+    end
+  end
+
+  def start_link(opts \\ []) do
+    GenServer.start_link(__MODULE__, :ok, opts)
   end
 
   ## Client interface
@@ -85,8 +84,8 @@ defmodule Relay.Store do
   @spec update(GenServer.server, :rds, String.t, [RouteConfiguration.t]) :: :ok
   @spec update(GenServer.server, :cds, String.t, [Cluster.t]) :: :ok
   @spec update(GenServer.server, :eds, String.t, [ClusterLoadAssignment.t]) :: :ok
-  def update(server, xds, version_info, resources) when is_xds(xds),
-    do: GenServer.call(server, {:update, xds, version_info, resources})
+  def update(server, xds, version, resources) when is_xds(xds),
+    do: GenServer.call(server, {:update, xds, version, resources})
 
   ## Server callbacks
 
@@ -95,47 +94,46 @@ defmodule Relay.Store do
     {:ok, State.new()}
   end
 
-  defp notify_subscribers(subscribers, xds, version_info, resources),
-    do: Enum.each(subscribers, &notify_subscriber(&1, xds, version_info, resources))
-
-  defp notify_subscriber(subscriber, xds, version_info, resources),
-    do: send(subscriber, {xds, version_info, resources})
-
-  defp update_subscribers(state, xds, update_fun),
-    do: update_in(state, [:subscribers, xds], update_fun)
-
   def handle_call({:subscribe, xds, pid}, _from, state) do
-    resources = Map.get(state.resources, xds)
-    new_state = update_subscribers(state, xds, &MapSet.put(&1, pid))
-
+    State.subscribe(state, xds, pid)
     # Send the current state to the new subscriber
-    notify_subscriber(pid, xds, resources.version_info, resources.resources)
-
-    {:reply, :ok, new_state}
+    notify_subscribers(state, xds, [pid])
+    {:reply, :ok, state}
   end
 
   def handle_call({:unsubscribe, xds, pid}, _from, state) do
-    new_state = update_subscribers(state, xds, &MapSet.delete(&1, pid))
-    {:reply, :ok, new_state}
+    State.unsubscribe(state, xds, pid)
+    {:reply, :ok, state}
   end
 
-  def handle_call({:update, xds, version_info, resources}, _from, state) do
-    new_state =
-      update_in(state, [:resources, xds], fn xds_resources ->
-        if xds_resources.version_info < version_info do
-          notify_subscribers(get_in(state, [:subscribers, xds]), xds, version_info, resources)
-          %{xds_resources | version_info: version_info, resources: resources}
-        else
-          xds_resources
-        end
-      end)
-
-    {:reply, :ok, new_state}
+  def handle_call({:update, rtype, version, resources}, _from, state) do
+    updated = State.update_resources(state, rtype, version, resources)
+    if updated, do: notify_subscribers(state, rtype)
+    {:reply, :ok, state}
   end
 
   # For testing only
   def handle_call({:_get_resources, xds}, _from, state),
-    do: {:reply, {:ok, Map.get(state.resources, xds)}, state}
+    do: {:reply, {:ok, State.get_resources(state, xds)}, state}
+
   def handle_call({:_get_subscribers, xds}, _from, state),
-    do: {:reply, {:ok, Map.get(state.subscribers, xds)}, state}
+    do: {:reply, {:ok, State.get_subscribers(state, xds)}, state}
+
+  # Internals
+
+  defp notify_subscribers(state, xds),
+    do: notify_subscribers(state, xds, State.get_subscribers(state, xds))
+
+  defp notify_subscribers(state, xds, subs) do
+    {version, resources} = build_xds_resources(state, xds)
+    Enum.each(subs, &notify_subscriber(&1, xds, version, resources))
+  end
+
+  defp notify_subscriber(subscriber, xds, version, resources),
+    do: send(subscriber, {xds, version, resources})
+
+  defp build_xds_resources(state, xds) do
+    # FIXME: Build xds resources from stored resources.
+    State.get_resources(state, xds)
+  end
 end

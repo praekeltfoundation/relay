@@ -17,7 +17,6 @@ defmodule Relay.StoreTest do
   use ExUnit.Case, async: true
 
   alias Relay.Store
-  alias Store.Resources
 
   import Relay.StoreTest.Macros
 
@@ -83,7 +82,7 @@ defmodule Relay.StoreTest do
     assert Store.update(store, xds, "1", old_resources) == :ok
 
     # Assert the stored resources haven't changed
-    assert %Resources{version_info: "2", resources: ^resources} = get_resources(store, xds)
+    assert get_resources(store, xds) == {"2", resources}
     # Assert we don't receive any updates for this xds
     refute_received {^xds, _, _}
   end
