@@ -1,7 +1,7 @@
 defmodule Relay.SupervisorTest do
   use ExUnit.Case
 
-  alias Relay.{Supervisor, Demo, Store}
+  alias Relay.{Supervisor, Demo, Publisher}
   alias Relay.Supervisor.FrontendSupervisor
 
   alias Envoy.Api.V2.{DiscoveryRequest, DiscoveryResponse}
@@ -121,7 +121,7 @@ defmodule Relay.SupervisorTest do
     Task.await(blocker_task)
   end
 
-  test "when the Store exits everything is restarted" do
+  test "when the Publisher exits everything is restarted" do
     Process.flag(:trap_exit, true)
 
     # Monitor the server and demo
@@ -132,8 +132,8 @@ defmodule Relay.SupervisorTest do
     # Wait for all the initial interation to finish
     Process.sleep(50)
 
-    # Exit the Store process
-    Process.whereis(Store) |> Process.exit(:kill)
+    # Exit the Publisher process
+    Process.whereis(Publisher) |> Process.exit(:kill)
 
     # The server and demo quit
     assert_receive {:DOWN, ^server_ref, :process, _, :shutdown}, 1_000
@@ -149,7 +149,7 @@ defmodule Relay.SupervisorTest do
   test "when the GRPC supervisor exits it is restarted" do
     Process.flag(:trap_exit, true)
 
-    store_pid = Process.whereis(Store)
+    publisher_pid = Process.whereis(Publisher)
     demo_certs_pid = Process.whereis(Demo.Certs)
     demo_marathon_pid = Process.whereis(Demo.Marathon)
 
@@ -168,7 +168,7 @@ defmodule Relay.SupervisorTest do
       assert_receive {:DOWN, ^grpc_ref, :process, _, :killed}, 1_000
 
       # Other things still happily running
-      assert Process.alive?(store_pid)
+      assert Process.alive?(publisher_pid)
       assert Process.alive?(demo_certs_pid)
       assert Process.alive?(demo_marathon_pid)
 
@@ -185,7 +185,7 @@ defmodule Relay.SupervisorTest do
   test "when Demo.Marathon exits it is restarted" do
     Process.flag(:trap_exit, true)
 
-    store_pid = Process.whereis(Store)
+    publisher_pid = Process.whereis(Publisher)
     grpc_pid = Process.whereis(GRPC.Server.Supervisor)
     demo_certs_pid = Process.whereis(Demo.Certs)
 
@@ -202,7 +202,7 @@ defmodule Relay.SupervisorTest do
     assert_receive {:DOWN, ^demo_marathon_ref, :process, _, :killed}, 1_000
 
     # Other things still happily running
-    assert Process.alive?(store_pid)
+    assert Process.alive?(publisher_pid)
     assert Process.alive?(grpc_pid)
     assert Process.alive?(demo_certs_pid)
 

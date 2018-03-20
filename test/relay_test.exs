@@ -1,7 +1,7 @@
 defmodule RelayTest do
   use ExUnit.Case
 
-  alias Relay.{Demo, Store}
+  alias Relay.{Demo, Publisher}
 
   alias Envoy.Api.V2.{DiscoveryRequest, DiscoveryResponse}
   alias Envoy.Api.V2.ClusterDiscoveryService.Stub, as: CDSStub
@@ -47,7 +47,7 @@ defmodule RelayTest do
   end
 
   test "starting the application starts everything" do
-    procs = [GRPC.Server.Supervisor, Relay.Supervisor, Store, Demo.Marathon]
+    procs = [GRPC.Server.Supervisor, Relay.Supervisor, Publisher, Demo.Marathon]
 
     # The various processes aren't running before we start the application
     procs |> Enum.each(fn(id) ->

@@ -1,6 +1,6 @@
 defmodule Relay.Supervisor do
   @moduledoc """
-  The parent Supervisor for the overall program. Supervises the Store
+  The parent Supervisor for the overall program. Supervises the Publisher
   process as well as the Supervisor for the other processes.
   """
 
@@ -53,7 +53,7 @@ defmodule Relay.Supervisor do
 
   def init({addr, port}) do
     children = [
-      {Relay.Store, [name: Relay.Store]},
+      {Relay.Publisher, [name: Relay.Publisher]},
       {FrontendSupervisor, {addr, port}},
     ]
     Supervisor.init(children, strategy: :rest_for_one)

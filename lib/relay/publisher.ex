@@ -1,4 +1,4 @@
-defmodule Relay.Store do
+defmodule Relay.Publisher do
   use GenServer
 
   alias Envoy.Api.V2.{Cluster, ClusterLoadAssignment, Listener, RouteConfiguration}

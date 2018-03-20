@@ -1,5 +1,5 @@
 defmodule Relay.Demo.Certs do
-  alias Relay.{Certs, EnvoyUtil, Store}
+  alias Relay.{Certs, EnvoyUtil, Publisher}
 
   @demo_pem """
   -----BEGIN RSA PRIVATE KEY-----
@@ -83,7 +83,7 @@ defmodule Relay.Demo.Certs do
 
   defp update_state(state) do
     v = "#{state.version}"
-    Store.update(Store, :lds, v, listeners())
+    Publisher.update(Publisher, :lds, v, listeners())
     %{state | version: state.version + 1}
   end
 
