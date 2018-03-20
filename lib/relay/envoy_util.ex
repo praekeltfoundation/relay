@@ -15,9 +15,15 @@ defmodule Relay.EnvoyUtil do
 
   @truncated_name_prefix "[...]"
 
+  @spec envoy_config() :: keyword
+  defp envoy_config, do: Application.fetch_env!(:relay, :envoy)
+
+  @spec fetch_envoy_config!(atom) :: any
+  defp fetch_envoy_config!(key), do: envoy_config() |> Keyword.fetch!(key)
+
   @spec api_config_source(keyword) :: ConfigSource.t()
   def api_config_source(options \\ []) do
-    cluster_name = Application.fetch_env!(:relay, :envoy) |> Keyword.fetch!(:cluster_name)
+    cluster_name = fetch_envoy_config!(:cluster_name)
 
     ConfigSource.new(
       config_source_specifier:
@@ -40,7 +46,7 @@ defmodule Relay.EnvoyUtil do
   """
   @spec truncate_obj_name(String.t()) :: String.t()
   def truncate_obj_name(name) do
-    max_size = Application.fetch_env!(:relay, :envoy) |> Keyword.fetch!(:max_obj_name_length)
+    max_size = fetch_envoy_config!(:max_obj_name_length)
 
     case byte_size(name) do
       size when size > max_size ->
@@ -64,9 +70,19 @@ defmodule Relay.EnvoyUtil do
     )
   end
 
+  @spec listener_config(atom) :: keyword
+  defp listener_config(listener), do: fetch_envoy_config!(:listeners) |> Keyword.fetch!(listener)
+
+  @spec get_listener_config(atom, atom, any) :: any
+  defp get_listener_config(listener, key, default),
+    do: listener_config(listener) |> Keyword.get(key, default)
+
+  @spec fetch_listener_config!(atom, atom) :: any
+  defp fetch_listener_config!(listener, key), do: listener_config(listener) |> Keyword.fetch!(key)
+
   @spec listener_address(atom) :: Address.t()
   defp listener_address(listener) do
-    listen = Application.fetch_env!(:relay, :envoy) |> get_in([:listeners, listener, :listen])
+    listen = fetch_listener_config!(listener, :listen)
     socket_address(Keyword.fetch!(listen, :address), Keyword.fetch!(listen, :port))
   end
 
@@ -86,11 +102,10 @@ defmodule Relay.EnvoyUtil do
 
   @spec http_connection_manager(atom, keyword) :: HttpConnectionManager.t()
   defp http_connection_manager(listener, options) do
-    listener_config = Application.get_env(:relay, :envoy) |> get_in([:listeners, listener])
-    config = Keyword.fetch!(listener_config, :http_connection_manager)
+    config = fetch_listener_config!(listener, :http_connection_manager)
 
     default_name = Atom.to_string(listener)
-    route_config_name = Keyword.get(listener_config, :route_config_name, default_name)
+    route_config_name = get_listener_config(listener, :route_config_name, default_name)
     stat_prefix = Keyword.get(config, :stat_prefix, default_name)
 
     access_log = Keyword.get(config, :access_log) |> access_logs_from_config()
@@ -120,8 +135,7 @@ defmodule Relay.EnvoyUtil do
 
   @spec router(atom, keyword) :: Router.t()
   defp router(listener, options) do
-    config = Application.get_env(:relay, :envoy) |> get_in([:listeners, listener, :router])
-
+    config = fetch_listener_config!(listener, :router)
     upstream_log = Keyword.get(config, :upstream_log) |> access_logs_from_config()
 
     Router.new([upstream_log: upstream_log] ++ options)
