@@ -95,7 +95,7 @@ defmodule Relay.Demo.Certs do
       name: "envoy.router",
       config: mkstruct(
         # FIXME: Don't do this name to atom thing
-        Router.new(upstream_log: String.to_atom(name) |> EnvoyUtil.router_upstream_log())
+        Router.new(upstream_log: String.to_existing_atom(name) |> EnvoyUtil.router_upstream_log())
       )
     )
   end
@@ -115,7 +115,8 @@ defmodule Relay.Demo.Certs do
           stat_prefix: name,
           http_filters: [router_filter(name)],
           # FIXME: Don't do this name to atom thing
-          access_log: String.to_atom(name) |> EnvoyUtil.http_connection_manager_access_log()
+          access_log:
+            String.to_existing_atom(name) |> EnvoyUtil.http_connection_manager_access_log()
         )
       )
     )
