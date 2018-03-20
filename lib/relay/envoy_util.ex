@@ -86,12 +86,11 @@ defmodule Relay.EnvoyUtil do
 
   @spec http_connection_manager(atom, keyword) :: HttpConnectionManager.t()
   defp http_connection_manager(listener, options) do
-    config =
-      Application.get_env(:relay, :envoy)
-      |> get_in([:listeners, listener, :http_connection_manager])
+    listener_config = Application.get_env(:relay, :envoy) |> get_in([:listeners, listener])
+    config = Keyword.fetch!(listener_config, :http_connection_manager)
 
     default_name = Atom.to_string(listener)
-    route_config_name = Keyword.get(config, :route_config_name, default_name)
+    route_config_name = Keyword.get(listener_config, :route_config_name, default_name)
     stat_prefix = Keyword.get(config, :stat_prefix, default_name)
 
     access_log = Keyword.get(config, :access_log) |> access_logs_from_config()

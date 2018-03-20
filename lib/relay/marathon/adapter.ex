@@ -134,6 +134,7 @@ defmodule Relay.Marathon.Adapter do
 
   @spec apps_route_configuration(atom, [App.t], keyword) :: RouteConfiguration.t
   defp apps_route_configuration(listener, apps, options) do
+    # TODO: Use route config name from config
     {name, options} = Keyword.pop(options, :name, Atom.to_string(listener))
     {virtual_host_opts, options} = Keyword.pop(options, :virtual_host_opts, [])
 

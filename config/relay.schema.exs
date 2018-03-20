@@ -106,7 +106,7 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       hidden: false,
       to: "relay.envoy.listeners"
     ],
-    "relay.envoy.listeners.*.http_connection_manager.route_config_name": [
+    "relay.envoy.listeners.*.route_config_name": [
       commented: false,
       datatype: :binary,
       doc: "Name for the route configuration (defaults to listener name)",
