@@ -122,11 +122,6 @@ defmodule Relay.Demo.Certs do
     )
   end
 
-  defp listener(name, address, filter_chains) do
-    alias Envoy.Api.V2.Listener
-    Listener.new(name: name, address: address, filter_chains: filter_chains)
-  end
-
   defp filter_chain(name, {tls_context, sni_domains} \\ {nil, []}) do
     alias Envoy.Api.V2.Listener.{FilterChain, FilterChainMatch}
     FilterChain.new(
@@ -163,8 +158,8 @@ defmodule Relay.Demo.Certs do
   def listeners do
     https_filter_chains = Enum.map([@demo_pem], &https_filter_chain/1)
     [
-      listener("http", EnvoyUtil.listener_address(:http), [filter_chain("http")]),
-      listener("https", EnvoyUtil.listener_address(:https), https_filter_chains),
+      EnvoyUtil.listener(:http, [filter_chain("http")]),
+      EnvoyUtil.listener(:https, https_filter_chains),
     ]
   end
 end

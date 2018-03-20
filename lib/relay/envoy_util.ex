@@ -1,6 +1,8 @@
 defmodule Relay.EnvoyUtil do
   alias Relay.ProtobufUtil
 
+  alias Envoy.Api.V2.Listener
+  alias Envoy.Api.V2.Listener.FilterChain
   alias Envoy.Api.V2.Core.{Address, ApiConfigSource, ConfigSource, SocketAddress}
   alias Envoy.Config.Filter.Accesslog.V2.{AccessLog, FileAccessLog}
 
@@ -44,8 +46,19 @@ defmodule Relay.EnvoyUtil do
     end
   end
 
+  @spec listener(atom, [FilterChain.t()], keyword) :: Listener.t()
+  def listener(listener, filter_chains, options \\ []) do
+    Listener.new(
+      [
+        name: Atom.to_string(listener) |> truncate_obj_name(),
+        address: listener_address(listener),
+        filter_chains: filter_chains
+      ] ++ options
+    )
+  end
+
   @spec listener_address(atom) :: Address.t()
-  def listener_address(listener) do
+  defp listener_address(listener) do
     listen = Application.fetch_env!(:relay, :envoy) |> get_in([:listeners, listener, :listen])
     socket_address(Keyword.fetch!(listen, :address), Keyword.fetch!(listen, :port))
   end
