@@ -28,3 +28,71 @@ use Mix.Config
 # here (which is why it is important to import them last).
 #
 #     import_config "#{Mix.env}.exs"
+
+config :relay, [
+  listen: [
+    address: "127.0.0.1",
+    port: 5000
+  ],
+
+  envoy: [
+    cluster_name: "xds_cluster",
+    max_obj_name_length: 60,
+    listeners: [
+      http: [
+        listen: [
+          address: "127.0.0.1",
+          port: 8080
+        ],
+        http_connection_manager: [
+          access_log: [
+            path: "http_access.log",
+            format: ""
+            # TODO: Figure out how to configure filters
+          ]
+        ],
+        router: [
+          upstream_log: [
+            path: "http_upstream.log",
+            format: ""
+            # TODO: Figure out how to configure filters
+          ]
+        ]
+      ],
+      https: [
+        listen: [
+          address: "127.0.0.1",
+          port: 8443
+        ],
+        http_connection_manager: [
+          access_log: [
+            path: "https_access.log",
+            format: ""
+            # TODO: Figure out how to configure filters
+          ]
+        ],
+        router: [
+          upstream_log: [
+            path: "https_upstream.log",
+            format: ""
+            # TODO: Figure out how to configure filters
+          ]
+        ]
+      ]
+    ]
+  ],
+
+  marathon: [
+    urls: ["http://localhost:8080"],
+    events_timeout: 60_000
+  ],
+
+  marathon_lb: [
+    group: "external"
+  ],
+
+  marathon_acme: [
+    app_id: "/marathon-acme",
+    port_index: 0
+  ]
+]

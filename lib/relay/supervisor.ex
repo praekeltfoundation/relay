@@ -10,9 +10,9 @@ defmodule Relay.Supervisor do
   Starts a new Supervisor.
   `port` is the port that the gRPC server should listen on.
   """
-  def start_link({port}, options \\ []) do
+  def start_link({addr, port}, options \\ []) do
     options = Keyword.put_new(options, :name, __MODULE__)
-    Supervisor.start_link(__MODULE__, {port}, options)
+    Supervisor.start_link(__MODULE__, {addr, port}, options)
   end
 
   defmodule FrontendSupervisor do
@@ -27,14 +27,14 @@ defmodule Relay.Supervisor do
       Supervisor.start_link(__MODULE__, arg, options)
     end
 
-    def init({port}) do
+    def init({addr, port}) do
       services = [
         Relay.Server.ListenerDiscoveryService,
         Relay.Server.RouteDiscoveryService,
         Relay.Server.ClusterDiscoveryService,
         Relay.Server.EndpointDiscoveryService,
       ]
-      opts = [adapter: Relay.GRPCAdapter]
+      opts = [adapter: Relay.GRPCAdapter, ip: parse_ip_address(addr)]
       children = [
         {Relay.Demo.Marathon, []},
         {Relay.Demo.Certs, []},
@@ -43,12 +43,18 @@ defmodule Relay.Supervisor do
 
       Supervisor.init(children, strategy: :one_for_one)
     end
+
+    @spec parse_ip_address(String.t()) :: :inet.ip_address()
+    defp parse_ip_address(addr) do
+      {:ok, address} = String.to_charlist(addr) |> :inet.parse_address()
+      address
+    end
   end
 
-  def init({port}) do
+  def init({addr, port}) do
     children = [
       {Relay.Store, [name: Relay.Store]},
-      {FrontendSupervisor, {port}},
+      {FrontendSupervisor, {addr, port}},
     ]
     Supervisor.init(children, strategy: :rest_for_one)
   end

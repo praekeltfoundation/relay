@@ -36,6 +36,16 @@ defmodule TestHelpers do
     capture_log(fn() -> apps |> Enum.each(&Application.stop/1) end)
   end
 
+  @doc """
+  Set an application configuration option for the duration of the test.
+  """
+  def put_env(app, key, new_value, put_opts \\ []) do
+    original = Application.get_env(app, key)
+    Application.put_env(app, key, new_value, put_opts)
+    on_exit(fn -> Application.put_env(app, key, original) end)
+
+    :ok
+  end
 end
 
 ExUnit.start()

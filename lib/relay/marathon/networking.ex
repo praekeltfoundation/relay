@@ -5,7 +5,6 @@ defmodule Relay.Marathon.Networking do
   """
 
   @type networking_mode :: :container | :"container/bridge" | :host
-  @type port_number :: 1..65_535
 
   @doc """
   Get the Marathon 1.5-equivalent networking mode for an app across different
@@ -35,7 +34,7 @@ defmodule Relay.Marathon.Networking do
 
   # Ports list
 
-  @spec ports_list(map) :: [port_number]
+  @spec ports_list(map) :: [:inet.port_number]
   def ports_list(app), do: networking_mode(app) |> ports_list(app)
 
   defp ports_list(:host, app), do: port_definitions_ports(app)
@@ -101,7 +100,7 @@ defmodule Relay.Marathon.Networking do
   Get the ports for a task given the app's networking mode and a task
   definition.
   """
-  @spec task_ports(networking_mode, map) :: [port_number] | nil
+  @spec task_ports(networking_mode, map) :: [:inet.port_number] | nil
   def task_ports(:host = _networking_mode, %{"ports" => ports} = _task), do: ports
 
   def task_ports(:"container/bridge", %{"ports" => ports}), do: ports

@@ -4,7 +4,7 @@ defmodule Relay.Marathon.AdapterTest do
   alias Relay.Marathon.{Adapter, App, Task}
 
   alias Envoy.Api.V2.{Cluster, ClusterLoadAssignment, RouteConfiguration}
-  alias Envoy.Api.V2.Core.{Address, ApiConfigSource, ConfigSource, Locality, SocketAddress}
+  alias Envoy.Api.V2.Core.{Address, ConfigSource, Locality, SocketAddress}
   alias Envoy.Api.V2.Endpoint.{Endpoint, LbEndpoint, LocalityLbEndpoints}
   alias Envoy.Api.V2.Route.{RedirectAction, Route, RouteAction, RouteMatch, VirtualHost}
 
@@ -13,10 +13,10 @@ defmodule Relay.Marathon.AdapterTest do
   @test_app %App{
     id: "/mc2",
     labels: %{
-      "HAPROXY_0_REDIRECT_TO_HTTPS" => "true",
+      "HAPROXY_0_REDIRECT_TO_HTTPS" => "false",
       "HAPROXY_0_VHOST" => "mc2.example.org",
       "HAPROXY_GROUP" => "external",
-      "MARATHON_ACME_0_DOMAIN" => "mc2.example.org"
+      "MARATHON_ACME_0_DOMAIN" => ""
     },
     networking_mode: :"container/bridge",
     ports_list: [80],
@@ -32,41 +32,16 @@ defmodule Relay.Marathon.AdapterTest do
     version: "2017-11-09T08:43:59.890Z"
   }
 
-  @test_config_source ConfigSource.new(
-                        config_source_specifier:
-                          {:api_config_source,
-                           ApiConfigSource.new(
-                             api_type: ApiConfigSource.ApiType.value(:GRPC),
-                             cluster_names: ["xds_cluster"]
-                           )}
-                      )
-
-  describe "truncate_name/2" do
-    test "long names truncated from beginning" do
-      assert Adapter.truncate_name("helloworldmynameis", 10) == "[...]ameis"
-    end
-
-    test "short names unchanged" do
-      assert Adapter.truncate_name("hello", 10) == "hello"
-    end
-
-    test "max_size must be larger than the prefix length" do
-      assert_raise ArgumentError, "`max_size` must be larger than the prefix length", fn ->
-        Adapter.truncate_name("hello", 3)
-      end
-    end
-  end
-
   describe "app_clusters/3" do
     test "simple cluster" do
       eds_type = Cluster.DiscoveryType.value(:EDS)
-      assert [cluster] = Adapter.app_clusters(@test_app, @test_config_source)
+      assert [cluster] = Adapter.app_clusters(@test_app)
 
       assert %Cluster{
                name: "/mc2_0",
                type: ^eds_type,
                eds_cluster_config: %Cluster.EdsClusterConfig{
-                 eds_config: @test_config_source,
+                 eds_config: %ConfigSource{},
                  service_name: "/mc2_0"
                },
                connect_timeout: %Duration{seconds: 5}
@@ -83,7 +58,6 @@ defmodule Relay.Marathon.AdapterTest do
       assert [cluster] =
                Adapter.app_clusters(
                  @test_app,
-                 @test_config_source,
                  connect_timeout: connect_timeout,
                  lb_policy: lb_policy
                )
@@ -92,7 +66,7 @@ defmodule Relay.Marathon.AdapterTest do
                name: "/mc2_0",
                type: ^eds_type,
                eds_cluster_config: %Cluster.EdsClusterConfig{
-                 eds_config: @test_config_source,
+                 eds_config: %ConfigSource{},
                  service_name: "/mc2_0"
                },
                connect_timeout: ^connect_timeout,
@@ -106,15 +80,7 @@ defmodule Relay.Marathon.AdapterTest do
       app = %{@test_app | id: "/organisation/my_long_group_name/subgroup3456/application2934"}
 
       assert [%Cluster{name: "[...]ation/my_long_group_name/subgroup3456/application2934_0"}] =
-               Adapter.app_clusters(app, @test_config_source)
-    end
-
-    test "custom max_obj_name_length" do
-      app = %{@test_app | id: "/myslightlylongname"}
-      assert [cluster] = Adapter.app_clusters(app, @test_config_source, max_obj_name_length: 10)
-
-      assert %Cluster{name: "[...]ame_0"} = cluster
-      assert Protobuf.Validator.valid?(cluster)
+               Adapter.app_clusters(app)
     end
   end
 
@@ -182,12 +148,7 @@ defmodule Relay.Marathon.AdapterTest do
 
   describe "app_virtual_hosts/3" do
     test "http virtual host" do
-      app = %{
-        @test_app
-        | labels: @test_app.labels |> Map.put("HAPROXY_0_REDIRECT_TO_HTTPS", "false")
-      }
-
-      assert [virtual_host] = Adapter.app_virtual_hosts(:http, app)
+      assert [virtual_host] = Adapter.app_virtual_hosts(:http, @test_app)
 
       assert %VirtualHost{
                name: "http_/mc2_0",
@@ -225,15 +186,10 @@ defmodule Relay.Marathon.AdapterTest do
       alias Envoy.Api.V2.Route.Decorator
       alias Google.Protobuf.UInt32Value
 
-      app = %{
-        @test_app
-        | labels: @test_app.labels |> Map.put("HAPROXY_0_REDIRECT_TO_HTTPS", "false")
-      }
-
       assert [virtual_host] =
                Adapter.app_virtual_hosts(
                  :http,
-                 app,
+                 @test_app,
                  response_headers_to_add: [
                    HeaderValueOption.new(
                      header:
@@ -292,7 +248,12 @@ defmodule Relay.Marathon.AdapterTest do
     end
 
     test "http to https redirect" do
-      assert [virtual_host] = Adapter.app_virtual_hosts(:http, @test_app)
+      app = %{
+        @test_app
+        | labels: @test_app.labels |> Map.put("HAPROXY_0_REDIRECT_TO_HTTPS", "true")
+      }
+
+      assert [virtual_host] = Adapter.app_virtual_hosts(:http, app)
 
       assert %VirtualHost{
                name: "http_/mc2_0",
@@ -300,6 +261,34 @@ defmodule Relay.Marathon.AdapterTest do
                routes: [
                  %Route{
                    action: {:redirect, %RedirectAction{https_redirect: true}},
+                   match: %RouteMatch{path_specifier: {:prefix, "/"}}
+                 }
+               ]
+             } = virtual_host
+
+      assert Protobuf.Validator.valid?(virtual_host)
+    end
+
+    test "marathon-acme route" do
+      app = %{
+        @test_app
+        | labels: @test_app.labels |> Map.put("MARATHON_ACME_0_DOMAIN", "mc2.example.org")
+      }
+      # Change the defaults to ensure we're reading from config
+      TestHelpers.put_env(:relay, :marathon_acme, [app_id: "/ma", port_index: 1])
+
+      assert [virtual_host] = Adapter.app_virtual_hosts(:http, app)
+
+      assert %VirtualHost{
+               name: "http_/mc2_0",
+               domains: ["mc2.example.org"],
+               routes: [
+                 %Route{
+                   action: {:route, %RouteAction{cluster_specifier: {:cluster, "/ma_1"}}},
+                   match: %RouteMatch{path_specifier: {:prefix, "/.well-known/acme-challenge/"}}
+                 },
+                 %Route{
+                   action: {:route, %RouteAction{cluster_specifier: {:cluster, "/mc2_0"}}},
                    match: %RouteMatch{path_specifier: {:prefix, "/"}}
                  }
                ]

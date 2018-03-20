@@ -11,14 +11,15 @@ defmodule Relay.SupervisorTest do
 
   import ExUnit.CaptureLog
 
+  @addr "127.0.0.1"
   @port 12345
 
   setup do
     TestHelpers.setup_apps([:grpc])
     TestHelpers.override_log_level(:warn)
-    Application.put_env(:grpc, :start_server, true)
+    TestHelpers.put_env(:grpc, :start_server, true)
 
-    {:ok, sup} = start_supervised({Supervisor, {@port}})
+    {:ok, sup} = start_supervised({Supervisor, {@addr, @port}})
     %{supervisor: sup}
   end
 
@@ -56,7 +57,7 @@ defmodule Relay.SupervisorTest do
   defp port_blocker(wait_time) do
     caller = self()
     task = Task.async(fn ->
-      {:ok, socket} = :gen_tcp.listen(0, [:binary, active: false])
+      {:ok, socket} = :gen_tcp.listen(0, [:binary, active: false, ip: {127, 0, 0, 1}])
       send(caller, :inet.port(socket))
       Process.sleep(wait_time)
       :ok = :gen_tcp.close(socket)
@@ -104,7 +105,7 @@ defmodule Relay.SupervisorTest do
 
     {blocker_task, port} = port_blocker(100)
     assert capture_log(fn() ->
-      {:ok, _} = start_supervised({Supervisor, {port}})
+      {:ok, _} = start_supervised({Supervisor, {@addr, port}})
     end) =~ ~r/Failed to start Ranch listener .* :eaddrinuse/
     Task.await(blocker_task)
   end
@@ -114,7 +115,7 @@ defmodule Relay.SupervisorTest do
 
     {blocker_task, port} = port_blocker(1_050)
     assert capture_log(fn() ->
-      {:error, reason} = start_supervised({Supervisor, {port}})
+      {:error, reason} = start_supervised({Supervisor, {@addr, port}})
       assert {:listen_error, _, :eaddrinuse} = extract_reason(reason)
     end) =~ ~r/Failed to start Ranch listener .* :eaddrinuse/
     Task.await(blocker_task)
