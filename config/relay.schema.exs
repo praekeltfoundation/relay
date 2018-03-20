@@ -136,12 +136,8 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
     ],
     "relay.marathon.urls": [
       commented: false,
-      datatype: [
-        list: :binary
-      ],
-      default: [
-        "http://localhost:8080"
-      ],
+      datatype: [list: :binary],
+      default: ["http://localhost:8080"],
       doc: "URLs for Marathon's API endpoints",
       hidden: false,
       to: "relay.marathon.urls"
