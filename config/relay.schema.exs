@@ -84,6 +84,40 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       hidden: false,
       to: "relay.envoy.max_obj_name_length"
     ],
+    "relay.envoy.listeners.*": [
+      datatype: [list: :complex],
+      default: [],
+      hidden: true,
+      to: "relay.envoy.listeners"
+    ],
+    "relay.envoy.listeners.*.http_connection_manager.access_log.path": [
+      commented: false,
+      datatype: :binary,
+      doc: "Path to the access log file for incoming connections",
+      hidden: false,
+      to: "relay.envoy.listeners"
+    ],
+    "relay.envoy.listeners.*.http_connection_manager.access_log.format": [
+      commented: false,
+      datatype: :binary,
+      doc: "Format for the access log for incoming connections",
+      hidden: false,
+      to: "relay.envoy.listeners"
+    ],
+    "relay.envoy.listeners.*.router.upstream_log.path": [
+      commented: false,
+      datatype: :binary,
+      doc: "Path to the access log file for outgoing connections",
+      hidden: false,
+      to: "relay.envoy.listeners"
+    ],
+    "relay.envoy.listeners.*.router.upstream_log.format": [
+      commented: false,
+      datatype: :binary,
+      doc: "Format for the access log for outgoing connections",
+      hidden: false,
+      to: "relay.envoy.listeners"
+    ],
     "relay.marathon.urls": [
       commented: false,
       datatype: [

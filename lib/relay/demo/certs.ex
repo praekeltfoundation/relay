@@ -87,18 +87,16 @@ defmodule Relay.Demo.Certs do
     %{state | version: state.version + 1}
   end
 
-  defp router_filter do
+  defp router_filter(name) do
     alias Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpFilter
     alias Envoy.Config.Filter.Http.Router.V2.Router
-    alias Envoy.Config.Filter.Accesslog.V2.{AccessLog, FileAccessLog}
     import Relay.ProtobufUtil
     HttpFilter.new(
       name: "envoy.router",
-      config: mkstruct(Router.new(upstream_log: [
-        AccessLog.new(
-          name: "envoy.file_access_log",
-          config: mkstruct(FileAccessLog.new(path: "upstream.log")))
-      ]))
+      config: mkstruct(
+        # FIXME: Don't do this name to atom thing
+        Router.new(upstream_log: String.to_atom(name) |> EnvoyUtil.router_upstream_log())
+      )
     )
   end
 
@@ -106,15 +104,21 @@ defmodule Relay.Demo.Certs do
     alias Envoy.Api.V2.Listener.Filter
     alias Envoy.Config.Filter.Network.HttpConnectionManager.V2.{HttpConnectionManager, Rds}
     import Relay.ProtobufUtil
+
     Filter.new(
       name: "envoy.http_connection_manager",
-      config: mkstruct(HttpConnectionManager.new(
-        codec_type: HttpConnectionManager.CodecType.value(:AUTO),
-        route_specifier: {:rds, Rds.new(
-          config_source: EnvoyUtil.api_config_source(), route_config_name: name)},
-        stat_prefix: name,
-        http_filters: [router_filter()]))
+      config: mkstruct(
+        HttpConnectionManager.new(
+          codec_type: HttpConnectionManager.CodecType.value(:AUTO),
+          route_specifier: {:rds, Rds.new(
+            config_source: EnvoyUtil.api_config_source(), route_config_name: name)},
+          stat_prefix: name,
+          http_filters: [router_filter(name)],
+          # FIXME: Don't do this name to atom thing
+          access_log: String.to_atom(name) |> EnvoyUtil.http_connection_manager_access_log()
+        )
       )
+    )
   end
 
   defp listener(name, address, filter_chains) do

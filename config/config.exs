@@ -37,7 +37,41 @@ config :relay, [
 
   envoy: [
     cluster_name: "xds_cluster",
-    max_obj_name_length: 60
+    max_obj_name_length: 60,
+    listeners: [
+      http: [
+        http_connection_manager: [
+          access_log: [
+            path: "http_access.log",
+            format: ""
+            # TODO: Figure out how to configure filters
+          ]
+        ],
+        router: [
+          upstream_log: [
+            path: "http_upstream.log",
+            format: ""
+            # TODO: Figure out how to configure filters
+          ]
+        ]
+      ],
+      https: [
+        http_connection_manager: [
+          access_log: [
+            path: "https_access.log",
+            format: ""
+            # TODO: Figure out how to configure filters
+          ]
+        ],
+        router: [
+          upstream_log: [
+            path: "https_upstream.log",
+            format: ""
+            # TODO: Figure out how to configure filters
+          ]
+        ]
+      ]
+    ]
   ],
 
   marathon: [
