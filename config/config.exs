@@ -30,7 +30,10 @@ use Mix.Config
 #     import_config "#{Mix.env}.exs"
 
 config :relay, [
-  port: 5000,
+  listen: [
+    address: {127, 0, 0, 1},
+    port: 5000
+  ],
 
   envoy: [
     cluster_name: "xds_cluster",

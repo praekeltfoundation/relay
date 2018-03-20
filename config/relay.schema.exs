@@ -52,13 +52,21 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
   extends: [],
   import: [],
   mappings: [
-    "relay.port": [
+    "relay.listen.address": [
+      commented: false,
+      datatype: :binary,
+      default: "127.0.0.1",
+      doc: "Address to interface for discovery service to listen on",
+      hidden: false,
+      to: "relay.listen.address"
+    ],
+    "relay.listen.port": [
       commented: false,
       datatype: :integer,
       default: 5000,
       doc: "Port for discovery service to listen on",
       hidden: false,
-      to: "relay.port"
+      to: "relay.listen.port"
     ],
     "relay.envoy.cluster_name": [
       commented: false,
@@ -121,6 +129,13 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       to: "relay.marathon_acme.port_index"
     ]
   ],
-  transforms: [],
+  transforms: [
+    "relay.listen.address": fn conf ->
+      [{_, str_address}] = Conform.Conf.get(conf, "relay.listen.address")
+      {:ok, address} = String.to_charlist(str_address) |> :inet.parse_address()
+
+      address
+    end
+  ],
   validators: []
 ]
