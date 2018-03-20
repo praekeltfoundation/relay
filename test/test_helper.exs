@@ -39,12 +39,12 @@ defmodule TestHelpers do
   @doc """
   Set an application configuration option for the duration of the test.
   """
-  def swap_env(app, key, new_value) do
+  def put_env(app, key, new_value, put_opts \\ []) do
     original = Application.get_env(app, key)
-    Application.put_env(app, key, new_value)
+    Application.put_env(app, key, new_value, put_opts)
     on_exit(fn -> Application.put_env(app, key, original) end)
 
-    original
+    :ok
   end
 end
 

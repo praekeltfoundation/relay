@@ -16,7 +16,7 @@ defmodule Relay.SupervisorTest do
   setup do
     TestHelpers.setup_apps([:grpc])
     TestHelpers.override_log_level(:warn)
-    Application.put_env(:grpc, :start_server, true)
+    TestHelpers.put_env(:grpc, :start_server, true)
 
     {:ok, sup} = start_supervised({Supervisor, {@port}})
     %{supervisor: sup}
