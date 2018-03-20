@@ -87,46 +87,11 @@ defmodule Relay.Demo.Certs do
     %{state | version: state.version + 1}
   end
 
-  defp router_filter(name) do
-    alias Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpFilter
-    alias Envoy.Config.Filter.Http.Router.V2.Router
-    import Relay.ProtobufUtil
-    HttpFilter.new(
-      name: "envoy.router",
-      config: mkstruct(
-        # FIXME: Don't do this name to atom thing
-        Router.new(upstream_log: String.to_existing_atom(name) |> EnvoyUtil.router_upstream_log())
-      )
-    )
-  end
-
-  defp default_http_conn_manager_filter(name) do
-    alias Envoy.Api.V2.Listener.Filter
-    alias Envoy.Config.Filter.Network.HttpConnectionManager.V2.{HttpConnectionManager, Rds}
-    import Relay.ProtobufUtil
-
-    Filter.new(
-      name: "envoy.http_connection_manager",
-      config: mkstruct(
-        HttpConnectionManager.new(
-          codec_type: HttpConnectionManager.CodecType.value(:AUTO),
-          route_specifier: {:rds, Rds.new(
-            config_source: EnvoyUtil.api_config_source(), route_config_name: name)},
-          stat_prefix: name,
-          http_filters: [router_filter(name)],
-          # FIXME: Don't do this name to atom thing
-          access_log:
-            String.to_existing_atom(name) |> EnvoyUtil.http_connection_manager_access_log()
-        )
-      )
-    )
-  end
-
-  defp filter_chain(name, {tls_context, sni_domains} \\ {nil, []}) do
+  defp filter_chain(listener, {tls_context, sni_domains} \\ {nil, []}) do
     alias Envoy.Api.V2.Listener.{FilterChain, FilterChainMatch}
     FilterChain.new(
       filter_chain_match: FilterChainMatch.new(sni_domains: sni_domains),
-      filters: [default_http_conn_manager_filter(name)],
+      filters: [EnvoyUtil.http_connection_manager_filter(listener)],
       tls_context: tls_context
     )
   end
@@ -152,13 +117,13 @@ defmodule Relay.Demo.Certs do
         ]
       )
     )
-    filter_chain("https", {tls_context, sni_domains})
+    filter_chain(:https, {tls_context, sni_domains})
   end
 
   def listeners do
     https_filter_chains = Enum.map([@demo_pem], &https_filter_chain/1)
     [
-      EnvoyUtil.listener(:http, [filter_chain("http")]),
+      EnvoyUtil.listener(:http, [filter_chain(:http)]),
       EnvoyUtil.listener(:https, https_filter_chains),
     ]
   end

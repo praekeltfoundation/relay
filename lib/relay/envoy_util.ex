@@ -2,9 +2,16 @@ defmodule Relay.EnvoyUtil do
   alias Relay.ProtobufUtil
 
   alias Envoy.Api.V2.Listener
-  alias Envoy.Api.V2.Listener.FilterChain
+  alias Envoy.Api.V2.Listener.{Filter, FilterChain}
   alias Envoy.Api.V2.Core.{Address, ApiConfigSource, ConfigSource, SocketAddress}
   alias Envoy.Config.Filter.Accesslog.V2.{AccessLog, FileAccessLog}
+  alias Envoy.Config.Filter.Http.Router.V2.Router
+
+  alias Envoy.Config.Filter.Network.HttpConnectionManager.V2.{
+    HttpConnectionManager,
+    HttpFilter,
+    Rds
+  }
 
   @truncated_name_prefix "[...]"
 
@@ -69,18 +76,56 @@ defmodule Relay.EnvoyUtil do
     Address.new(address: {:socket_address, sock})
   end
 
-  @spec http_connection_manager_access_log(atom) :: [AccessLog.t()]
-  def http_connection_manager_access_log(listener) do
-    Application.fetch_env!(:relay, :envoy)
-    |> get_in([:listeners, listener, :http_connection_manager, :access_log])
-    |> access_logs_from_config()
+  @spec http_connection_manager_filter(atom) :: Filter.t()
+  def http_connection_manager_filter(listener, options \\ []) do
+    Filter.new(
+      name: "envoy.http_connection_manager",
+      config: ProtobufUtil.mkstruct(http_connection_manager(listener, options))
+    )
   end
 
-  @spec router_upstream_log(atom) :: [AccessLog.t()]
-  def router_upstream_log(listener) do
-    Application.fetch_env!(:relay, :envoy)
-    |> get_in([:listeners, listener, :router, :upstream_log])
-    |> access_logs_from_config()
+  @spec http_connection_manager(atom, keyword) :: HttpConnectionManager.t()
+  defp http_connection_manager(listener, options) do
+    config =
+      Application.get_env(:relay, :envoy)
+      |> get_in([:listeners, listener, :http_connection_manager])
+
+    default_name = Atom.to_string(listener)
+    route_config_name = Keyword.get(config, :route_config_name, default_name)
+    stat_prefix = Keyword.get(config, :stat_prefix, default_name)
+
+    access_log = Keyword.get(config, :access_log) |> access_logs_from_config()
+
+    {options, router_opts} = Keyword.pop(options, :router_opts, [])
+
+    HttpConnectionManager.new(
+      [
+        codec_type: HttpConnectionManager.CodecType.value(:AUTO),
+        route_specifier:
+          {:rds,
+           Rds.new(config_source: api_config_source(), route_config_name: route_config_name)},
+        stat_prefix: stat_prefix,
+        access_log: access_log,
+        http_filters: [router_http_filter(listener, router_opts)]
+      ] ++ options
+    )
+  end
+
+  @spec router_http_filter(atom, keyword) :: HttpFilter.t()
+  defp router_http_filter(listener, options) do
+    HttpFilter.new(
+      name: "envoy.router",
+      config: ProtobufUtil.mkstruct(router(listener, options))
+    )
+  end
+
+  @spec router(atom, keyword) :: Router.t()
+  defp router(listener, options) do
+    config = Application.get_env(:relay, :envoy) |> get_in([:listeners, listener, :router])
+
+    upstream_log = Keyword.get(config, :upstream_log) |> access_logs_from_config()
+
+    Router.new([upstream_log: upstream_log] ++ options)
   end
 
   @spec access_logs_from_config(keyword) :: [AccessLog.t()]
