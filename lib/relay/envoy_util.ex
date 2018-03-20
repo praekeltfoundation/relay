@@ -18,7 +18,6 @@ defmodule Relay.EnvoyUtil do
   @spec envoy_config() :: keyword
   defp envoy_config, do: Application.fetch_env!(:relay, :envoy)
 
-  @spec fetch_envoy_config!(atom) :: any
   defp fetch_envoy_config!(key), do: envoy_config() |> Keyword.fetch!(key)
 
   @spec api_config_source(keyword) :: ConfigSource.t()
@@ -73,11 +72,9 @@ defmodule Relay.EnvoyUtil do
   @spec listener_config(atom) :: keyword
   defp listener_config(listener), do: fetch_envoy_config!(:listeners) |> Keyword.fetch!(listener)
 
-  @spec get_listener_config(atom, atom, any) :: any
   defp get_listener_config(listener, key, default),
     do: listener_config(listener) |> Keyword.get(key, default)
 
-  @spec fetch_listener_config!(atom, atom) :: any
   defp fetch_listener_config!(listener, key), do: listener_config(listener) |> Keyword.fetch!(key)
 
   @spec listener_address(atom) :: Address.t()
