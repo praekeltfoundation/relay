@@ -1,9 +1,9 @@
 defmodule Relay.Marathon.Adapter do
   alias Relay.EnvoyUtil
-  alias Relay.Marathon.{App, Task, Networking}
+  alias Relay.Marathon.{App, Task}
 
   alias Envoy.Api.V2.{Cluster, ClusterLoadAssignment, RouteConfiguration}
-  alias Envoy.Api.V2.Core.{Address, ConfigSource, Locality, SocketAddress}
+  alias Envoy.Api.V2.Core.{ConfigSource, Locality}
   alias Envoy.Api.V2.Endpoint.{Endpoint, LbEndpoint, LocalityLbEndpoints}
   alias Envoy.Api.V2.Route.{RedirectAction, Route, RouteAction, RouteMatch, VirtualHost}
 
@@ -103,15 +103,12 @@ defmodule Relay.Marathon.Adapter do
   @spec task_port_lb_endpoint(Task.t, non_neg_integer, keyword) :: LbEndpoint.t
   def task_port_lb_endpoint(%Task{address: address, ports: ports}, port_index, options \\ []) do
     LbEndpoint.new(
-      [endpoint: Endpoint.new(address: socket_address(address, Enum.at(ports, port_index)))] ++
-        options
+      [
+        endpoint: Endpoint.new(
+          address: EnvoyUtil.socket_address(address, Enum.at(ports, port_index))
+        )
+      ] ++ options
     )
-  end
-
-  @spec socket_address(String.t, Networking.port_number) :: Address.t
-  defp socket_address(address, port) do
-    sock = SocketAddress.new(address: address, port_specifier: {:port_value, port})
-    Address.new(address: {:socket_address, sock})
   end
 
   @doc """

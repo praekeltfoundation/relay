@@ -1,5 +1,5 @@
 defmodule Relay.EnvoyUtil do
-  alias Envoy.Api.V2.Core.{ApiConfigSource, ConfigSource}
+  alias Envoy.Api.V2.Core.{Address, ApiConfigSource, ConfigSource, SocketAddress}
 
   @truncated_name_prefix "[...]"
 
@@ -39,5 +39,11 @@ defmodule Relay.EnvoyUtil do
       _ ->
         name
     end
+  end
+
+  @spec socket_address(String.t, :inet.port_number) :: Address.t
+  def socket_address(address, port) do
+    sock = SocketAddress.new(address: address, port_specifier: {:port_value, port})
+    Address.new(address: {:socket_address, sock})
   end
 end

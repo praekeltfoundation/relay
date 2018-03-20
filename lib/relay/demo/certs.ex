@@ -87,12 +87,6 @@ defmodule Relay.Demo.Certs do
     %{state | version: state.version + 1}
   end
 
-  defp socket_address(address, port) do
-    alias Envoy.Api.V2.Core.{Address, SocketAddress}
-    sock = SocketAddress.new(address: address, port_specifier: {:port_value, port})
-    Address.new(address: {:socket_address, sock})
-  end
-
   defp router_filter do
     alias Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpFilter
     alias Envoy.Config.Filter.Http.Router.V2.Router
@@ -164,8 +158,8 @@ defmodule Relay.Demo.Certs do
   def listeners do
     https_filter_chains = Enum.map([@demo_pem], &https_filter_chain/1)
     [
-      listener("http", socket_address("0.0.0.0", 8080), [filter_chain("http")]),
-      listener("https", socket_address("0.0.0.0", 8443), https_filter_chains),
+      listener("http", EnvoyUtil.socket_address("0.0.0.0", 8080), [filter_chain("http")]),
+      listener("https", EnvoyUtil.socket_address("0.0.0.0", 8443), https_filter_chains),
     ]
   end
 end
