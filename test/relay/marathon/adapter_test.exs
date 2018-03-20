@@ -32,22 +32,6 @@ defmodule Relay.Marathon.AdapterTest do
     version: "2017-11-09T08:43:59.890Z"
   }
 
-  describe "truncate_name/2" do
-    test "long names truncated from beginning" do
-      assert Adapter.truncate_name("helloworldmynameis", 10) == "[...]ameis"
-    end
-
-    test "short names unchanged" do
-      assert Adapter.truncate_name("hello", 10) == "hello"
-    end
-
-    test "max_size must be larger than the prefix length" do
-      assert_raise ArgumentError, "`max_size` must be larger than the prefix length", fn ->
-        Adapter.truncate_name("hello", 3)
-      end
-    end
-  end
-
   describe "app_clusters/3" do
     test "simple cluster" do
       eds_type = Cluster.DiscoveryType.value(:EDS)
@@ -97,14 +81,6 @@ defmodule Relay.Marathon.AdapterTest do
 
       assert [%Cluster{name: "[...]ation/my_long_group_name/subgroup3456/application2934_0"}] =
                Adapter.app_clusters(app)
-    end
-
-    test "custom max_obj_name_length" do
-      app = %{@test_app | id: "/myslightlylongname"}
-      assert [cluster] = Adapter.app_clusters(app, max_obj_name_length: 10)
-
-      assert %Cluster{name: "[...]ame_0"} = cluster
-      assert Protobuf.Validator.valid?(cluster)
     end
   end
 
@@ -301,7 +277,7 @@ defmodule Relay.Marathon.AdapterTest do
         | labels: @test_app.labels |> Map.put("MARATHON_ACME_0_DOMAIN", "mc2.example.org")
       }
       # Change the defaults to ensure we're reading from config
-      Application.put_env(:relay, :marathon_acme, [app_id: "/ma", port_index: 1])
+      TestHelpers.swap_env(:relay, :marathon_acme, [app_id: "/ma", port_index: 1])
 
       assert [virtual_host] = Adapter.app_virtual_hosts(:http, app)
 

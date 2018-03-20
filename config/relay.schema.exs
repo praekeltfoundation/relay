@@ -60,13 +60,21 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       hidden: false,
       to: "relay.port"
     ],
-    "relay.cluster_name": [
+    "relay.envoy.cluster_name": [
       commented: false,
       datatype: :binary,
       default: "xds_cluster",
       doc: "The cluster name for this discovery service in Envoy's bootstrap.yaml",
       hidden: false,
-      to: "relay.cluster_name"
+      to: "relay.envoy.cluster_name"
+    ],
+    "relay.envoy.max_obj_name_length": [
+      commented: false,
+      datatype: :integer,
+      default: 60,
+      doc: "The maximum length of Envoy object names",
+      hidden: false,
+      to: "relay.envoy.max_obj_name_length"
     ],
     "relay.marathon.urls": [
       commented: false,

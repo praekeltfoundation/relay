@@ -31,7 +31,12 @@ use Mix.Config
 
 config :relay, [
   port: 5000,
-  cluster_name: "xds_cluster",
+
+  envoy: [
+    cluster_name: "xds_cluster",
+    max_obj_name_length: 60
+  ],
+
   marathon: [
     urls: ["http://localhost:8080"],
     events_timeout: 60_000
