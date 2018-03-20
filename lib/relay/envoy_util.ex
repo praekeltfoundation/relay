@@ -41,7 +41,7 @@ defmodule Relay.EnvoyUtil do
     end
   end
 
-  @spec socket_address(String.t, :inet.port_number) :: Address.t
+  @spec socket_address(String.t(), :inet.port_number()) :: Address.t()
   def socket_address(address, port) do
     sock = SocketAddress.new(address: address, port_specifier: {:port_value, port})
     Address.new(address: {:socket_address, sock})
