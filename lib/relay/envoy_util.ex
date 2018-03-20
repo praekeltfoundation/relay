@@ -44,6 +44,12 @@ defmodule Relay.EnvoyUtil do
     end
   end
 
+  @spec listener_address(atom) :: Address.t()
+  def listener_address(listener) do
+    listen = Application.fetch_env!(:relay, :envoy) |> get_in([:listeners, listener, :listen])
+    socket_address(Keyword.fetch!(listen, :address), Keyword.fetch!(listen, :port))
+  end
+
   @spec socket_address(String.t(), :inet.port_number()) :: Address.t()
   def socket_address(address, port) do
     sock = SocketAddress.new(address: address, port_specifier: {:port_value, port})

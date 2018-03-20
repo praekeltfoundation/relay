@@ -40,6 +40,10 @@ config :relay, [
     max_obj_name_length: 60,
     listeners: [
       http: [
+        listen: [
+          address: "127.0.0.1",
+          port: 8080
+        ],
         http_connection_manager: [
           access_log: [
             path: "http_access.log",
@@ -56,6 +60,10 @@ config :relay, [
         ]
       ],
       https: [
+        listen: [
+          address: "127.0.0.1",
+          port: 8443
+        ],
         http_connection_manager: [
           access_log: [
             path: "https_access.log",

@@ -162,8 +162,8 @@ defmodule Relay.Demo.Certs do
   def listeners do
     https_filter_chains = Enum.map([@demo_pem], &https_filter_chain/1)
     [
-      listener("http", EnvoyUtil.socket_address("0.0.0.0", 8080), [filter_chain("http")]),
-      listener("https", EnvoyUtil.socket_address("0.0.0.0", 8443), https_filter_chains),
+      listener("http", EnvoyUtil.listener_address(:http), [filter_chain("http")]),
+      listener("https", EnvoyUtil.listener_address(:https), https_filter_chains),
     ]
   end
 end

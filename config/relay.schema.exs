@@ -90,6 +90,22 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       hidden: true,
       to: "relay.envoy.listeners"
     ],
+    "relay.envoy.listeners.*.listen.address": [
+      commented: true,
+      # These addresses aren't transformed because Envoy takes binary addresses
+      datatype: :binary,
+      default: "127.0.0.1",
+      doc: "Address to interface for listener to listen on",
+      hidden: false,
+      to: "relay.envoy.listeners"
+    ],
+    "relay.envoy.listeners.*.listen.port": [
+      commented: false,
+      datatype: :integer,
+      doc: "Port for listener to listen on",
+      hidden: false,
+      to: "relay.envoy.listeners"
+    ],
     "relay.envoy.listeners.*.http_connection_manager.access_log.path": [
       commented: false,
       datatype: :binary,
