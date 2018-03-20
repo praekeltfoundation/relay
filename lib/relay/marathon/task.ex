@@ -6,7 +6,7 @@ defmodule Relay.Marathon.Task do
     id: String.t,
     app_id: String.t,
     address: String.t,
-    ports: [Networking.port_number],
+    ports: [:inet.port_number],
     version: String.t
   }
 
@@ -54,7 +54,7 @@ defmodule Relay.Marathon.Task do
     end
   end
 
-  @spec endpoint(t, non_neg_integer) :: {String.t, Networking.port_number}
+  @spec endpoint(t, non_neg_integer) :: {String.t, :inet.port_number}
   def endpoint(%__MODULE__{address: address, ports: ports}, port_index),
     do: {address, Enum.at(ports, port_index)}
 end
