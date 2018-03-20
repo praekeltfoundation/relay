@@ -179,13 +179,6 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       to: "relay.marathon_acme.port_index"
     ]
   ],
-  transforms: [
-    "relay.listen.address": fn conf ->
-      [{_, str_address}] = Conform.Conf.get(conf, "relay.listen.address")
-      {:ok, address} = String.to_charlist(str_address) |> :inet.parse_address()
-
-      address
-    end
-  ],
+  transforms: [],
   validators: []
 ]
