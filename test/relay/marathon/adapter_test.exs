@@ -148,9 +148,7 @@ defmodule Relay.Marathon.AdapterTest do
 
   describe "app_virtual_hosts/3" do
     test "http virtual host" do
-      app = @test_app
-
-      assert [virtual_host] = Adapter.app_virtual_hosts(:http, app)
+      assert [virtual_host] = Adapter.app_virtual_hosts(:http, @test_app)
 
       assert %VirtualHost{
                name: "http_/mc2_0",
