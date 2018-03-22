@@ -15,7 +15,7 @@ defmodule Relay.Certs do
   """
   @spec pem_encode(binary | pem_entry | [pem_entry]) :: binary
   def pem_encode(pem_data) when is_binary(pem_data), do: pem_data
-  def pem_encode(pem_data = {_, _, _}), do: pem_encode([pem_data])
+  def pem_encode({_, _, _} = pem_data), do: pem_encode([pem_data])
   def pem_encode(pem_data), do: :public_key.pem_encode(pem_data)
 
   @doc """

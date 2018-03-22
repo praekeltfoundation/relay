@@ -15,6 +15,7 @@ defmodule Relay.MixProject do
         "coveralls": :test,
         "coveralls.json": :test,
         "coveralls.detail": :test,
+        "credo": :test,
       ],
       dialyzer: dialyzer(),
     ]
@@ -59,6 +60,7 @@ defmodule Relay.MixProject do
 
       {:excoveralls, "~> 0.8", only: :test},
       {:dialyxir, "~> 0.5", only: :dev, runtime: false},
+      {:credo, "~> 0.9.0-rc1", only: [:dev, :test], runtime: false}
     ]
   end
 
