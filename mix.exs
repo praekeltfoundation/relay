@@ -15,6 +15,7 @@ defmodule Relay.MixProject do
         "coveralls": :test,
         "coveralls.json": :test,
         "coveralls.detail": :test,
+        "credo": :test,
       ],
       dialyzer: dialyzer(),
     ]
