@@ -16,6 +16,7 @@ defmodule Envoy.Api.V2.Cluster do
           max_requests_per_connection: Google.Protobuf.UInt32Value.t(),
           circuit_breakers: Envoy.Api.V2.Cluster.CircuitBreakers.t(),
           tls_context: Envoy.Api.V2.Auth.UpstreamTlsContext.t(),
+          common_http_protocol_options: Envoy.Api.V2.Core.HttpProtocolOptions.t(),
           http_protocol_options: Envoy.Api.V2.Core.Http1ProtocolOptions.t(),
           http2_protocol_options: Envoy.Api.V2.Core.Http2ProtocolOptions.t(),
           dns_refresh_rate: Google.Protobuf.Duration.t(),
@@ -44,6 +45,7 @@ defmodule Envoy.Api.V2.Cluster do
     :max_requests_per_connection,
     :circuit_breakers,
     :tls_context,
+    :common_http_protocol_options,
     :http_protocol_options,
     :http2_protocol_options,
     :dns_refresh_rate,
@@ -72,6 +74,7 @@ defmodule Envoy.Api.V2.Cluster do
   field :max_requests_per_connection, 9, type: Google.Protobuf.UInt32Value
   field :circuit_breakers, 10, type: Envoy.Api.V2.Cluster.CircuitBreakers
   field :tls_context, 11, type: Envoy.Api.V2.Auth.UpstreamTlsContext
+  field :common_http_protocol_options, 29, type: Envoy.Api.V2.Core.HttpProtocolOptions
   field :http_protocol_options, 13, type: Envoy.Api.V2.Core.Http1ProtocolOptions
   field :http2_protocol_options, 14, type: Envoy.Api.V2.Core.Http2ProtocolOptions
   field :dns_refresh_rate, 16, type: Google.Protobuf.Duration
