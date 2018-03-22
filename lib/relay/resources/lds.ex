@@ -2,7 +2,7 @@ defmodule Relay.Resources.LDS do
   alias Envoy.Api.V2.Listener
   alias Relay.{EnvoyUtil, Resources.CertInfo}
 
-  @spec listeners([CertInfo.t()]) :: Listener.t()
+  @spec listeners([CertInfo.t()]) :: [Listener.t()]
   def listeners(cert_infos) do
     https_filter_chains = Enum.map(cert_infos, &https_filter_chain/1)
 

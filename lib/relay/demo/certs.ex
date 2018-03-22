@@ -1,5 +1,5 @@
 defmodule Relay.Demo.Certs do
-  alias Relay.{Certs, Publisher, Resources}
+  alias Relay.{Certs, Resources}
 
   @demo_pem """
   -----BEGIN RSA PRIVATE KEY-----
@@ -83,14 +83,11 @@ defmodule Relay.Demo.Certs do
 
   defp update_state(state) do
     v = "#{state.version}"
-    # FIXME: Send this through Resources instead of calling into Resources.LDS.
-    Publisher.update(Publisher, :lds, v, listeners())
+    Resources.update_sni_certs(Resources, v, sni_certs())
     %{state | version: state.version + 1}
   end
 
-  def listeners() do
-    Resources.LDS.listeners([pem_to_cert_info(@demo_pem)])
-  end
+  def sni_certs(), do: [pem_to_cert_info(@demo_pem)]
 
   defp pem_to_cert_info(cert_bundle) do
     {:ok, key} = Certs.get_key(cert_bundle)

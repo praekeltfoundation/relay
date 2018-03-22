@@ -1,7 +1,7 @@
 defmodule RelayTest do
   use ExUnit.Case
 
-  alias Relay.{Demo, Publisher}
+  alias Relay.{Demo, Publisher, Resources}
 
   alias Envoy.Api.V2.{DiscoveryRequest, DiscoveryResponse}
   alias Envoy.Api.V2.ClusterDiscoveryService.Stub, as: CDSStub
@@ -46,8 +46,18 @@ defmodule RelayTest do
     assert resources |> Enum.map(fn any_res -> Listener.decode(any_res.value) end) == listeners
   end
 
+  defp demo_clusters(), do: Demo.Marathon.clusters()
+  defp demo_listeners(), do: Demo.Certs.sni_certs() |> Resources.LDS.listeners()
+
   test "starting the application starts everything" do
-    procs = [GRPC.Server.Supervisor, Relay.Supervisor, Publisher, Demo.Marathon]
+    procs = [
+      GRPC.Server.Supervisor,
+      Relay.Supervisor,
+      Publisher,
+      Resources,
+      Demo.Certs,
+      Demo.Marathon
+    ]
 
     # The various processes aren't running before we start the application
     procs |> Enum.each(fn(id) ->
@@ -62,8 +72,8 @@ defmodule RelayTest do
     end)
 
     streams = stream_xds()
-    assert_cds_response(streams, "1", Demo.Marathon.clusters())
-    assert_lds_response(streams, "1", Demo.Certs.listeners())
+    assert_cds_response(streams, "1", demo_clusters())
+    assert_lds_response(streams, "1", demo_listeners())
   end
 
   test "demo app sends multiple updates" do
@@ -74,20 +84,20 @@ defmodule RelayTest do
     t0 = Time.utc_now()
     # Initial update
     streams = stream_xds()
-    assert_cds_response(streams, "1", Demo.Marathon.clusters())
-    assert_lds_response(streams, "1", Demo.Certs.listeners())
+    assert_cds_response(streams, "1", demo_clusters())
+    assert_lds_response(streams, "1", demo_listeners())
     # Ad-hoc updates
     Demo.Marathon.update_state()
-    assert_cds_response(streams, "2", Demo.Marathon.clusters())
+    assert_cds_response(streams, "2", demo_clusters())
     Demo.Certs.update_state()
-    assert_lds_response(streams, "2", Demo.Certs.listeners())
+    assert_lds_response(streams, "2", demo_listeners())
     Demo.Marathon.update_state()
-    assert_cds_response(streams, "3", Demo.Marathon.clusters())
+    assert_cds_response(streams, "3", demo_clusters())
     t1 = Time.utc_now()
     assert Time.diff(t1, t0, :milliseconds) < 1_000
     # Scheduled update
-    assert_cds_response(streams, "4", Demo.Marathon.clusters())
-    assert_lds_response(streams, "3", Demo.Certs.listeners())
+    assert_cds_response(streams, "4", demo_clusters())
+    assert_lds_response(streams, "3", demo_listeners())
     t2 = Time.utc_now()
     assert Time.diff(t2, t0, :milliseconds) < 1_500
   end

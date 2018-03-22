@@ -54,6 +54,7 @@ defmodule Relay.Supervisor do
   def init({addr, port}) do
     children = [
       {Relay.Publisher, [name: Relay.Publisher]},
+      {Relay.Resources, [name: Relay.Resources]},
       {FrontendSupervisor, {addr, port}},
     ]
     Supervisor.init(children, strategy: :rest_for_one)
