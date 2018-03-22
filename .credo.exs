@@ -12,8 +12,8 @@
         {Credo.Check.Design.TagTODO, exit_status: 0},
         {Credo.Check.Design.TagFIXME, exit_status: 0},
 
-        # mix format seems to enforce a line length of 100
-        {Credo.Check.Readability.MaxLineLength, max_length: 100},
+        # mix format defaults to a line length of 98
+        {Credo.Check.Readability.MaxLineLength, max_length: 98}
       ]
     }
   ]
