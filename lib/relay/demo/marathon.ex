@@ -1,5 +1,5 @@
 defmodule Relay.Demo.Marathon do
-  alias Relay.Publisher
+  alias Relay.{Publisher, Resources}
   alias Relay.Marathon.{Adapter, App, Task}
 
   @demo_app %App{
@@ -64,8 +64,11 @@ defmodule Relay.Demo.Marathon do
   end
 
   def clusters do
-    Adapter.app_clusters(@demo_app)
+    app_port_infos()
+    |> Resources.CDS.clusters()
   end
+
+  def app_port_infos(), do: Adapter.app_port_infos_for_app(@demo_app)
 
   def routes do
     Adapter.apps_route_configurations([@demo_app])

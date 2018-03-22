@@ -93,6 +93,7 @@ defmodule Relay.Demo.Certs do
     {:ok, key} = Certs.get_key(cert_bundle)
     certs = Certs.get_certs(cert_bundle)
     sni_domains = Certs.get_end_entity_hostnames(certs)
+
     %Resources.CertInfo{
       domains: sni_domains,
       key: Certs.pem_encode(key),

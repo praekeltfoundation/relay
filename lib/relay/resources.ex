@@ -11,6 +11,16 @@ defmodule Relay.Resources do
           }
   end
 
+  # FIXME: This needs a better name.
+  defmodule AppPortInfo do
+    defstruct [:name, cluster_opts: []]
+
+    @type t :: %__MODULE__{
+            name: String.t(),
+            cluster_opts: keyword
+          }
+  end
+
   use GenServer
 
   defmodule State do

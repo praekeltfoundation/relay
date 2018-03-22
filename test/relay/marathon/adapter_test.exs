@@ -2,9 +2,10 @@ defmodule Relay.Marathon.AdapterTest do
   use ExUnit.Case, async: true
 
   alias Relay.Marathon.{Adapter, App, Task}
+  alias Relay.Resources
 
   alias Envoy.Api.V2.{Cluster, ClusterLoadAssignment, RouteConfiguration}
-  alias Envoy.Api.V2.Core.{Address, ConfigSource, Locality, SocketAddress}
+  alias Envoy.Api.V2.Core.{Address, Locality, SocketAddress}
   alias Envoy.Api.V2.Endpoint.{Endpoint, LbEndpoint, LocalityLbEndpoints}
   alias Envoy.Api.V2.Route.{RedirectAction, Route, RouteAction, RouteMatch, VirtualHost}
 
@@ -33,54 +34,25 @@ defmodule Relay.Marathon.AdapterTest do
   }
 
   describe "app_clusters/3" do
-    test "simple cluster" do
-      eds_type = Cluster.DiscoveryType.value(:EDS)
-      assert [cluster] = Adapter.app_clusters(@test_app)
-
-      assert %Cluster{
-               name: "/mc2_0",
-               type: ^eds_type,
-               eds_cluster_config: %Cluster.EdsClusterConfig{
-                 eds_config: %ConfigSource{},
-                 service_name: "/mc2_0"
-               },
-               connect_timeout: %Duration{seconds: 5}
-             } = cluster
-
-      assert Protobuf.Validator.valid?(cluster)
+    test "simple app_port_info" do
+      assert [app_port_info] = Adapter.app_port_infos_for_app(@test_app)
+      assert %Resources.AppPortInfo{name: "/mc2_0"} = app_port_info
     end
 
-    test "cluster with options" do
-      eds_type = Cluster.DiscoveryType.value(:EDS)
+    test "app_port_info with cluster_opts" do
       connect_timeout = Duration.new(seconds: 10)
       lb_policy = Cluster.LbPolicy.value(:MAGLEV)
 
-      assert [cluster] =
-               Adapter.app_clusters(
+      assert [app_port_info] =
+               Adapter.app_port_infos_for_app(
                  @test_app,
-                 connect_timeout: connect_timeout,
-                 lb_policy: lb_policy
+                 cluster_opts: [connect_timeout: connect_timeout, lb_policy: lb_policy]
                )
 
-      assert %Cluster{
+      assert %Resources.AppPortInfo{
                name: "/mc2_0",
-               type: ^eds_type,
-               eds_cluster_config: %Cluster.EdsClusterConfig{
-                 eds_config: %ConfigSource{},
-                 service_name: "/mc2_0"
-               },
-               connect_timeout: ^connect_timeout,
-               lb_policy: ^lb_policy
-             } = cluster
-
-      assert Protobuf.Validator.valid?(cluster)
-    end
-
-    test "cluster with long name" do
-      app = %{@test_app | id: "/organisation/my_long_group_name/subgroup3456/application2934"}
-
-      assert [%Cluster{name: "[...]ation/my_long_group_name/subgroup3456/application2934_0"}] =
-               Adapter.app_clusters(app)
+               cluster_opts: [connect_timeout: ^connect_timeout, lb_policy: ^lb_policy]
+             } = app_port_info
     end
   end
 

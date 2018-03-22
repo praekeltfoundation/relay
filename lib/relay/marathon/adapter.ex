@@ -1,53 +1,36 @@
 defmodule Relay.Marathon.Adapter do
   alias Relay.Resources.Common
   alias Relay.Marathon.{App, Task}
+  alias Relay.Resources.AppPortInfo
 
-  alias Envoy.Api.V2.{Cluster, ClusterLoadAssignment, RouteConfiguration}
-  alias Envoy.Api.V2.Core.{ConfigSource, Locality}
+  alias Envoy.Api.V2.{ClusterLoadAssignment, RouteConfiguration}
+  alias Envoy.Api.V2.Core.Locality
   alias Envoy.Api.V2.Endpoint.{Endpoint, LbEndpoint, LocalityLbEndpoints}
   alias Envoy.Api.V2.Route.{RedirectAction, Route, RouteAction, RouteMatch, VirtualHost}
 
-  alias Google.Protobuf.Duration
-
-  @default_cluster_connect_timeout Duration.new(seconds: 5)
   @default_locality Locality.new(region: "default")
 
   @listeners [:http, :https]
 
   @doc """
-  Create Clusters for the given app. The Clusters will have the minimum amount
-  of options set but will be Clusters with EDS endpoint discovery. Additional
-  options can be specified using `options`.
+  Create AppPortInfos for the given app. These AppPortInfos will contain only
+  the basic app information required to build the various Envoy resources.
+  Additional options may be specified in the `options` keyword list using the
+  following keys:
+  - Cluster: `:cluster_opts`
+  - TODO: More options.
   """
-  @spec app_clusters(App.t, keyword) :: [Cluster.t]
-  def app_clusters(%App{port_indices_in_group: port_indices_in_group} = app, options \\ []) do
-    eds_config_source = Common.api_config_source()
+  @spec app_port_infos_for_app(App.t, keyword) :: [AppPortInfo.t]
+  def app_port_infos_for_app(%App{port_indices_in_group: port_indices} = app, options \\ []),
+    do: Enum.map(port_indices, &app_port_info_for_app_port(app, &1, options))
 
-    port_indices_in_group
-    |> Enum.map(&app_port_cluster(app, &1, eds_config_source, options))
-  end
-
-  @spec app_port_cluster(App.t, non_neg_integer, ConfigSource.t, keyword) :: Cluster.t
-  defp app_port_cluster(
-        %App{id: app_id},
-        port_index,
-        %ConfigSource{} = eds_config_source,
-        options
-      ) do
-    service_name = "#{app_id}_#{port_index}"
-
-    Cluster.new(
-      [
-        name: Common.truncate_obj_name(service_name),
-        type: Cluster.DiscoveryType.value(:EDS),
-        eds_cluster_config:
-          Cluster.EdsClusterConfig.new(
-            eds_config: eds_config_source,
-            service_name: service_name
-          ),
-        connect_timeout: Keyword.get(options, :connect_timeout, @default_cluster_connect_timeout)
-      ] ++ options
-    )
+  @spec app_port_info_for_app_port(App.t, non_neg_integer, keyword) :: AppPortInfo.t
+  defp app_port_info_for_app_port(app, port_index, options) do
+    # TODO: Validate options keys?
+    %AppPortInfo{
+      name: "#{app.id}_#{port_index}",
+      cluster_opts: Keyword.get(options, :cluster_opts, [])
+    }
   end
 
   @doc """
