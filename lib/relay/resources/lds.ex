@@ -2,8 +2,9 @@ defmodule Relay.Resources.LDS do
   alias Relay.{ProtobufUtil, Resources.CertInfo}
   import Relay.Resources.Common
 
+  alias Envoy.Api.V2.Core.Address
   alias Envoy.Api.V2.Listener
-  alias Envoy.Api.V2.Listener.{Filter, FilterChain}
+  alias Listener.{Filter, FilterChain}
   alias Envoy.Config.Filter.Accesslog.V2.{AccessLog, FileAccessLog}
   alias Envoy.Config.Filter.Http.Router.V2.Router
 
