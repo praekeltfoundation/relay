@@ -2,9 +2,9 @@ defmodule Relay.Resources.LDS do
   alias Relay.{ProtobufUtil, Resources.CertInfo}
   import Relay.Resources.Common
 
-  alias Envoy.Api.V2.Core.Address
+  alias Envoy.Api.V2.Core.{Address, DataSource}
   alias Envoy.Api.V2.Listener
-  alias Listener.{Filter, FilterChain}
+  alias Listener.{Filter, FilterChain, FilterChainMatch}
   alias Envoy.Config.Filter.Accesslog.V2.{AccessLog, FileAccessLog}
   alias Envoy.Config.Filter.Http.Router.V2.Router
 
@@ -16,15 +16,24 @@ defmodule Relay.Resources.LDS do
 
   @spec listeners([CertInfo.t()]) :: [Listener.t()]
   def listeners(cert_infos) do
-    https_filter_chains = Enum.map(cert_infos, &https_filter_chain/1)
-
     [
-      listener(:http, [filter_chain(:http)]),
-      listener(:https, https_filter_chains)
+      listener(:http, http_filter_chains()),
+      listener(:https, https_filter_chains(cert_infos))
     ]
   end
 
-  defp https_filter_chain(cert_info) do
+  @spec http_filter_chains() :: [FilterChain.t()]
+  defp http_filter_chains, do: [filter_chain([http_connection_manager_filter(:http)])]
+
+  @spec https_filter_chains([CertInfo.t()]) :: [FilterChain.t()]
+  defp https_filter_chains(cert_infos) do
+    # List of filters must be identical across filter chains, so create them once
+    https_filters = [http_connection_manager_filter(:https)]
+    Enum.map(cert_infos, &https_filter_chain(https_filters, &1))
+  end
+
+  @spec https_filter_chain([Filter.t()], CertInfo.t()) :: FilterChain.t()
+  defp https_filter_chain(filters, cert_info) do
     alias Envoy.Api.V2.Auth
 
     tls_context =
@@ -41,19 +50,22 @@ defmodule Relay.Resources.LDS do
           )
       )
 
-    filter_chain(:https, {tls_context, cert_info.domains})
+    filter_chain(filters, tls_context: tls_context, sni_domains: cert_info.domains)
   end
 
-  defp inline_string(text),
-    do: Envoy.Api.V2.Core.DataSource.new(specifier: {:inline_string, text})
+  @spec inline_string(String.t()) :: DataSource.t()
+  defp inline_string(text), do: DataSource.new(specifier: {:inline_string, text})
 
-  defp filter_chain(listener, {tls_context, sni_domains} \\ {nil, []}) do
-    alias Envoy.Api.V2.Listener.{FilterChain, FilterChainMatch}
+  @spec filter_chain([Filter.t()], keyword) :: FilterChain.t()
+  defp filter_chain(filters, options \\ []) do
+    {sni_domains, options} = Keyword.pop(options, :sni_domains, [])
 
+    # TODO: Add PROXY protocol configuration for AWS ELB support
     FilterChain.new(
-      filter_chain_match: FilterChainMatch.new(sni_domains: sni_domains),
-      filters: [http_connection_manager_filter(listener)],
-      tls_context: tls_context
+      [
+        filter_chain_match: FilterChainMatch.new(sni_domains: sni_domains),
+        filters: filters
+      ] ++ options
     )
   end
 
