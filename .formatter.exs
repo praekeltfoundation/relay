@@ -5,6 +5,7 @@
 # but we'd rather not have config in many different files.
 
 include_patterns = ["*.exs", "{config,lib,test}/**/*.{ex,exs}"]
+
 ignore_paths = [
   "lib/envoy/",
   "lib/google/",
