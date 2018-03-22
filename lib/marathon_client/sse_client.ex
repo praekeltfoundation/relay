@@ -38,7 +38,7 @@ defmodule MarathonClient.SSEClient do
     end
   end
 
-  def handle_info(%HTTPoison.AsyncChunk{chunk: chunk}, {_, ssep}=state) do
+  def handle_info(%HTTPoison.AsyncChunk{chunk: chunk}, {_, ssep} = state) do
     SSEParser.feed_data(ssep, chunk)
     {:noreply, state}
   end
