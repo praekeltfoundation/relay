@@ -14,7 +14,7 @@ defmodule Relay.Server.Macros do
       defmodule unquote(name) do
         use GRPC.Server, service: unquote(service)
 
-        alias Relay.{ProtobufUtil, Store}
+        alias Relay.{ProtobufUtil, Publisher}
         alias Envoy.Api.V2.{DiscoveryRequest, DiscoveryResponse}
         alias GRPC.Server.Stream
 
@@ -30,7 +30,7 @@ defmodule Relay.Server.Macros do
         def unquote(stream_func)(req_stream, stream) do
           IO.inspect({unquote(stream_func), self()})
 
-          :ok = Store.subscribe(Store, @xds, self())
+          :ok = Publisher.subscribe(Publisher, @xds, self())
           handle_requests(req_stream, stream)
         end
 

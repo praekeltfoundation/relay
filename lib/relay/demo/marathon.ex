@@ -1,5 +1,5 @@
 defmodule Relay.Demo.Marathon do
-  alias Relay.Store
+  alias Relay.Publisher
   alias Relay.Marathon.{Adapter, App, Task}
 
   @demo_app %App{
@@ -57,9 +57,9 @@ defmodule Relay.Demo.Marathon do
 
   defp update_state(state) do
     v = "#{state.version}"
-    Store.update(Store, :cds, v, clusters())
-    Store.update(Store, :rds, v, routes())
-    Store.update(Store, :eds, v, endpoints())
+    Publisher.update(Publisher, :cds, v, clusters())
+    Publisher.update(Publisher, :rds, v, routes())
+    Publisher.update(Publisher, :eds, v, endpoints())
     %{state | version: state.version + 1}
   end
 

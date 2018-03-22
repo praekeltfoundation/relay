@@ -1,7 +1,7 @@
 defmodule Relay.SupervisorTest do
   use ExUnit.Case
 
-  alias Relay.{Supervisor, Demo, Store}
+  alias Relay.{Supervisor, Demo, Publisher, Resources}
   alias Relay.Supervisor.FrontendSupervisor
 
   alias Envoy.Api.V2.{DiscoveryRequest, DiscoveryResponse}
@@ -25,7 +25,7 @@ defmodule Relay.SupervisorTest do
 
   defp assert_example_response do
     assert_cds_response("1", Demo.Marathon.clusters())
-    assert_lds_response("1", Demo.Certs.listeners())
+    assert_lds_response("1", Demo.Certs.sni_certs() |> Resources.LDS.listeners())
   end
 
   defp assert_cds_response(version_info, clusters) do
@@ -121,10 +121,11 @@ defmodule Relay.SupervisorTest do
     Task.await(blocker_task)
   end
 
-  test "when the Store exits everything is restarted" do
+  test "when the Publisher exits everything is restarted" do
     Process.flag(:trap_exit, true)
 
-    # Monitor the server and demo
+    # Monitor resources, server, and demo
+    resources_ref = Process.whereis(Resources) |> Process.monitor()
     server_ref = Process.whereis(GRPC.Server.Supervisor) |> Process.monitor()
     demo_certs_ref = Process.whereis(Demo.Certs) |> Process.monitor()
     demo_marathon_ref = Process.whereis(Demo.Marathon) |> Process.monitor()
@@ -132,10 +133,11 @@ defmodule Relay.SupervisorTest do
     # Wait for all the initial interation to finish
     Process.sleep(50)
 
-    # Exit the Store process
-    Process.whereis(Store) |> Process.exit(:kill)
+    # Exit the Publisher process
+    Process.whereis(Publisher) |> Process.exit(:kill)
 
-    # The server and demo quit
+    # Resources, server, and demo quit
+    assert_receive {:DOWN, ^resources_ref, :process, _, :shutdown}, 1_000
     assert_receive {:DOWN, ^server_ref, :process, _, :shutdown}, 1_000
     assert_receive {:DOWN, ^demo_certs_ref, :process, _, :shutdown}, 1_000
     assert_receive {:DOWN, ^demo_marathon_ref, :process, _, :shutdown}, 1_000
@@ -146,10 +148,41 @@ defmodule Relay.SupervisorTest do
     assert_example_response()
   end
 
+  test "when Resources exits everything except Publisher is restarted" do
+    Process.flag(:trap_exit, true)
+
+    publisher_pid = Process.whereis(Publisher)
+
+    # Monitor the server and demo
+    server_ref = Process.whereis(GRPC.Server.Supervisor) |> Process.monitor()
+    demo_certs_ref = Process.whereis(Demo.Certs) |> Process.monitor()
+    demo_marathon_ref = Process.whereis(Demo.Marathon) |> Process.monitor()
+
+    # Wait for all the initial interation to finish
+    Process.sleep(50)
+
+    # Exit the Publisher process
+    Process.whereis(Resources) |> Process.exit(:kill)
+
+    # The server and demo quit
+    assert_receive {:DOWN, ^server_ref, :process, _, :shutdown}, 1_000
+    assert_receive {:DOWN, ^demo_certs_ref, :process, _, :shutdown}, 1_000
+    assert_receive {:DOWN, ^demo_marathon_ref, :process, _, :shutdown}, 1_000
+
+    # Publisher still happily running
+    assert Process.alive?(publisher_pid)
+
+    wait_until_live()
+
+    # Things still work as everything has been restarted
+    assert_example_response()
+  end
+
   test "when the GRPC supervisor exits it is restarted" do
     Process.flag(:trap_exit, true)
 
-    store_pid = Process.whereis(Store)
+    publisher_pid = Process.whereis(Publisher)
+    resources_pid = Process.whereis(Resources)
     demo_certs_pid = Process.whereis(Demo.Certs)
     demo_marathon_pid = Process.whereis(Demo.Marathon)
 
@@ -168,7 +201,8 @@ defmodule Relay.SupervisorTest do
       assert_receive {:DOWN, ^grpc_ref, :process, _, :killed}, 1_000
 
       # Other things still happily running
-      assert Process.alive?(store_pid)
+      assert Process.alive?(publisher_pid)
+      assert Process.alive?(resources_pid)
       assert Process.alive?(demo_certs_pid)
       assert Process.alive?(demo_marathon_pid)
 
@@ -185,7 +219,8 @@ defmodule Relay.SupervisorTest do
   test "when Demo.Marathon exits it is restarted" do
     Process.flag(:trap_exit, true)
 
-    store_pid = Process.whereis(Store)
+    publisher_pid = Process.whereis(Publisher)
+    resources_pid = Process.whereis(Resources)
     grpc_pid = Process.whereis(GRPC.Server.Supervisor)
     demo_certs_pid = Process.whereis(Demo.Certs)
 
@@ -202,7 +237,8 @@ defmodule Relay.SupervisorTest do
     assert_receive {:DOWN, ^demo_marathon_ref, :process, _, :killed}, 1_000
 
     # Other things still happily running
-    assert Process.alive?(store_pid)
+    assert Process.alive?(publisher_pid)
+    assert Process.alive?(resources_pid)
     assert Process.alive?(grpc_pid)
     assert Process.alive?(demo_certs_pid)
 

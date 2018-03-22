@@ -6,7 +6,7 @@ defmodule Relay.ServerTest do
   alias Relay.Server.ClusterDiscoveryService, as: CDS
   alias Relay.Server.EndpointDiscoveryService, as: EDS
 
-  alias Relay.Store
+  alias Relay.Publisher
 
   alias Envoy.Api.V2.{DiscoveryRequest, DiscoveryResponse}
 
@@ -21,7 +21,7 @@ defmodule Relay.ServerTest do
     TestHelpers.setup_apps([:grpc])
     TestHelpers.override_log_level(:warn)
 
-    {:ok, store} = start_supervised({Store, [name: Store]})
+    {:ok, publisher} = start_supervised({Publisher, [name: Publisher]})
 
     servers = [LDS, RDS, CDS, EDS]
     {:ok, pid, port} = GRPC.Server.start(servers, 0)
@@ -29,7 +29,7 @@ defmodule Relay.ServerTest do
 
     on_exit fn -> GRPC.Server.stop(servers) end
 
-    %{channel: channel, pid: pid, store: store}
+    %{channel: channel, pid: pid, publisher: publisher}
   end
 
   test "fetch_listeners unimplemented", %{channel: channel} do
@@ -71,13 +71,13 @@ defmodule Relay.ServerTest do
     assert [response1] = Enum.take(result_enum, 1)
     assert %DiscoveryResponse{type_url: ^type_url, version_info: "", resources: []} = response1
 
-    # Make the second request, this requires something to be updated in the store
+    # Make the second request, this requires something to be updated in the publisher
     task2 = Task.async(fn ->
       GRPC.Stub.stream_send(stream, request, end_stream: true)
     end)
 
-    # Once we update something in the store it should be returned in a response
-    Store.update(Store, xds, "1", [example_resource])
+    # Once we update something in the publisher it should be returned in a response
+    Publisher.update(Publisher, xds, "1", [example_resource])
 
     Task.await(task2)
 
