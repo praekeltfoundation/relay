@@ -41,7 +41,7 @@ defmodule Relay.EnvoyUtil do
   size of the value for the name field for Cluster/RouteConfiguration/Listener
   objects.
 
-  https://www.envoyproxy.io/docs/envoy/v1.5.0/operations/cli.html#cmdoption-max-obj-name-len
+  https://www.envoyproxy.io/docs/envoy/v1.6.0/operations/cli.html#cmdoption-max-obj-name-len
   """
   @spec truncate_obj_name(String.t()) :: String.t()
   def truncate_obj_name(name) do

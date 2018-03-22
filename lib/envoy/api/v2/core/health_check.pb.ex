@@ -10,7 +10,8 @@ defmodule Envoy.Api.V2.Core.HealthCheck do
           unhealthy_threshold: Google.Protobuf.UInt32Value.t(),
           healthy_threshold: Google.Protobuf.UInt32Value.t(),
           alt_port: Google.Protobuf.UInt32Value.t(),
-          reuse_connection: Google.Protobuf.BoolValue.t()
+          reuse_connection: Google.Protobuf.BoolValue.t(),
+          no_traffic_interval: Google.Protobuf.Duration.t()
         }
   defstruct [
     :health_checker,
@@ -20,7 +21,8 @@ defmodule Envoy.Api.V2.Core.HealthCheck do
     :unhealthy_threshold,
     :healthy_threshold,
     :alt_port,
-    :reuse_connection
+    :reuse_connection,
+    :no_traffic_interval
   ]
 
   oneof :health_checker, 0
@@ -35,6 +37,7 @@ defmodule Envoy.Api.V2.Core.HealthCheck do
   field :tcp_health_check, 9, type: Envoy.Api.V2.Core.HealthCheck.TcpHealthCheck, oneof: 0
   field :redis_health_check, 10, type: Envoy.Api.V2.Core.HealthCheck.RedisHealthCheck, oneof: 0
   field :grpc_health_check, 11, type: Envoy.Api.V2.Core.HealthCheck.GrpcHealthCheck, oneof: 0
+  field :no_traffic_interval, 12, type: Google.Protobuf.Duration
 end
 
 defmodule Envoy.Api.V2.Core.HealthCheck.Payload do

@@ -1,5 +1,5 @@
 defmodule Relay.Demo.Certs do
-  alias Relay.{Certs, EnvoyUtil, Store}
+  alias Relay.{Certs, Resources}
 
   @demo_pem """
   -----BEGIN RSA PRIVATE KEY-----
@@ -83,48 +83,20 @@ defmodule Relay.Demo.Certs do
 
   defp update_state(state) do
     v = "#{state.version}"
-    Store.update(Store, :lds, v, listeners())
+    Resources.update_sni_certs(Resources, v, sni_certs())
     %{state | version: state.version + 1}
   end
 
-  defp filter_chain(listener, {tls_context, sni_domains} \\ {nil, []}) do
-    alias Envoy.Api.V2.Listener.{FilterChain, FilterChainMatch}
-    FilterChain.new(
-      filter_chain_match: FilterChainMatch.new(sni_domains: sni_domains),
-      filters: [EnvoyUtil.http_connection_manager_filter(listener)],
-      tls_context: tls_context
-    )
-  end
+  def sni_certs(), do: [pem_to_cert_info(@demo_pem)]
 
-  defp inline_pem(pem_data) do
-    alias Envoy.Api.V2.Core.DataSource
-    DataSource.new(specifier: {:inline_string, Certs.pem_encode(pem_data)})
-  end
-
-  defp https_filter_chain(cert_bundle) do
-    alias Envoy.Api.V2.Auth
+  defp pem_to_cert_info(cert_bundle) do
     {:ok, key} = Certs.get_key(cert_bundle)
     certs = Certs.get_certs(cert_bundle)
     sni_domains = Certs.get_end_entity_hostnames(certs)
-    tls_context = Auth.DownstreamTlsContext.new(
-      common_tls_context: Auth.CommonTlsContext.new(
-        alpn_protocols: ["h2,http/1.1"],
-        tls_certificates: [
-          Auth.TlsCertificate.new(
-            certificate_chain: inline_pem(certs),
-            private_key: inline_pem(key)
-          )
-        ]
-      )
-    )
-    filter_chain(:https, {tls_context, sni_domains})
-  end
-
-  def listeners do
-    https_filter_chains = Enum.map([@demo_pem], &https_filter_chain/1)
-    [
-      EnvoyUtil.listener(:http, [filter_chain(:http)]),
-      EnvoyUtil.listener(:https, https_filter_chains),
-    ]
+    %Resources.CertInfo{
+      domains: sni_domains,
+      key: Certs.pem_encode(key),
+      cert_chain: Certs.pem_encode(certs)
+    }
   end
 end
