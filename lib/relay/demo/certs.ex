@@ -1,5 +1,5 @@
 defmodule Relay.Demo.Certs do
-  alias Relay.{Certs, EnvoyUtil, Store}
+  alias Relay.{Certs, Resources}
 
   @demo_pem """
   -----BEGIN RSA PRIVATE KEY-----
@@ -83,88 +83,20 @@ defmodule Relay.Demo.Certs do
 
   defp update_state(state) do
     v = "#{state.version}"
-    Store.update(Store, :lds, v, listeners())
+    Resources.update_sni_certs(Resources, v, sni_certs())
     %{state | version: state.version + 1}
   end
 
-  defp router_filter(name) do
-    alias Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpFilter
-    alias Envoy.Config.Filter.Http.Router.V2.Router
-    import Relay.ProtobufUtil
-    HttpFilter.new(
-      name: "envoy.router",
-      config: mkstruct(
-        # FIXME: Don't do this name to atom thing
-        Router.new(upstream_log: String.to_existing_atom(name) |> EnvoyUtil.router_upstream_log())
-      )
-    )
-  end
+  def sni_certs(), do: [pem_to_cert_info(@demo_pem)]
 
-  defp default_http_conn_manager_filter(name) do
-    alias Envoy.Api.V2.Listener.Filter
-    alias Envoy.Config.Filter.Network.HttpConnectionManager.V2.{HttpConnectionManager, Rds}
-    import Relay.ProtobufUtil
-
-    Filter.new(
-      name: "envoy.http_connection_manager",
-      config: mkstruct(
-        HttpConnectionManager.new(
-          codec_type: HttpConnectionManager.CodecType.value(:AUTO),
-          route_specifier: {:rds, Rds.new(
-            config_source: EnvoyUtil.api_config_source(), route_config_name: name)},
-          stat_prefix: name,
-          http_filters: [router_filter(name)],
-          # FIXME: Don't do this name to atom thing
-          access_log:
-            String.to_existing_atom(name) |> EnvoyUtil.http_connection_manager_access_log()
-        )
-      )
-    )
-  end
-
-  defp listener(name, address, filter_chains) do
-    alias Envoy.Api.V2.Listener
-    Listener.new(name: name, address: address, filter_chains: filter_chains)
-  end
-
-  defp filter_chain(name, {tls_context, sni_domains} \\ {nil, []}) do
-    alias Envoy.Api.V2.Listener.{FilterChain, FilterChainMatch}
-    FilterChain.new(
-      filter_chain_match: FilterChainMatch.new(sni_domains: sni_domains),
-      filters: [default_http_conn_manager_filter(name)],
-      tls_context: tls_context
-    )
-  end
-
-  defp inline_pem(pem_data) do
-    alias Envoy.Api.V2.Core.DataSource
-    DataSource.new(specifier: {:inline_string, Certs.pem_encode(pem_data)})
-  end
-
-  defp https_filter_chain(cert_bundle) do
-    alias Envoy.Api.V2.Auth
+  defp pem_to_cert_info(cert_bundle) do
     {:ok, key} = Certs.get_key(cert_bundle)
     certs = Certs.get_certs(cert_bundle)
     sni_domains = Certs.get_end_entity_hostnames(certs)
-    tls_context = Auth.DownstreamTlsContext.new(
-      common_tls_context: Auth.CommonTlsContext.new(
-        alpn_protocols: ["h2,http/1.1"],
-        tls_certificates: [
-          Auth.TlsCertificate.new(
-            certificate_chain: inline_pem(certs),
-            private_key: inline_pem(key)
-          )
-        ]
-      )
-    )
-    filter_chain("https", {tls_context, sni_domains})
-  end
-
-  def listeners do
-    https_filter_chains = Enum.map([@demo_pem], &https_filter_chain/1)
-    [
-      listener("http", EnvoyUtil.listener_address(:http), [filter_chain("http")]),
-      listener("https", EnvoyUtil.listener_address(:https), https_filter_chains),
-    ]
+    %Resources.CertInfo{
+      domains: sni_domains,
+      key: Certs.pem_encode(key),
+      cert_chain: Certs.pem_encode(certs)
+    }
   end
 end
