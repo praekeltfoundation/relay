@@ -6,6 +6,7 @@ defmodule Relay.Resources.Common do
   @spec envoy_config() :: keyword
   def envoy_config, do: Application.fetch_env!(:relay, :envoy)
 
+  @spec fetch_envoy_config!(atom) :: any
   def fetch_envoy_config!(key), do: envoy_config() |> Keyword.fetch!(key)
 
   @spec api_config_source(keyword) :: ConfigSource.t()

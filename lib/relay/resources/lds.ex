@@ -2,7 +2,7 @@ defmodule Relay.Resources.LDS do
   alias Relay.{ProtobufUtil, Resources.CertInfo}
   import Relay.Resources.Common
 
-  alias Envoy.Api.V2.Core.{Address, DataSource}
+  alias Envoy.Api.V2.Core.DataSource
   alias Envoy.Api.V2.Listener
   alias Listener.{Filter, FilterChain, FilterChainMatch}
   alias Envoy.Config.Filter.Accesslog.V2.{AccessLog, FileAccessLog}
@@ -88,7 +88,6 @@ defmodule Relay.Resources.LDS do
 
   defp fetch_listener_config!(listener, key), do: listener_config(listener) |> Keyword.fetch!(key)
 
-  @spec listener_address(atom) :: Address.t()
   defp listener_address(listener) do
     listen = fetch_listener_config!(listener, :listen)
     socket_address(Keyword.fetch!(listen, :address), Keyword.fetch!(listen, :port))
