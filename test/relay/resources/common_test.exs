@@ -1,4 +1,4 @@
-defmodule Relay.EnvoyUtilTest do
+defmodule Relay.Resources.CommonTest do
   use ExUnit.Case, async: true
 
   alias Relay.Resources.Common
