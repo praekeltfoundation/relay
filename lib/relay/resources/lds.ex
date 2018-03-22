@@ -70,7 +70,7 @@ defmodule Relay.Resources.LDS do
   end
 
   @spec listener(atom, [FilterChain.t()], keyword) :: Listener.t()
-  def listener(listener, filter_chains, options \\ []) do
+  defp listener(listener, filter_chains, options \\ []) do
     Listener.new(
       [
         name: Atom.to_string(listener) |> truncate_obj_name(),
@@ -95,7 +95,7 @@ defmodule Relay.Resources.LDS do
   end
 
   @spec http_connection_manager_filter(atom) :: Filter.t()
-  def http_connection_manager_filter(listener, options \\ []) do
+  defp http_connection_manager_filter(listener, options \\ []) do
     Filter.new(
       name: "envoy.http_connection_manager",
       config: ProtobufUtil.mkstruct(http_connection_manager(listener, options))
@@ -154,7 +154,7 @@ defmodule Relay.Resources.LDS do
   end
 
   @spec file_access_log(String.t(), String.t(), keyword) :: AccessLog.t()
-  def file_access_log(path, format, options \\ []) do
+  defp file_access_log(path, format, options \\ []) do
     # TODO: Make it easier to configure filters (currently the only extra
     # AccessLog option).
     AccessLog.new(
