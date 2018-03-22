@@ -5,16 +5,32 @@ defmodule Envoy.Api.V2.Core.TcpProtocolOptions do
   defstruct []
 end
 
+defmodule Envoy.Api.V2.Core.HttpProtocolOptions do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          idle_timeout: Google.Protobuf.Duration.t()
+        }
+  defstruct [:idle_timeout]
+
+  field :idle_timeout, 1, type: Google.Protobuf.Duration
+end
+
 defmodule Envoy.Api.V2.Core.Http1ProtocolOptions do
   @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          allow_absolute_url: Google.Protobuf.BoolValue.t()
+          allow_absolute_url: Google.Protobuf.BoolValue.t(),
+          accept_http_10: boolean,
+          default_host_for_http_10: String.t()
         }
-  defstruct [:allow_absolute_url]
+  defstruct [:allow_absolute_url, :accept_http_10, :default_host_for_http_10]
 
   field :allow_absolute_url, 1, type: Google.Protobuf.BoolValue
+  field :accept_http_10, 2, type: :bool
+  field :default_host_for_http_10, 3, type: :string
 end
 
 defmodule Envoy.Api.V2.Core.Http2ProtocolOptions do

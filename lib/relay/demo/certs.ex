@@ -1,5 +1,5 @@
 defmodule Relay.Demo.Certs do
-  alias Relay.{Certs, Store}
+  alias Relay.{Certs, EnvoyUtil, Store}
 
   @demo_pem """
   -----BEGIN RSA PRIVATE KEY-----
@@ -87,40 +87,16 @@ defmodule Relay.Demo.Certs do
     %{state | version: state.version + 1}
   end
 
-  defp own_api_config_source do
-    alias Envoy.Api.V2.Core.{ApiConfigSource, ConfigSource, GrpcService}
-    ConfigSource.new(config_source_specifier: {:api_config_source, ApiConfigSource.new(
-      api_type: ApiConfigSource.ApiType.value(:GRPC),
-      # TODO: Make our cluster name configurable--this must match the cluster
-      # name in bootstrap.yaml
-      # TODO: I don't understand what grpc_services is for when there is a
-      # `cluster_names`. `cluster_names` is required.
-      cluster_names: ["xds_cluster"],
-      grpc_services: [
-        GrpcService.new(target_specifier:
-          {:envoy_grpc, GrpcService.EnvoyGrpc.new(cluster_name: "xds_cluster")})
-      ]
-    )})
-  end
-
-  defp socket_address(address, port) do
-    alias Envoy.Api.V2.Core.{Address, SocketAddress}
-    sock = SocketAddress.new(address: address, port_specifier: {:port_value, port})
-    Address.new(address: {:socket_address, sock})
-  end
-
-  defp router_filter do
+  defp router_filter(name) do
     alias Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpFilter
     alias Envoy.Config.Filter.Http.Router.V2.Router
-    alias Envoy.Config.Filter.Accesslog.V2.{AccessLog, FileAccessLog}
     import Relay.ProtobufUtil
     HttpFilter.new(
       name: "envoy.router",
-      config: mkstruct(Router.new(upstream_log: [
-        AccessLog.new(
-          name: "envoy.file_access_log",
-          config: mkstruct(FileAccessLog.new(path: "upstream.log")))
-      ]))
+      config: mkstruct(
+        # FIXME: Don't do this name to atom thing
+        Router.new(upstream_log: String.to_existing_atom(name) |> EnvoyUtil.router_upstream_log())
+      )
     )
   end
 
@@ -128,15 +104,22 @@ defmodule Relay.Demo.Certs do
     alias Envoy.Api.V2.Listener.Filter
     alias Envoy.Config.Filter.Network.HttpConnectionManager.V2.{HttpConnectionManager, Rds}
     import Relay.ProtobufUtil
+
     Filter.new(
       name: "envoy.http_connection_manager",
-      config: mkstruct(HttpConnectionManager.new(
-        codec_type: HttpConnectionManager.CodecType.value(:AUTO),
-        route_specifier: {:rds, Rds.new(
-          config_source: own_api_config_source(), route_config_name: name)},
-        stat_prefix: name,
-        http_filters: [router_filter()]))
+      config: mkstruct(
+        HttpConnectionManager.new(
+          codec_type: HttpConnectionManager.CodecType.value(:AUTO),
+          route_specifier: {:rds, Rds.new(
+            config_source: EnvoyUtil.api_config_source(), route_config_name: name)},
+          stat_prefix: name,
+          http_filters: [router_filter(name)],
+          # FIXME: Don't do this name to atom thing
+          access_log:
+            String.to_existing_atom(name) |> EnvoyUtil.http_connection_manager_access_log()
+        )
       )
+    )
   end
 
   defp listener(name, address, filter_chains) do
@@ -180,8 +163,8 @@ defmodule Relay.Demo.Certs do
   def listeners do
     https_filter_chains = Enum.map([@demo_pem], &https_filter_chain/1)
     [
-      listener("http", socket_address("0.0.0.0", 8080), [filter_chain("http")]),
-      listener("https", socket_address("0.0.0.0", 8443), https_filter_chains),
+      listener("http", EnvoyUtil.listener_address(:http), [filter_chain("http")]),
+      listener("https", EnvoyUtil.listener_address(:https), https_filter_chains),
     ]
   end
 end

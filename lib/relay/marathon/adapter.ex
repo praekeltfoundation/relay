@@ -1,15 +1,13 @@
 defmodule Relay.Marathon.Adapter do
-  alias Relay.Marathon.{App, Task, Networking}
+  alias Relay.EnvoyUtil
+  alias Relay.Marathon.{App, Task}
 
   alias Envoy.Api.V2.{Cluster, ClusterLoadAssignment, RouteConfiguration}
-  alias Envoy.Api.V2.Core.{Address, ConfigSource, Locality, SocketAddress}
+  alias Envoy.Api.V2.Core.{ConfigSource, Locality}
   alias Envoy.Api.V2.Endpoint.{Endpoint, LbEndpoint, LocalityLbEndpoints}
   alias Envoy.Api.V2.Route.{RedirectAction, Route, RouteAction, RouteMatch, VirtualHost}
 
   alias Google.Protobuf.Duration
-
-  @default_max_obj_name_length 60
-  @truncated_name_prefix "[...]"
 
   @default_cluster_connect_timeout Duration.new(seconds: 5)
   @default_locality Locality.new(region: "default")
@@ -21,12 +19,10 @@ defmodule Relay.Marathon.Adapter do
   of options set but will be Clusters with EDS endpoint discovery. Additional
   options can be specified using `options`.
   """
-  @spec app_clusters(App.t, ConfigSource.t, keyword) :: [Cluster.t]
-  def app_clusters(
-        %App{port_indices_in_group: port_indices_in_group} = app,
-        %ConfigSource{} = eds_config_source,
-        options \\ []
-      ) do
+  @spec app_clusters(App.t, keyword) :: [Cluster.t]
+  def app_clusters(%App{port_indices_in_group: port_indices_in_group} = app, options \\ []) do
+    eds_config_source = EnvoyUtil.api_config_source()
+
     port_indices_in_group
     |> Enum.map(&app_port_cluster(app, &1, eds_config_source, options))
   end
@@ -39,11 +35,10 @@ defmodule Relay.Marathon.Adapter do
         options
       ) do
     service_name = "#{app_id}_#{port_index}"
-    {max_size, options} = max_obj_name_length(options)
 
     Cluster.new(
       [
-        name: truncate_name(service_name, max_size),
+        name: EnvoyUtil.truncate_obj_name(service_name),
         type: Cluster.DiscoveryType.value(:EDS),
         eds_cluster_config:
           Cluster.EdsClusterConfig.new(
@@ -53,32 +48,6 @@ defmodule Relay.Marathon.Adapter do
         connect_timeout: Keyword.get(options, :connect_timeout, @default_cluster_connect_timeout)
       ] ++ options
     )
-  end
-
-  # Pop the max_obj_name_length keyword from the given keyword list.
-  defp max_obj_name_length(options),
-    do: Keyword.pop(options, :max_obj_name_length, @default_max_obj_name_length)
-
-  @doc """
-  Truncate a name to a certain byte size. Envoy has limits on the size of the
-  value for the name field for Cluster/RouteConfiguration/Listener objects.
-
-  https://www.envoyproxy.io/docs/envoy/v1.5.0/operations/cli.html#cmdoption-max-obj-name-len
-  """
-  @spec truncate_name(String.t, pos_integer) :: String.t
-  def truncate_name(name, max_size) do
-    if byte_size(@truncated_name_prefix) > max_size,
-      do: raise(ArgumentError, "`max_size` must be larger than the prefix length")
-
-    case byte_size(name) do
-      size when size > max_size ->
-        truncated_size = max_size - byte_size(@truncated_name_prefix)
-        truncated_name = name |> binary_part(size, -truncated_size)
-        "#{@truncated_name_prefix}#{truncated_name}"
-
-      _ ->
-        name
-    end
   end
 
   @doc """
@@ -134,15 +103,12 @@ defmodule Relay.Marathon.Adapter do
   @spec task_port_lb_endpoint(Task.t, non_neg_integer, keyword) :: LbEndpoint.t
   def task_port_lb_endpoint(%Task{address: address, ports: ports}, port_index, options \\ []) do
     LbEndpoint.new(
-      [endpoint: Endpoint.new(address: socket_address(address, Enum.at(ports, port_index)))] ++
-        options
+      [
+        endpoint: Endpoint.new(
+          address: EnvoyUtil.socket_address(address, Enum.at(ports, port_index))
+        )
+      ] ++ options
     )
-  end
-
-  @spec socket_address(String.t, Networking.port_number) :: Address.t
-  defp socket_address(address, port) do
-    sock = SocketAddress.new(address: address, port_specifier: {:port_value, port})
-    Address.new(address: {:socket_address, sock})
   end
 
   @doc """
@@ -247,10 +213,11 @@ defmodule Relay.Marathon.Adapter do
         ] ++ options
       )
 
-    # TODO: marathon-acme route (which will come before the primary route in
-    # the list)
-
-    [primary_route]
+    case App.marathon_acme_domain(app, port_index) do
+      # No marathon-acme domain--don't route to marathon-acme
+      [] -> [primary_route]
+      _ -> [marathon_acme_route(), primary_route]
+    end
   end
 
   defp app_port_routes(:https, %App{id: app_id}, port_index, options) do
@@ -274,5 +241,16 @@ defmodule Relay.Marathon.Adapter do
         ] ++ options
       )
     ]
+  end
+
+  @spec marathon_acme_route() :: Route.t
+  defp marathon_acme_route do
+    config = Application.fetch_env!(:relay, :marathon_acme)
+    # TODO: Does the cluster name here need to be truncated?
+    cluster = "#{Keyword.fetch!(config, :app_id)}_#{Keyword.fetch!(config, :port_index)}"
+    Route.new(
+      action: {:route, RouteAction.new(cluster_specifier: {:cluster, cluster})},
+      match: RouteMatch.new(path_specifier: {:prefix, "/.well-known/acme-challenge/"})
+    )
   end
 end

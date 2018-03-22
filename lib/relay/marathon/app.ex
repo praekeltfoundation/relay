@@ -7,7 +7,7 @@ defmodule Relay.Marathon.App do
   @type t :: %__MODULE__{
           id: String.t(),
           networking_mode: Networking.networking_mode(),
-          ports_list: [Networking.port_number()],
+          ports_list: [:inet.port_number()],
           port_indices_in_group: [non_neg_integer],
           labels: Labels.labels(),
           version: String.t()
@@ -36,7 +36,7 @@ defmodule Relay.Marathon.App do
 
   defp port_indices_in_group([], _labels, _group), do: []
 
-  @spec port_indices_in_group([Networking.port_number()], %{String.t() => String.t()}, String.t()) ::
+  @spec port_indices_in_group([:inet.port_number()], %{String.t() => String.t()}, String.t()) ::
           [non_neg_integer]
   defp port_indices_in_group(ports_list, labels, group) do
     0..(length(ports_list) - 1)

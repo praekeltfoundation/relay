@@ -67,5 +67,4 @@ defmodule Envoy.Config.Metrics.V2.DogStatsdSink do
 
   oneof :dog_statsd_specifier, 0
   field :address, 1, type: Envoy.Api.V2.Core.Address, oneof: 0
-  field :tcp_cluster_name, 2, type: :string, oneof: 0
 end
