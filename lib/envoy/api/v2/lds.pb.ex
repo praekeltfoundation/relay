@@ -12,7 +12,8 @@ defmodule Envoy.Api.V2.Listener do
           deprecated_v1: Envoy.Api.V2.Listener.DeprecatedV1.t(),
           drain_type: integer,
           listener_filters: [Envoy.Api.V2.Listener.ListenerFilter.t()],
-          transparent: boolean
+          transparent: Google.Protobuf.BoolValue.t(),
+          freebind: Google.Protobuf.BoolValue.t()
         }
   defstruct [
     :name,
@@ -24,7 +25,8 @@ defmodule Envoy.Api.V2.Listener do
     :deprecated_v1,
     :drain_type,
     :listener_filters,
-    :transparent
+    :transparent,
+    :freebind
   ]
 
   field :name, 1, type: :string
@@ -36,7 +38,8 @@ defmodule Envoy.Api.V2.Listener do
   field :deprecated_v1, 7, type: Envoy.Api.V2.Listener.DeprecatedV1
   field :drain_type, 8, type: Envoy.Api.V2.Listener.DrainType, enum: true
   field :listener_filters, 9, repeated: true, type: Envoy.Api.V2.Listener.ListenerFilter
-  field :transparent, 10, type: :bool
+  field :transparent, 10, type: Google.Protobuf.BoolValue
+  field :freebind, 11, type: Google.Protobuf.BoolValue
 end
 
 defmodule Envoy.Api.V2.Listener.DeprecatedV1 do
