@@ -18,6 +18,7 @@ defmodule Relay.MixProject do
         "credo": :test,
       ],
       dialyzer: dialyzer(),
+      elixirc_paths: ["lib", "gen"]
     ]
   end
 

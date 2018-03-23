@@ -32,8 +32,8 @@ popd
 echo
 
 generated_paths=(
-	lib/envoy
-	lib/google
+	gen/envoy
+	gen/google
 )
 echo "Deleting existing generated code..."
 for path in "${generated_paths[@]}"; do
@@ -63,12 +63,12 @@ data_plane_modules=(
 echo "Generating data-plane-api protos..."
 for module in "${data_plane_modules[@]}"; do
 	find data-plane-api/envoy/"$module" -name '*.proto' | \
-		xargs $protoc ${protocargs[@]} --plugin=elixir --elixir_out="${elixirarg}":"${root}/lib/"
+		xargs $protoc ${protocargs[@]} --plugin=elixir --elixir_out="${elixirarg}":"${root}/gen/"
 done
 echo
 
 echo "The following Google protos are used:"
-grep -REho '\bGoogle.[A-Z]\w+.[A-Z]\w*' lib/envoy | sort -u
+grep -REho '\bGoogle.[A-Z]\w+.[A-Z]\w*' gen/envoy | sort -u
 echo
 
 # These are the protos under 'Google.Protobuf'
@@ -84,7 +84,7 @@ echo "Generating protobuf protos..."
 protobuf_src="$output_base/external/com_google_protobuf/src"
 # These have no dependencies
 for proto in "${protobuf_protos[@]}"; do
-	$protoc -I="$protobuf_src" --plugin=elixir --elixir_out="${elixirarg}":"${root}/lib/" \
+	$protoc -I="$protobuf_src" --plugin=elixir --elixir_out="${elixirarg}":"${root}/gen/" \
 		"$protobuf_src"/google/protobuf/"$proto".proto
 done
 echo
@@ -99,6 +99,6 @@ echo "Generating googleapis protos..."
 googleapis_src="$output_base/external/googleapis"
 # These *implicitly* depend on the Google.Protobuf APIs
 for proto in "${googleapis_protos[@]}"; do
-	$protoc -I="$googleapis_src" --plugin=elixir --elixir_out="${elixirarg}":"${root}/lib/" \
+	$protoc -I="$googleapis_src" --plugin=elixir --elixir_out="${elixirarg}":"${root}/gen/" \
 		"$googleapis_src"/google/"$proto".proto
 done
