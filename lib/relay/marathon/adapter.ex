@@ -1,5 +1,5 @@
 defmodule Relay.Marathon.Adapter do
-  alias Relay.EnvoyUtil
+  alias Relay.Resources.Common
   alias Relay.Marathon.{App, Task}
 
   alias Envoy.Api.V2.{Cluster, ClusterLoadAssignment, RouteConfiguration}
@@ -21,7 +21,7 @@ defmodule Relay.Marathon.Adapter do
   """
   @spec app_clusters(App.t, keyword) :: [Cluster.t]
   def app_clusters(%App{port_indices_in_group: port_indices_in_group} = app, options \\ []) do
-    eds_config_source = EnvoyUtil.api_config_source()
+    eds_config_source = Common.api_config_source()
 
     port_indices_in_group
     |> Enum.map(&app_port_cluster(app, &1, eds_config_source, options))
@@ -38,7 +38,7 @@ defmodule Relay.Marathon.Adapter do
 
     Cluster.new(
       [
-        name: EnvoyUtil.truncate_obj_name(service_name),
+        name: Common.truncate_obj_name(service_name),
         type: Cluster.DiscoveryType.value(:EDS),
         eds_cluster_config:
           Cluster.EdsClusterConfig.new(
@@ -105,7 +105,7 @@ defmodule Relay.Marathon.Adapter do
     LbEndpoint.new(
       [
         endpoint: Endpoint.new(
-          address: EnvoyUtil.socket_address(address, Enum.at(ports, port_index))
+          address: Common.socket_address(address, Enum.at(ports, port_index))
         )
       ] ++ options
     )
@@ -134,6 +134,7 @@ defmodule Relay.Marathon.Adapter do
 
   @spec apps_route_configuration(atom, [App.t], keyword) :: RouteConfiguration.t
   defp apps_route_configuration(listener, apps, options) do
+    # TODO: Use route config name from config
     {name, options} = Keyword.pop(options, :name, Atom.to_string(listener))
     {virtual_host_opts, options} = Keyword.pop(options, :virtual_host_opts, [])
 
