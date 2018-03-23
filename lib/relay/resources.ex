@@ -13,10 +13,19 @@ defmodule Relay.Resources do
 
   # FIXME: This needs a better name.
   defmodule AppPortInfo do
-    defstruct [:name, cluster_opts: []]
+    defstruct [
+      :name,
+      domains: [],
+      marathon_acme_domains: [],
+      redirect_to_https: false,
+      cluster_opts: []
+    ]
 
     @type t :: %__MODULE__{
             name: String.t(),
+            domains: [String.t()],
+            marathon_acme_domains: [String.t()],
+            redirect_to_https: boolean,
             cluster_opts: keyword
           }
   end

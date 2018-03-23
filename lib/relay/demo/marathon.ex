@@ -71,7 +71,8 @@ defmodule Relay.Demo.Marathon do
   def app_port_infos(), do: Adapter.app_port_infos_for_app(@demo_app)
 
   def routes do
-    Adapter.apps_route_configurations([@demo_app])
+    app_port_infos()
+    |> Resources.RDS.routes()
   end
 
   def endpoints do
