@@ -19,7 +19,8 @@
         {Credo.Check.Readability.LargeNumbers, only_greater_than: 65535},
 
         # Sometimes it makes sense to start a pipe chain with a function call
-        {Credo.Check.Refactor.PipeChainStart, excluded_functions: ["Map.new"]}
+        {Credo.Check.Refactor.PipeChainStart,
+         excluded_functions: ["Map.new"], excluded_argument_types: [:atom, :binary]}
       ]
     }
   ]

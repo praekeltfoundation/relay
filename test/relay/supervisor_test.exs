@@ -104,6 +104,10 @@ defmodule Relay.SupervisorTest do
       false
   end
 
+  defp monitor_by_name(name), do: name |> Process.whereis() |> Process.monitor()
+
+  defp kill_by_name(name), do: name |> Process.whereis() |> Process.exit(:kill)
+
   test "retry listener startup when address is in use" do
     :ok = stop_supervised(Supervisor)
 
@@ -133,16 +137,16 @@ defmodule Relay.SupervisorTest do
     Process.flag(:trap_exit, true)
 
     # Monitor resources, server, and demo
-    resources_ref = Process.whereis(Resources) |> Process.monitor()
-    server_ref = Process.whereis(GRPC.Server.Supervisor) |> Process.monitor()
-    demo_certs_ref = Process.whereis(Demo.Certs) |> Process.monitor()
-    demo_marathon_ref = Process.whereis(Demo.Marathon) |> Process.monitor()
+    resources_ref = monitor_by_name(Resources)
+    server_ref = monitor_by_name(GRPC.Server.Supervisor)
+    demo_certs_ref = monitor_by_name(Demo.Certs)
+    demo_marathon_ref = monitor_by_name(Demo.Marathon)
 
     # Wait for all the initial interation to finish
     Process.sleep(50)
 
     # Exit the Publisher process
-    Process.whereis(Publisher) |> Process.exit(:kill)
+    kill_by_name(Publisher)
 
     # Resources, server, and demo quit
     assert_receive {:DOWN, ^resources_ref, :process, _, :shutdown}, 1_000
@@ -162,15 +166,15 @@ defmodule Relay.SupervisorTest do
     publisher_pid = Process.whereis(Publisher)
 
     # Monitor the server and demo
-    server_ref = Process.whereis(GRPC.Server.Supervisor) |> Process.monitor()
-    demo_certs_ref = Process.whereis(Demo.Certs) |> Process.monitor()
-    demo_marathon_ref = Process.whereis(Demo.Marathon) |> Process.monitor()
+    server_ref = monitor_by_name(GRPC.Server.Supervisor)
+    demo_certs_ref = monitor_by_name(Demo.Certs)
+    demo_marathon_ref = monitor_by_name(Demo.Marathon)
 
     # Wait for all the initial interation to finish
     Process.sleep(50)
 
     # Exit the Publisher process
-    Process.whereis(Resources) |> Process.exit(:kill)
+    kill_by_name(Resources)
 
     # The server and demo quit
     assert_receive {:DOWN, ^server_ref, :process, _, :shutdown}, 1_000
