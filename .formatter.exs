@@ -4,11 +4,9 @@
 # option. It is possible to have different .formatter.exs files per-directory,
 # but we'd rather not have config in many different files.
 
-include_patterns = ["*.exs", "{config,lib,test}/**/*.{ex,exs}"]
+include_patterns = ["*.exs", "{config,gen,lib,test}/**/*.{ex,exs}"]
 
 ignore_paths = [
-  "lib/envoy/",
-  "lib/google/",
   # TODO: Reduce this list
   "mix.exs",
   "config/config.exs",
@@ -49,10 +47,14 @@ ignore_paths = [
   "test/test_helper.exs"
 ]
 
+inputs =
+  Enum.flat_map(include_patterns, fn pattern ->
+    Path.wildcard(pattern, match_dot: true)
+    |> Enum.filter(fn path -> not String.starts_with?(path, ignore_paths) end)
+  end)
+
 [
-  inputs:
-    Enum.flat_map(include_patterns, fn pattern ->
-      Path.wildcard(pattern, match_dot: true)
-      |> Enum.filter(fn path -> not String.starts_with?(path, ignore_paths) end)
-    end)
+  # https://github.com/tony612/protobuf-elixir/blob/v0.5.3/lib/protobuf/protoc/generator.ex#L48
+  locals_without_parens: [field: 2, field: 3, oneof: 2, rpc: 3],
+  inputs: inputs
 ]

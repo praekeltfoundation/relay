@@ -1,8 +1,7 @@
 {
   "skip_files": [
     "data-plane-api",
-    "lib/envoy",
-    "lib/google"
+    "gen"
   ],
   "custom_stop_words": [
     "#\s*noqa"
