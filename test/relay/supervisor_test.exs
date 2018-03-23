@@ -24,11 +24,11 @@ defmodule Relay.SupervisorTest do
   end
 
   defp assert_example_response do
-    assert_cds_response("1", Demo.Marathon.clusters())
-    assert_lds_response("1", Demo.Certs.sni_certs() |> Resources.LDS.listeners())
+    assert_cds_response(Demo.Marathon.clusters())
+    assert_lds_response(Demo.Certs.sni_certs() |> Resources.LDS.listeners())
   end
 
-  defp assert_cds_response(version_info, clusters) do
+  defp assert_cds_response(clusters) do
     {:ok, channel} = GRPC.Stub.connect("127.0.0.1:#{@port}")
     stream = channel |> CDSStub.stream_clusters()
     GRPC.Stub.stream_send(stream, DiscoveryRequest.new())
@@ -36,12 +36,12 @@ defmodule Relay.SupervisorTest do
     result_stream = GRPC.Stub.recv(stream)
 
     assert [response] = Enum.take(result_stream, 1)
-    assert %DiscoveryResponse{version_info: ^version_info, resources: resources} = response
+    assert %DiscoveryResponse{resources: resources} = response
 
     assert resources |> Enum.map(fn any_res -> Cluster.decode(any_res.value) end) == clusters
   end
 
-  defp assert_lds_response(version_info, listeners) do
+  defp assert_lds_response(listeners) do
     {:ok, channel} = GRPC.Stub.connect("127.0.0.1:#{@port}")
     stream = channel |> LDSStub.stream_listeners()
     GRPC.Stub.stream_send(stream, DiscoveryRequest.new())
@@ -49,19 +49,22 @@ defmodule Relay.SupervisorTest do
     result_stream = GRPC.Stub.recv(stream)
 
     assert [response] = Enum.take(result_stream, 1)
-    assert %DiscoveryResponse{version_info: ^version_info, resources: resources} = response
+    assert %DiscoveryResponse{resources: resources} = response
 
     assert resources |> Enum.map(fn any_res -> Listener.decode(any_res.value) end) == listeners
   end
 
   defp port_blocker(wait_time) do
     caller = self()
-    task = Task.async(fn ->
-      {:ok, socket} = :gen_tcp.listen(0, [:binary, active: false, ip: {127, 0, 0, 1}])
-      send(caller, :inet.port(socket))
-      Process.sleep(wait_time)
-      :ok = :gen_tcp.close(socket)
-    end)
+
+    task =
+      Task.async(fn ->
+        {:ok, socket} = :gen_tcp.listen(0, [:binary, active: false, ip: {127, 0, 0, 1}])
+        send(caller, :inet.port(socket))
+        Process.sleep(wait_time)
+        :ok = :gen_tcp.close(socket)
+      end)
+
     assert_receive {:ok, port}, 50
     {task, port}
   end
@@ -74,9 +77,11 @@ defmodule Relay.SupervisorTest do
     end
   end
 
-  defp wait_until_live() do
+  defp wait_until_live do
     case procs_live?(Supervisor) and procs_live?(FrontendSupervisor) do
-      true -> :ok
+      true ->
+        :ok
+
       _ ->
         Process.sleep(10)
         wait_until_live()
@@ -84,29 +89,34 @@ defmodule Relay.SupervisorTest do
   end
 
   defp procs_live?(sup) do
+    case Elixir.Supervisor.count_children(sup) do
+      %{specs: n, active: n} -> true
+      _ -> false
+    end
+  catch
     # `Supervisor.count_children` uses `:gen.call` under the hood, which
     # monitors the process we're querying during the query. This is fine if
     # we're part of a supervision tree, but for these tests we don't really
     # want to crash if the process we're querying is down. To get around this,
     # we catch exits (which is almost always a terrible idea) and return
     # `false` instead.
-    try do
-      case Elixir.Supervisor.count_children(sup) do
-        %{specs: n, active: n} -> true
-        _ -> false
-      end
-    catch
-      :exit, _ -> false
-    end
+    :exit, _ ->
+      false
   end
+
+  defp monitor_by_name(name), do: name |> Process.whereis() |> Process.monitor()
+
+  defp kill_by_name(name), do: name |> Process.whereis() |> Process.exit(:kill)
 
   test "retry listener startup when address is in use" do
     :ok = stop_supervised(Supervisor)
 
     {blocker_task, port} = port_blocker(100)
-    assert capture_log(fn() ->
-      {:ok, _} = start_supervised({Supervisor, {@addr, port}})
-    end) =~ ~r/Failed to start Ranch listener .* :eaddrinuse/
+
+    assert capture_log(fn ->
+             {:ok, _} = start_supervised({Supervisor, {@addr, port}})
+           end) =~ ~r/Failed to start Ranch listener .* :eaddrinuse/
+
     Task.await(blocker_task)
   end
 
@@ -114,10 +124,12 @@ defmodule Relay.SupervisorTest do
     :ok = stop_supervised(Supervisor)
 
     {blocker_task, port} = port_blocker(1_050)
-    assert capture_log(fn() ->
-      {:error, reason} = start_supervised({Supervisor, {@addr, port}})
-      assert {:listen_error, _, :eaddrinuse} = extract_reason(reason)
-    end) =~ ~r/Failed to start Ranch listener .* :eaddrinuse/
+
+    assert capture_log(fn ->
+             {:error, reason} = start_supervised({Supervisor, {@addr, port}})
+             assert {:listen_error, _, :eaddrinuse} = extract_reason(reason)
+           end) =~ ~r/Failed to start Ranch listener .* :eaddrinuse/
+
     Task.await(blocker_task)
   end
 
@@ -125,16 +137,16 @@ defmodule Relay.SupervisorTest do
     Process.flag(:trap_exit, true)
 
     # Monitor resources, server, and demo
-    resources_ref = Process.whereis(Resources) |> Process.monitor()
-    server_ref = Process.whereis(GRPC.Server.Supervisor) |> Process.monitor()
-    demo_certs_ref = Process.whereis(Demo.Certs) |> Process.monitor()
-    demo_marathon_ref = Process.whereis(Demo.Marathon) |> Process.monitor()
+    resources_ref = monitor_by_name(Resources)
+    server_ref = monitor_by_name(GRPC.Server.Supervisor)
+    demo_certs_ref = monitor_by_name(Demo.Certs)
+    demo_marathon_ref = monitor_by_name(Demo.Marathon)
 
     # Wait for all the initial interation to finish
     Process.sleep(50)
 
     # Exit the Publisher process
-    Process.whereis(Publisher) |> Process.exit(:kill)
+    kill_by_name(Publisher)
 
     # Resources, server, and demo quit
     assert_receive {:DOWN, ^resources_ref, :process, _, :shutdown}, 1_000
@@ -154,15 +166,15 @@ defmodule Relay.SupervisorTest do
     publisher_pid = Process.whereis(Publisher)
 
     # Monitor the server and demo
-    server_ref = Process.whereis(GRPC.Server.Supervisor) |> Process.monitor()
-    demo_certs_ref = Process.whereis(Demo.Certs) |> Process.monitor()
-    demo_marathon_ref = Process.whereis(Demo.Marathon) |> Process.monitor()
+    server_ref = monitor_by_name(GRPC.Server.Supervisor)
+    demo_certs_ref = monitor_by_name(Demo.Certs)
+    demo_marathon_ref = monitor_by_name(Demo.Marathon)
 
     # Wait for all the initial interation to finish
     Process.sleep(50)
 
     # Exit the Publisher process
-    Process.whereis(Resources) |> Process.exit(:kill)
+    kill_by_name(Resources)
 
     # The server and demo quit
     assert_receive {:DOWN, ^server_ref, :process, _, :shutdown}, 1_000
@@ -193,21 +205,21 @@ defmodule Relay.SupervisorTest do
     Process.sleep(50)
 
     # Capture the error logged when we kill the supervisor
-    assert capture_log(fn() ->
-      # Exit the GRPC process
-      grpc_pid |> Process.exit(:kill)
+    assert capture_log(fn ->
+             # Exit the GRPC process
+             grpc_pid |> Process.exit(:kill)
 
-      # Check the GRPC supervisor quit
-      assert_receive {:DOWN, ^grpc_ref, :process, _, :killed}, 1_000
+             # Check the GRPC supervisor quit
+             assert_receive {:DOWN, ^grpc_ref, :process, _, :killed}, 1_000
 
-      # Other things still happily running
-      assert Process.alive?(publisher_pid)
-      assert Process.alive?(resources_pid)
-      assert Process.alive?(demo_certs_pid)
-      assert Process.alive?(demo_marathon_pid)
+             # Other things still happily running
+             assert Process.alive?(publisher_pid)
+             assert Process.alive?(resources_pid)
+             assert Process.alive?(demo_certs_pid)
+             assert Process.alive?(demo_marathon_pid)
 
-      wait_until_live()
-    end) =~ ~r/\[error\] GenServer #PID<\S*> terminating\n\*\* \(stop\) killed/
+             wait_until_live()
+           end) =~ ~r/\[error\] GenServer #PID<\S*> terminating\n\*\* \(stop\) killed/
 
     # Everything else still works because it's all running again
     assert_example_response()

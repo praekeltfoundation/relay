@@ -27,33 +27,45 @@ defmodule Relay.ServerTest do
     {:ok, pid, port} = GRPC.Server.start(servers, 0)
     {:ok, channel} = GRPC.Stub.connect("127.0.0.1:#{port}")
 
-    on_exit fn -> GRPC.Server.stop(servers) end
+    on_exit(fn -> GRPC.Server.stop(servers) end)
 
     %{channel: channel, pid: pid, publisher: publisher}
   end
 
   test "fetch_listeners unimplemented", %{channel: channel} do
     {:error, reply} = channel |> LDSStub.fetch_listeners(DiscoveryRequest.new())
+
     assert reply == %GRPC.RPCError{
-      status: GRPC.Status.unimplemented(), message: "not implemented"}
+             status: GRPC.Status.unimplemented(),
+             message: "not implemented"
+           }
   end
 
   test "fetch_routes unimplemented", %{channel: channel} do
     {:error, reply} = channel |> RDSStub.fetch_routes(DiscoveryRequest.new())
+
     assert reply == %GRPC.RPCError{
-      status: GRPC.Status.unimplemented(), message: "not implemented"}
+             status: GRPC.Status.unimplemented(),
+             message: "not implemented"
+           }
   end
 
   test "fetch_clusters unimplemented", %{channel: channel} do
     {:error, reply} = channel |> CDSStub.fetch_clusters(DiscoveryRequest.new())
+
     assert reply == %GRPC.RPCError{
-      status: GRPC.Status.unimplemented(), message: "not implemented"}
+             status: GRPC.Status.unimplemented(),
+             message: "not implemented"
+           }
   end
 
   test "fetch_endpoints unimplemented", %{channel: channel} do
     {:error, reply} = channel |> EDSStub.fetch_endpoints(DiscoveryRequest.new())
+
     assert reply == %GRPC.RPCError{
-      status: GRPC.Status.unimplemented(), message: "not implemented"}
+             status: GRPC.Status.unimplemented(),
+             message: "not implemented"
+           }
   end
 
   defp assert_streams_responses(stream, server, example_resource) do
@@ -72,9 +84,10 @@ defmodule Relay.ServerTest do
     assert %DiscoveryResponse{type_url: ^type_url, version_info: "", resources: []} = response1
 
     # Make the second request, this requires something to be updated in the publisher
-    task2 = Task.async(fn ->
-      GRPC.Stub.stream_send(stream, request, end_stream: true)
-    end)
+    task2 =
+      Task.async(fn ->
+        GRPC.Stub.stream_send(stream, request, end_stream: true)
+      end)
 
     # Once we update something in the publisher it should be returned in a response
     Publisher.update(Publisher, xds, "1", [example_resource])
@@ -82,8 +95,9 @@ defmodule Relay.ServerTest do
     Task.await(task2)
 
     assert [response2] = Enum.to_list(result_enum)
-    assert %DiscoveryResponse{
-      type_url: ^type_url, version_info: "1", resources: [any_resource]} = response2
+
+    assert %DiscoveryResponse{type_url: ^type_url, version_info: "1", resources: [any_resource]} =
+             response2
 
     assert any_resource.type_url == type_url
     assert example_resource.__struct__.decode(any_resource.value) == example_resource

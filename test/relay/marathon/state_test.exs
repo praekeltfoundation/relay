@@ -31,10 +31,10 @@ defmodule Relay.Marathon.StateTest do
     assert {nil, state} = State.put_app(%State{}, @test_app)
 
     assert state == %State{
-      apps: %{app_id => @test_app},
-      app_tasks: %{app_id => MapSet.new()},
-      tasks: %{}
-    }
+             apps: %{app_id => @test_app},
+             app_tasks: %{app_id => MapSet.new()},
+             tasks: %{}
+           }
   end
 
   test "update app same version" do
@@ -75,10 +75,10 @@ defmodule Relay.Marathon.StateTest do
     assert {nil, state2} = State.put_task!(state, @test_task)
 
     assert state2 == %State{
-      apps: %{app_id => @test_app},
-      tasks: %{task_id => @test_task},
-      app_tasks: %{app_id => MapSet.new([task_id])}
-    }
+             apps: %{app_id => @test_app},
+             tasks: %{task_id => @test_task},
+             app_tasks: %{app_id => MapSet.new([task_id])}
+           }
   end
 
   test "add task without app" do
@@ -118,10 +118,10 @@ defmodule Relay.Marathon.StateTest do
     assert {nil, state2} = State.put_task!(state, @test_task)
 
     assert State.delete_task!(state2, @test_task) == %State{
-      apps: %{app_id => @test_app},
-      tasks: %{},
-      app_tasks: %{app_id => MapSet.new()}
-    }
+             apps: %{app_id => @test_app},
+             tasks: %{},
+             app_tasks: %{app_id => MapSet.new()}
+           }
   end
 
   test "delete task does not exist" do
@@ -130,10 +130,10 @@ defmodule Relay.Marathon.StateTest do
     %Task{app_id: app_id} = @test_task
 
     assert State.delete_task!(state, @test_task) == %State{
-      apps: %{app_id => @test_app},
-      tasks: %{},
-      app_tasks: %{app_id => MapSet.new()}
-    }
+             apps: %{app_id => @test_app},
+             tasks: %{},
+             app_tasks: %{app_id => MapSet.new()}
+           }
   end
 
   test "delete task does not exist without app" do
