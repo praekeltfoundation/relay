@@ -13,7 +13,13 @@
         {Credo.Check.Design.TagFIXME, exit_status: 0},
 
         # mix format defaults to a line length of 98
-        {Credo.Check.Readability.MaxLineLength, max_length: 98}
+        {Credo.Check.Readability.MaxLineLength, max_length: 98},
+
+        # We use copy/pasted port numbers in tests a lot
+        {Credo.Check.Readability.LargeNumbers, only_greater_than: 65535},
+
+        # Sometimes it makes sense to start a pipe chain with a function call
+        {Credo.Check.Refactor.PipeChainStart, excluded_functions: ["Map.new"]}
       ]
     }
   ]
