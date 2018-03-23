@@ -24,11 +24,11 @@ defmodule Relay.SupervisorTest do
   end
 
   defp assert_example_response do
-    assert_cds_response("1", Demo.Marathon.clusters())
-    assert_lds_response("1", Demo.Certs.sni_certs() |> Resources.LDS.listeners())
+    assert_cds_response(Demo.Marathon.clusters())
+    assert_lds_response(Demo.Certs.sni_certs() |> Resources.LDS.listeners())
   end
 
-  defp assert_cds_response(version_info, clusters) do
+  defp assert_cds_response(clusters) do
     {:ok, channel} = GRPC.Stub.connect("127.0.0.1:#{@port}")
     stream = channel |> CDSStub.stream_clusters()
     GRPC.Stub.stream_send(stream, DiscoveryRequest.new())
@@ -36,12 +36,12 @@ defmodule Relay.SupervisorTest do
     result_stream = GRPC.Stub.recv(stream)
 
     assert [response] = Enum.take(result_stream, 1)
-    assert %DiscoveryResponse{version_info: ^version_info, resources: resources} = response
+    assert %DiscoveryResponse{resources: resources} = response
 
     assert resources |> Enum.map(fn any_res -> Cluster.decode(any_res.value) end) == clusters
   end
 
-  defp assert_lds_response(version_info, listeners) do
+  defp assert_lds_response(listeners) do
     {:ok, channel} = GRPC.Stub.connect("127.0.0.1:#{@port}")
     stream = channel |> LDSStub.stream_listeners()
     GRPC.Stub.stream_send(stream, DiscoveryRequest.new())
@@ -49,7 +49,7 @@ defmodule Relay.SupervisorTest do
     result_stream = GRPC.Stub.recv(stream)
 
     assert [response] = Enum.take(result_stream, 1)
-    assert %DiscoveryResponse{version_info: ^version_info, resources: resources} = response
+    assert %DiscoveryResponse{resources: resources} = response
 
     assert resources |> Enum.map(fn any_res -> Listener.decode(any_res.value) end) == listeners
   end
