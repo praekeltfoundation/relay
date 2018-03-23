@@ -77,7 +77,7 @@ defmodule Relay.SupervisorTest do
     end
   end
 
-  defp wait_until_live() do
+  defp wait_until_live do
     case procs_live?(Supervisor) and procs_live?(FrontendSupervisor) do
       true ->
         :ok
@@ -89,20 +89,18 @@ defmodule Relay.SupervisorTest do
   end
 
   defp procs_live?(sup) do
+    case Elixir.Supervisor.count_children(sup) do
+      %{specs: n, active: n} -> true
+      _ -> false
+    end
+  catch
     # `Supervisor.count_children` uses `:gen.call` under the hood, which
     # monitors the process we're querying during the query. This is fine if
     # we're part of a supervision tree, but for these tests we don't really
     # want to crash if the process we're querying is down. To get around this,
     # we catch exits (which is almost always a terrible idea) and return
     # `false` instead.
-    try do
-      case Elixir.Supervisor.count_children(sup) do
-        %{specs: n, active: n} -> true
-        _ -> false
-      end
-    catch
-      :exit, _ -> false
-    end
+    :exit, _ -> false
   end
 
   test "retry listener startup when address is in use" do
