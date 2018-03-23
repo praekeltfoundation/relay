@@ -274,8 +274,9 @@ defmodule Relay.Marathon.AdapterTest do
         @test_app
         | labels: @test_app.labels |> Map.put("MARATHON_ACME_0_DOMAIN", "mc2.example.org")
       }
+
       # Change the defaults to ensure we're reading from config
-      TestHelpers.put_env(:relay, :marathon_acme, [app_id: "/ma", port_index: 1])
+      TestHelpers.put_env(:relay, :marathon_acme, app_id: "/ma", port_index: 1)
 
       assert [virtual_host] = Adapter.app_virtual_hosts(:http, app)
 

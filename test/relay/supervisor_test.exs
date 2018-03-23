@@ -56,12 +56,15 @@ defmodule Relay.SupervisorTest do
 
   defp port_blocker(wait_time) do
     caller = self()
-    task = Task.async(fn ->
-      {:ok, socket} = :gen_tcp.listen(0, [:binary, active: false, ip: {127, 0, 0, 1}])
-      send(caller, :inet.port(socket))
-      Process.sleep(wait_time)
-      :ok = :gen_tcp.close(socket)
-    end)
+
+    task =
+      Task.async(fn ->
+        {:ok, socket} = :gen_tcp.listen(0, [:binary, active: false, ip: {127, 0, 0, 1}])
+        send(caller, :inet.port(socket))
+        Process.sleep(wait_time)
+        :ok = :gen_tcp.close(socket)
+      end)
+
     assert_receive {:ok, port}, 50
     {task, port}
   end
@@ -76,7 +79,9 @@ defmodule Relay.SupervisorTest do
 
   defp wait_until_live() do
     case procs_live?(Supervisor) and procs_live?(FrontendSupervisor) do
-      true -> :ok
+      true ->
+        :ok
+
       _ ->
         Process.sleep(10)
         wait_until_live()
@@ -104,9 +109,11 @@ defmodule Relay.SupervisorTest do
     :ok = stop_supervised(Supervisor)
 
     {blocker_task, port} = port_blocker(100)
-    assert capture_log(fn() ->
-      {:ok, _} = start_supervised({Supervisor, {@addr, port}})
-    end) =~ ~r/Failed to start Ranch listener .* :eaddrinuse/
+
+    assert capture_log(fn ->
+             {:ok, _} = start_supervised({Supervisor, {@addr, port}})
+           end) =~ ~r/Failed to start Ranch listener .* :eaddrinuse/
+
     Task.await(blocker_task)
   end
 
@@ -114,10 +121,12 @@ defmodule Relay.SupervisorTest do
     :ok = stop_supervised(Supervisor)
 
     {blocker_task, port} = port_blocker(1_050)
-    assert capture_log(fn() ->
-      {:error, reason} = start_supervised({Supervisor, {@addr, port}})
-      assert {:listen_error, _, :eaddrinuse} = extract_reason(reason)
-    end) =~ ~r/Failed to start Ranch listener .* :eaddrinuse/
+
+    assert capture_log(fn ->
+             {:error, reason} = start_supervised({Supervisor, {@addr, port}})
+             assert {:listen_error, _, :eaddrinuse} = extract_reason(reason)
+           end) =~ ~r/Failed to start Ranch listener .* :eaddrinuse/
+
     Task.await(blocker_task)
   end
 
@@ -193,21 +202,21 @@ defmodule Relay.SupervisorTest do
     Process.sleep(50)
 
     # Capture the error logged when we kill the supervisor
-    assert capture_log(fn() ->
-      # Exit the GRPC process
-      grpc_pid |> Process.exit(:kill)
+    assert capture_log(fn ->
+             # Exit the GRPC process
+             grpc_pid |> Process.exit(:kill)
 
-      # Check the GRPC supervisor quit
-      assert_receive {:DOWN, ^grpc_ref, :process, _, :killed}, 1_000
+             # Check the GRPC supervisor quit
+             assert_receive {:DOWN, ^grpc_ref, :process, _, :killed}, 1_000
 
-      # Other things still happily running
-      assert Process.alive?(publisher_pid)
-      assert Process.alive?(resources_pid)
-      assert Process.alive?(demo_certs_pid)
-      assert Process.alive?(demo_marathon_pid)
+             # Other things still happily running
+             assert Process.alive?(publisher_pid)
+             assert Process.alive?(resources_pid)
+             assert Process.alive?(demo_certs_pid)
+             assert Process.alive?(demo_marathon_pid)
 
-      wait_until_live()
-    end) =~ ~r/\[error\] GenServer #PID<\S*> terminating\n\*\* \(stop\) killed/
+             wait_until_live()
+           end) =~ ~r/\[error\] GenServer #PID<\S*> terminating\n\*\* \(stop\) killed/
 
     # Everything else still works because it's all running again
     assert_example_response()

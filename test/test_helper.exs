@@ -10,7 +10,7 @@ defmodule TestHelpers do
     require Logger
     old_level = Logger.level()
     Logger.configure(level: level)
-    on_exit(fn() -> Logger.configure(level: old_level) end)
+    on_exit(fn -> Logger.configure(level: old_level) end)
   end
 
   @doc """
@@ -23,7 +23,8 @@ defmodule TestHelpers do
       apps
       |> Stream.map(&start_app/1)
       |> Enum.concat()
-    on_exit(fn() -> cleanup_apps(started_apps) end)
+
+    on_exit(fn -> cleanup_apps(started_apps) end)
   end
 
   defp start_app(app) do
@@ -33,7 +34,7 @@ defmodule TestHelpers do
 
   defp cleanup_apps(apps) do
     import ExUnit.CaptureLog
-    capture_log(fn() -> apps |> Enum.each(&Application.stop/1) end)
+    capture_log(fn -> apps |> Enum.each(&Application.stop/1) end)
   end
 
   @doc """

@@ -36,7 +36,7 @@ defmodule Relay.Marathon.AppTest do
     "env" => %{
       "MESOS_MARATHON_HOST" => "http://master.mesos:8080",
       "DEBUG" => "False",
-      "PROJECT_ROOT" => "/deploy/",
+      "PROJECT_ROOT" => "/deploy/"
     },
     "executor" => "",
     "instances" => 1,
@@ -147,29 +147,29 @@ defmodule Relay.Marathon.AppTest do
 
   test "from definition" do
     assert App.from_definition(@test_app, "external") == %App{
-      id: "/mc2",
-      labels: %{
-        "HAPROXY_0_REDIRECT_TO_HTTPS" => "true",
-        "HAPROXY_0_VHOST" => "mc2.example.org",
-        "HAPROXY_GROUP" => "external",
-        "MARATHON_ACME_0_DOMAIN" => "mc2.example.org"
-      },
-      networking_mode: :"container/bridge",
-      ports_list: [80],
-      port_indices_in_group: [0],
-      version: "2017-11-08T15:06:31.066Z"
-    }
+             id: "/mc2",
+             labels: %{
+               "HAPROXY_0_REDIRECT_TO_HTTPS" => "true",
+               "HAPROXY_0_VHOST" => "mc2.example.org",
+               "HAPROXY_GROUP" => "external",
+               "MARATHON_ACME_0_DOMAIN" => "mc2.example.org"
+             },
+             networking_mode: :"container/bridge",
+             ports_list: [80],
+             port_indices_in_group: [0],
+             version: "2017-11-08T15:06:31.066Z"
+           }
   end
 
   test "from event" do
     assert App.from_event(@test_event, "external") == %App{
-      id: "/jamie-event-test",
-      labels: %{},
-      networking_mode: :host,
-      ports_list: [0],
-      port_indices_in_group: [],
-      version: "2018-03-02T09:31:54.763Z"
-    }
+             id: "/jamie-event-test",
+             labels: %{},
+             networking_mode: :host,
+             ports_list: [0],
+             port_indices_in_group: [],
+             version: "2018-03-02T09:31:54.763Z"
+           }
   end
 
   test "port indices in group" do

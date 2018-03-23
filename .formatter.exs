@@ -24,20 +24,7 @@ ignore_paths = [
   "lib/relay/protobuf_util.ex",
   "lib/relay/publisher.ex",
   "lib/relay/server.ex",
-  "lib/relay/supervisor.ex",
-  "test/relay/envoy_util_test.exs",
-  "test/relay/marathon/adapter_test.exs",
-  "test/relay/marathon/app_test.exs",
-  "test/relay/marathon/labels_test.exs",
-  "test/relay/marathon/networking_test.exs",
-  "test/relay/marathon/state_test.exs",
-  "test/relay/marathon/task_test.exs",
-  "test/relay/protobuf_util_test.exs",
-  "test/relay/publisher_test.exs",
-  "test/relay/server_test.exs",
-  "test/relay/supervisor_test.exs",
-  "test/relay_test.exs",
-  "test/test_helper.exs"
+  "lib/relay/supervisor.ex"
 ]
 
 inputs =
@@ -48,5 +35,6 @@ inputs =
 
 [
   import_deps: [:grpc, :protobuf],
-  inputs: inputs
+  inputs: inputs,
+  locals_without_parens: [xds_tests: 2]
 ]

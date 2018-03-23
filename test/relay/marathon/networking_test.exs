@@ -28,7 +28,7 @@ defmodule Relay.Marathon.NetworkingTest do
     "dependencies" => [],
     "upgradeStrategy" => %{
       "minimumHealthCapacity" => 1,
-      "maximumOverCapacity" => 1,
+      "maximumOverCapacity" => 1
     },
     "labels" => %{},
     "ipAddress" => nil,
@@ -38,18 +38,18 @@ defmodule Relay.Marathon.NetworkingTest do
     "taskKillGracePeriodSeconds" => nil,
     "unreachableStrategy" => %{
       "inactiveAfterSeconds" => 300,
-      "expungeAfterSeconds" => 600,
+      "expungeAfterSeconds" => 600
     },
     "killSelection" => "YOUNGEST_FIRST",
     "versionInfo" => %{
       "lastScalingAt" => "2017-05-22T08:53:15.476Z",
-      "lastConfigChangeAt" => "2017-05-22T08:53:15.476Z",
+      "lastConfigChangeAt" => "2017-05-22T08:53:15.476Z"
     },
     "tasksStaged" => 0,
     "tasksRunning" => 1,
     "tasksHealthy" => 0,
     "tasksUnhealthy" => 0,
-    "deployments" => [],
+    "deployments" => []
   }
 
   describe "networking_mode/1" do
@@ -72,18 +72,20 @@ defmodule Relay.Marathon.NetworkingTest do
     end
 
     test "host networking with Docker container (Marathon < 1.5)" do
-      app = @test_app |> Map.put("container", %{
-        "type" => "DOCKER",
-        "volumes" => [],
-        "docker" => %{
-          "image" => "praekeltfoundation/marathon-lb:1.6.0",
-          "network" => "HOST",
-          "portMappings" => [],
-          "privileged" => true,
-          "parameters" => [],
-          "forcePullImage" => false
-        }
-      })
+      app =
+        @test_app
+        |> Map.put("container", %{
+          "type" => "DOCKER",
+          "volumes" => [],
+          "docker" => %{
+            "image" => "praekeltfoundation/marathon-lb:1.6.0",
+            "network" => "HOST",
+            "portMappings" => [],
+            "privileged" => true,
+            "parameters" => [],
+            "forcePullImage" => false
+          }
+        })
 
       assert Networking.networking_mode(app) == :host
     end
@@ -91,98 +93,108 @@ defmodule Relay.Marathon.NetworkingTest do
     test "host networking with Docker container w/o network (Marathon < 1.5)" do
       # At least with DC/OS 1.9, container.docker.network seems to always be
       # null with host networking.
-      app = @test_app |> Map.put("container", %{
-        "type" => "DOCKER",
-        "volumes" => [],
-        "docker" => %{
-          "image" => "python:3-alpine3.7",
-          "network" => nil,
-          "portMappings" => [],
-          "privileged" => false,
-          "parameters" => [],
-          "forcePullImage" => false
-        }
-      })
+      app =
+        @test_app
+        |> Map.put("container", %{
+          "type" => "DOCKER",
+          "volumes" => [],
+          "docker" => %{
+            "image" => "python:3-alpine3.7",
+            "network" => nil,
+            "portMappings" => [],
+            "privileged" => false,
+            "parameters" => [],
+            "forcePullImage" => false
+          }
+        })
 
       assert Networking.networking_mode(app) == :host
     end
 
     test "container/bridge networking with Docker container (Marathon < 1.5)" do
-      app = @test_app |> Map.put("container", %{
-        "type" => "DOCKER",
-        "volumes" => [],
-        "docker" => %{
-          "image" => "index.docker.io/jerithorg/testapp:0.0.12",
-          "network" => "BRIDGE",
-          "portMappings" => [
-            %{
-              "containerPort" => 5858,
-              "hostPort" => 0,
-              "servicePort" => 10008,
-              "protocol" => "tcp",
-              "labels" => %{},
-            },
-          ],
-          "privileged" => false,
-          "parameters" => [],
-          "forcePullImage" => true,
-        },
-      })
+      app =
+        @test_app
+        |> Map.put("container", %{
+          "type" => "DOCKER",
+          "volumes" => [],
+          "docker" => %{
+            "image" => "index.docker.io/jerithorg/testapp:0.0.12",
+            "network" => "BRIDGE",
+            "portMappings" => [
+              %{
+                "containerPort" => 5858,
+                "hostPort" => 0,
+                "servicePort" => 10008,
+                "protocol" => "tcp",
+                "labels" => %{}
+              }
+            ],
+            "privileged" => false,
+            "parameters" => [],
+            "forcePullImage" => true
+          }
+        })
 
       assert Networking.networking_mode(app) == :"container/bridge"
     end
 
     test "container networking with Docker container (Marathon < 1.5)" do
-      app = @test_app |> Map.put("container", %{
-        "type" => "DOCKER",
-        "volumes" => [],
-        "docker" => %{
-          "image" => "python:3-alpine",
-          "network" => "USER",
-          "portMappings" => [
-            %{
-              "containerPort" => 8080,
-              "servicePort" => 10004,
-              "protocol" => "tcp",
-              "name" => "foovu1http",
-              "labels" => %{
-                "VIP_0" => "/foovu1:8080",
-              },
-            },
-          ],
-          "privileged" => false,
-          "parameters" => [],
-          "forcePullImage" => false,
-        },
-      })
+      app =
+        @test_app
+        |> Map.put("container", %{
+          "type" => "DOCKER",
+          "volumes" => [],
+          "docker" => %{
+            "image" => "python:3-alpine",
+            "network" => "USER",
+            "portMappings" => [
+              %{
+                "containerPort" => 8080,
+                "servicePort" => 10004,
+                "protocol" => "tcp",
+                "name" => "foovu1http",
+                "labels" => %{
+                  "VIP_0" => "/foovu1:8080"
+                }
+              }
+            ],
+            "privileged" => false,
+            "parameters" => [],
+            "forcePullImage" => false
+          }
+        })
 
       assert Networking.networking_mode(app) == :container
     end
 
     test "legacy IP-per-task (Marathon < 1.5)" do
-      app = @test_app |> Map.put("ipAddress", %{
-        "groups" => [],
-        "labels" => %{},
-        "discovery" => %{
-          "ports" => [
-            %{"number" => 80, "name" => "http", "protocol" => "tcp"},
-            %{"number" => 443, "name" => "http", "protocol" => "tcp"},
-          ],
-        },
-      })
+      app =
+        @test_app
+        |> Map.put("ipAddress", %{
+          "groups" => [],
+          "labels" => %{},
+          "discovery" => %{
+            "ports" => [
+              %{"number" => 80, "name" => "http", "protocol" => "tcp"},
+              %{"number" => 443, "name" => "http", "protocol" => "tcp"}
+            ]
+          }
+        })
 
       assert Networking.networking_mode(app) == :container
     end
 
     test "host networking (Marathon < 1.5)" do
-      app = @test_app |> Map.put("portDefinitions", [
-        %{
-          "port" => 10008,
-          "protocol" => "tcp",
-          "name" => "default",
-          "labels" => %{},
-        },
-      ])
+      app =
+        @test_app
+        |> Map.put("portDefinitions", [
+          %{
+            "port" => 10008,
+            "protocol" => "tcp",
+            "name" => "default",
+            "labels" => %{}
+          }
+        ])
 
       assert Networking.networking_mode(app) == :host
     end
@@ -198,8 +210,8 @@ defmodule Relay.Marathon.NetworkingTest do
             "port" => 10008,
             "protocol" => "tcp",
             "name" => "default",
-            "labels" => %{},
-          },
+            "labels" => %{}
+          }
         ])
 
       assert Networking.ports_list(app) == [10008]
@@ -238,7 +250,8 @@ defmodule Relay.Marathon.NetworkingTest do
     end
 
     test "container/bridge networking Mesos containerizer (Marathon 1.5+)" do
-      app = @test_app
+      app =
+        @test_app
         |> Map.put("networks", [%{"mode" => "container/bridge"}])
         |> Map.put("container", %{
           "type" => "MESOS",
@@ -278,75 +291,81 @@ defmodule Relay.Marathon.NetworkingTest do
               "protocol" => "tcp",
               "servicePort" => 10004
             }
-          ],
+          ]
         })
 
       assert Networking.ports_list(app) == [8080]
     end
 
     test "container networking (Marathon < 1.5)" do
-      app = @test_app |> Map.put("container", %{
-        "type" => "DOCKER",
-        "volumes" => [],
-        "docker" => %{
-          "image" => "python:3-alpine",
-          "network" => "USER",
-          "portMappings" => [
-            %{
-              "containerPort" => 8080,
-              "servicePort" => 10004,
-              "protocol" => "tcp",
-              "name" => "foovu1http",
-              "labels" => %{
-                "VIP_0" => "/foovu1:8080",
-              },
-            },
-          ],
-          "privileged" => false,
-          "parameters" => [],
-          "forcePullImage" => false,
-        },
-      })
+      app =
+        @test_app
+        |> Map.put("container", %{
+          "type" => "DOCKER",
+          "volumes" => [],
+          "docker" => %{
+            "image" => "python:3-alpine",
+            "network" => "USER",
+            "portMappings" => [
+              %{
+                "containerPort" => 8080,
+                "servicePort" => 10004,
+                "protocol" => "tcp",
+                "name" => "foovu1http",
+                "labels" => %{
+                  "VIP_0" => "/foovu1:8080"
+                }
+              }
+            ],
+            "privileged" => false,
+            "parameters" => [],
+            "forcePullImage" => false
+          }
+        })
 
       assert Networking.ports_list(app) == [8080]
     end
 
     test "IP-per-task (Marathon < 1.5)" do
-      app = @test_app |> Map.put("ipAddress", %{
-        "groups" => [],
-        "labels" => %{},
-        "discovery" => %{
-          "ports" => [
-            %{"number" => 80, "name" => "http", "protocol" => "tcp"},
-            %{"number" => 443, "name" => "http", "protocol" => "tcp"},
-          ],
-        },
-      })
+      app =
+        @test_app
+        |> Map.put("ipAddress", %{
+          "groups" => [],
+          "labels" => %{},
+          "discovery" => %{
+            "ports" => [
+              %{"number" => 80, "name" => "http", "protocol" => "tcp"},
+              %{"number" => 443, "name" => "http", "protocol" => "tcp"}
+            ]
+          }
+        })
 
       assert Networking.ports_list(app) == [80, 443]
     end
 
     test "bridge networking (Marathon < 1.5)" do
-      app = @test_app |> Map.put("container", %{
-        "type" => "DOCKER",
-        "volumes" => [],
-        "docker" => %{
-          "image" => "index.docker.io/jerithorg/testapp:0.0.12",
-          "network" => "BRIDGE",
-          "portMappings" => [
-            %{
-              "containerPort" => 5858,
-              "hostPort" => 0,
-              "servicePort" => 10008,
-              "protocol" => "tcp",
-              "labels" => %{},
-            },
-          ],
-          "privileged" => false,
-          "parameters" => [],
-          "forcePullImage" => true,
-        },
-      })
+      app =
+        @test_app
+        |> Map.put("container", %{
+          "type" => "DOCKER",
+          "volumes" => [],
+          "docker" => %{
+            "image" => "index.docker.io/jerithorg/testapp:0.0.12",
+            "network" => "BRIDGE",
+            "portMappings" => [
+              %{
+                "containerPort" => 5858,
+                "hostPort" => 0,
+                "servicePort" => 10008,
+                "protocol" => "tcp",
+                "labels" => %{}
+              }
+            ],
+            "privileged" => false,
+            "parameters" => [],
+            "forcePullImage" => true
+          }
+        })
 
       assert Networking.ports_list(app) == [5858]
     end
@@ -379,12 +398,14 @@ defmodule Relay.Marathon.NetworkingTest do
     end
 
     test "container networking" do
-      task = @test_task |> Map.put("ipAddresses", [
-        %{
-          "ipAddress" => "9.0.4.130",
-          "protocol" => "IPv4"
-        }
-      ])
+      task =
+        @test_task
+        |> Map.put("ipAddresses", [
+          %{
+            "ipAddress" => "9.0.4.130",
+            "protocol" => "IPv4"
+          }
+        ])
 
       assert Networking.task_address(:container, task) == "9.0.4.130"
     end

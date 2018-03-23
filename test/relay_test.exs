@@ -20,9 +20,10 @@ defmodule RelayTest do
 
   defp stream_xds() do
     {:ok, channel} = GRPC.Stub.connect("127.0.0.1:#{@port}")
+
     %{
       cds: channel |> CDSStub.stream_clusters(),
-      lds: channel |> LDSStub.stream_listeners(),
+      lds: channel |> LDSStub.stream_listeners()
     }
   end
 
@@ -60,14 +61,16 @@ defmodule RelayTest do
     ]
 
     # The various processes aren't running before we start the application
-    procs |> Enum.each(fn(id) ->
+    procs
+    |> Enum.each(fn id ->
       assert Process.whereis(id) == nil
     end)
 
     :ok = TestHelpers.setup_apps([:relay])
 
     # The various processes are running after we start the application
-    procs |> Enum.each(fn(id) ->
+    procs
+    |> Enum.each(fn id ->
       assert Process.alive?(Process.whereis(id))
     end)
 
