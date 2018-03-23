@@ -1,13 +1,18 @@
 defmodule MarathonClient do
+  @moduledoc """
+  A very basic Marathon API client. Currently supports the minimum
+  functionality necessary for Relay to watch events and fetch app and task
+  information.
+  """
   alias HTTPoison.Response
 
-  # FIXME: Next version of Poison will have an error type which will make this nicer
-  @typep poison_decode_result :: {:ok, Poison.Parser.t} | {:error, :invalid}
-    | {:error, {:invalid, String.t}}
+  # The next version of Poison will have an error type, so this will need to change.
+  @typep poison_decode_error :: {:error, :invalid} | {:error, {:invalid, String.t()}}
+  @typep poison_decode_result :: {:ok, Poison.Parser.t()} | poison_decode_error
   @typep client_error :: {:error, {integer, map}}
   @type response :: poison_decode_result | client_error
 
-  @spec stream_events(String.t, [pid], non_neg_integer) :: GenServer.on_start
+  @spec stream_events(String.t(), [pid], non_neg_integer) :: GenServer.on_start()
   def stream_events(base_url, listeners, timeout \\ 60_000) do
     url = base_url <> "/v2/events"
     MarathonClient.SSEClient.start_link({url, listeners, timeout})
@@ -26,10 +31,10 @@ defmodule MarathonClient do
     marathon_response(response)
   end
 
-  @spec get_apps(String.t) :: response
+  @spec get_apps(String.t()) :: response
   def get_apps(base_url), do: get(base_url, "/v2/apps")
 
-  @spec get_app_tasks(String.t, String.t) :: response
+  @spec get_app_tasks(String.t(), String.t()) :: response
   def get_app_tasks(base_url, app_id),
     do: get(base_url, "/v2/apps/#{String.trim(app_id, "/")}/tasks")
 end
