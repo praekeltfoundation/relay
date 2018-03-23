@@ -32,6 +32,7 @@ defmodule FakeMarathon do
       case FakeMarathon.get_app_tasks(fm, app_id) do
         nil ->
           FakeMarathon.response(req, fm, 404, %{"message" => "App '#{app_id}' does not exist"})
+
         app_tasks ->
           FakeMarathon.response(req, fm, 200, %{"tasks" => app_tasks})
       end
@@ -49,8 +50,7 @@ defmodule FakeMarathon do
   def base_url(fm \\ :fake_marathon), do: "http://localhost:#{port(fm)}"
   def events_url(fm \\ :fake_marathon), do: base_url(fm) <> "/v2/events"
 
-  def event(fm \\ :fake_marathon, event, data),
-    do: GenServer.call(fm, {:event, event, data})
+  def event(fm \\ :fake_marathon, event, data), do: GenServer.call(fm, {:event, event, data})
 
   def mk_event(fm \\ :fake_marathon, event_type, fields) do
     e = TestHelpers.marathon_event(event_type, fields)
@@ -66,8 +66,7 @@ defmodule FakeMarathon do
   def get_app_tasks(fm \\ :fake_marathon, app_id),
     do: GenServer.call(fm, {:get_app_tasks, app_id})
 
-  def set_apps(fm \\ :fake_marathon, apps),
-    do: GenServer.call(fm, {:set_apps, apps})
+  def set_apps(fm \\ :fake_marathon, apps), do: GenServer.call(fm, {:set_apps, apps})
 
   def set_app_tasks(fm \\ :fake_marathon, app_id, tasks),
     do: GenServer.call(fm, {:set_app_tasks, app_id, tasks})
@@ -79,12 +78,14 @@ defmodule FakeMarathon do
     Process.flag(:trap_exit, true)
     {:ok, sse} = SSEServer.start_link(opts, name: nil)
     listener = make_ref()
+
     handlers = [
       {"/v2/apps", AppsHandler, self()},
       # FIXME: Support app IDs with `/` in them
       {"/v2/apps/:app_id/tasks", AppTasksHandler, self()},
-      SSEServer.configure_endpoint_handler(sse, "/v2/events", opts),
+      SSEServer.configure_endpoint_handler(sse, "/v2/events", opts)
     ]
+
     dispatch = :cowboy_router.compile([{:_, handlers}])
     {:ok, _} = :cowboy.start_clear(listener, [], %{env: %{dispatch: dispatch}})
     {:ok, %State{sse: sse, listener: listener}}
@@ -95,8 +96,7 @@ defmodule FakeMarathon do
     reason
   end
 
-  def handle_call(:port, _from, state),
-    do: {:reply, :ranch.get_port(state.listener), state}
+  def handle_call(:port, _from, state), do: {:reply, :ranch.get_port(state.listener), state}
 
   def handle_call({:event, event, data}, _from, state),
     do: {:reply, SSEServer.event(state.sse, "/v2/events", event, data), state}
@@ -112,8 +112,7 @@ defmodule FakeMarathon do
   def handle_call({:get_app_tasks, app_id}, _from, state),
     do: {:reply, Map.get(state.app_tasks, app_id), state}
 
-  def handle_call({:set_apps, apps}, _from, state),
-    do: {:reply, :ok, %{state | apps: apps}}
+  def handle_call({:set_apps, apps}, _from, state), do: {:reply, :ok, %{state | apps: apps}}
 
   def handle_call({:set_app_tasks, app_id, tasks}, _from, %{app_tasks: app_tasks} = state) do
     {:reply, :ok, %{state | app_tasks: Map.put(app_tasks, app_id, tasks)}}
