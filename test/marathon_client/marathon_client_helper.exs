@@ -25,10 +25,12 @@ defmodule MarathonTestHelpers do
   added if one is not provided.
   """
   def marathon_event(event_type, fields) do
-    {:ok, data} = Map.new(fields)
-    |> Map.put_new(:timestamp, DateTime.utc_now |> DateTime.to_iso8601)
-    |> Map.put(:eventType, event_type)
-    |> Poison.encode()
+    {:ok, data} =
+      Map.new(fields)
+      |> Map.put_new(:timestamp, DateTime.utc_now() |> DateTime.to_iso8601())
+      |> Map.put(:eventType, event_type)
+      |> Poison.encode()
+
     %Event{event: event_type, data: data}
   end
 end

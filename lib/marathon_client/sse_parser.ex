@@ -10,19 +10,20 @@ defmodule MarathonClient.SSEParser do
   use GenServer
 
   defmodule Event do
+    @moduledoc "SSE event struct."
     defstruct data: "", event: "", id: ""
   end
 
   defimpl String.Chars, for: Event do
     def to_string(event) do
-      "#Event<#{event.event} #{inspect event.data} id=#{inspect event.id}>"
+      "#Event<#{event.event} #{inspect(event.data)} id=#{inspect(event.id)}>"
     end
   end
 
   defmodule State do
+    @moduledoc false
     defstruct listeners: MapSet.new(), event: %Event{}, line_part: ""
   end
-
 
   ## Client API
 
@@ -54,7 +55,6 @@ defmodule MarathonClient.SSEParser do
     GenServer.call(server, {:unregister_listener, pid})
   end
 
-
   ## Server callbacks
 
   def init(:ok) do
@@ -80,13 +80,11 @@ defmodule MarathonClient.SSEParser do
     {:reply, {:ok, state}, state}
   end
 
-
   ## Internals
 
   def emit_event(event, state) do
     Enum.each(state.listeners, fn l -> send(l, {:sse, event}) end)
   end
-
 
   ## Parser
 
@@ -94,13 +92,14 @@ defmodule MarathonClient.SSEParser do
   defp data_received("", state) do
     state
   end
+
   # These three clauses handle newlines.
   defp data_received("\r\n" <> data, state), do: line_complete(data, state)
   defp data_received("\r" <> data, state), do: line_complete(data, state)
   defp data_received("\n" <> data, state), do: line_complete(data, state)
   # This clause handles anything not matched above, which is all non-newlines
   # characters.
-  defp data_received(<<char, data :: binary>>, state) do
+  defp data_received(<<char, data::binary>>, state) do
     %State{line_part: line} = state
     new_state = %{state | line_part: line <> <<char>>}
     data_received(data, new_state)
@@ -118,17 +117,21 @@ defmodule MarathonClient.SSEParser do
       data = String.replace_suffix(state.event.data, "\n", "")
       emit_event(%{state.event | data: data}, state)
     end
+
     %{state | event: %Event{}}
   end
+
   # Handle a comment by ignoring it.
   defp line_received(":" <> _, state), do: state
   # Parse the line into the field and value for further processing.
   defp line_received(line, state) do
-    {field, value} = case String.split(line, ":", parts: 2) do
-                       [field] -> {field, ""}
-                       [field, " " <> value] -> {field, value}
-                       [field, value] -> {field, value}
-                     end
+    {field, value} =
+      case String.split(line, ":", parts: 2) do
+        [field] -> {field, ""}
+        [field, " " <> value] -> {field, value}
+        [field, value] -> {field, value}
+      end
+
     process_field(field, value, state)
   end
 
@@ -137,21 +140,20 @@ defmodule MarathonClient.SSEParser do
     new_event = %{state.event | data: state.event.data <> value <> "\n"}
     %{state | event: new_event}
   end
+
   # Set the event field to the event value.
   defp process_field("event", value, state) do
     new_event = %{state.event | event: value}
     %{state | event: new_event}
   end
+
   # Set the id field to the id value if the value does not contain a NUL.
   defp process_field("id", value, state) do
-    cond do
-      String.contains?(value, <<0>>) -> state
-      true ->
-        new_event = %{state.event | id: value}
-        %{state | event: new_event}
-    end
+    if String.contains?(value, <<0>>),
+      do: state,
+      else: %{state | event: %{state.event | id: value}}
   end
+
   # Ignore any other field.
   defp process_field(_field, _value, state), do: state
-
 end

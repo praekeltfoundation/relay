@@ -23,8 +23,9 @@ defmodule MarathonClient.SSEParserTest do
     assert estr(%Event{id: "3"}) == ~s'#Event< "" id="3">'
     assert estr(%Event{event: "dinner"}) == ~s'#Event<dinner "" id="">'
     assert estr(%Event{data: "food"}) == ~s'#Event< "food" id="">'
+
     assert estr(%Event{event: "dinner", data: "food", id: "3"}) ==
-      ~s'#Event<dinner "food" id="3">'
+             ~s'#Event<dinner "food" id="3">'
   end
 
   test "register_listener is idempotent", %{ssep: ssep} do
@@ -129,5 +130,4 @@ defmodule MarathonClient.SSEParserTest do
     assert SSEParser.feed_data(ssep, "data: 16:9\n") == :ok
     assert get_state(ssep) == %State{event: %Event{data: "16:9\n"}}
   end
-
 end
