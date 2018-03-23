@@ -1,7 +1,14 @@
 defmodule Relay.Resources do
+  @moduledoc """
+  Relay.Resources is a GenServer that listens for state updates on cluster
+  resources and sends the appropriate Envoy resource updates to
+  Relay.Publisher.
+  """
+
   alias Relay.Publisher
 
   defmodule CertInfo do
+    @moduledoc "Certificate data for SNI."
     defstruct [:domains, :key, :cert_chain]
     # key and cert_chain are PEM-encoded strings.
     @type t :: %__MODULE__{
@@ -13,6 +20,7 @@ defmodule Relay.Resources do
 
   # FIXME: This needs a better name.
   defmodule AppPortInfo do
+    @moduledoc "All the stuff we need to know about a cluster 'application'."
     defstruct [
       :name,
       domains: [],
@@ -33,6 +41,7 @@ defmodule Relay.Resources do
   use GenServer
 
   defmodule State do
+    @moduledoc false
     defstruct sni_certs: {"", []}
 
     @type t :: %__MODULE__{

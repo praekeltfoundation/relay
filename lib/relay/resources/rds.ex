@@ -1,4 +1,7 @@
 defmodule Relay.Resources.RDS do
+  @moduledoc """
+  Builds Envoy RouteConfiguration values from cluster resources.
+  """
   alias Relay.Resources.AppPortInfo
 
   alias Envoy.Api.V2.RouteConfiguration

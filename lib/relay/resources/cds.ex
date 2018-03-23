@@ -1,4 +1,7 @@
 defmodule Relay.Resources.CDS do
+  @moduledoc """
+  Builds Envoy Cluster values from cluster resources.
+  """
   alias Relay.Resources.{AppPortInfo, Common}
 
   alias Envoy.Api.V2.Cluster
