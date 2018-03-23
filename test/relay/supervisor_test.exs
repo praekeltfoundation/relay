@@ -100,7 +100,8 @@ defmodule Relay.SupervisorTest do
     # want to crash if the process we're querying is down. To get around this,
     # we catch exits (which is almost always a terrible idea) and return
     # `false` instead.
-    :exit, _ -> false
+    :exit, _ ->
+      false
   end
 
   test "retry listener startup when address is in use" do
