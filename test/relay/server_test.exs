@@ -94,7 +94,7 @@ defmodule Relay.ServerTest do
 
     Task.await(task2)
 
-    assert [response2] = Enum.to_list(result_enum)
+    assert [{:ok, response2}] = Enum.to_list(result_enum)
 
     assert %DiscoveryResponse{type_url: ^type_url, version_info: "1", resources: [any_resource]} =
              response2
