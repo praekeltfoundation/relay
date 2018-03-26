@@ -38,14 +38,18 @@ defmodule Relay.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:grpc, github: "tony612/grpc-elixir"},
+      {:grpc, "~> 0.3.0-alpha.1"},
+      # 2018-03-26: grpc has the dependency `{:gun, "~> 1.0.0-pre.5"}` which
+      # actually pulls in 1.0.0-pre.4b which causes errors with GRPC streams
+      # that return an error code.
+      {:gun, "1.0.0-pre.5"},
 
       # 2017-12-13: The latest hackney release (1.10.1) has a bug in async
       # request cleanup: https://github.com/benoitc/hackney/issues/447 The
       # partial fix in master leaves us with a silent deadlock, so for now
       # we'll use an earlier version.
       {:hackney, "~> 1.9.0"},
-      {:httpoison, "~> 0.13"},
+      {:httpoison, "~> 1.0"},
 
       {:poison, "~> 3.1"},
 

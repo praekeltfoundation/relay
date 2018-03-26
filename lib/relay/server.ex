@@ -52,14 +52,13 @@ defmodule Relay.Server.Macros do
           # FIXME: What if we get multiple updates between requests?
           receive do
             {@xds, version_info, resources} ->
-              stream_send_response(stream, version_info, resources)
+              send_reply(stream, version_info, resources)
           end
         end
 
-        @spec stream_send_response(Stream.t, String.t, [unquote(resource_type).t]) :: any
-        defp stream_send_response(stream, version_info, resources) do
-          GRPC.Server.stream_send(stream, mkresponse(version_info, resources))
-        end
+        @spec send_reply(Stream.t, String.t, [unquote(resource_type).t]) :: any
+        defp send_reply(stream, version_info, resources),
+          do: GRPC.Server.send_reply(stream, mkresponse(version_info, resources))
 
         @spec mkresponse(String.t, [unquote(resource_type).t]) :: DiscoveryResponse.t
         defp mkresponse(version_info, resources) do

@@ -74,13 +74,13 @@ defmodule Relay.ServerTest do
     request = DiscoveryRequest.new(type_url: type_url)
 
     # Send the first request
-    task1 = Task.async(fn -> GRPC.Stub.stream_send(stream, request) end)
+    task1 = Task.async(fn -> GRPC.Stub.send_request(stream, request) end)
 
-    result_enum = GRPC.Stub.recv(stream)
+    assert {:ok, result_enum} = GRPC.Stub.recv(stream)
     Task.await(task1)
 
     # We should receive a response right away...
-    assert [response1] = Enum.take(result_enum, 1)
+    assert [{:ok, response1}] = Enum.take(result_enum, 1)
     assert %DiscoveryResponse{type_url: ^type_url, version_info: "", resources: []} = response1
 
     # Make the second request, this requires something to be updated in the publisher

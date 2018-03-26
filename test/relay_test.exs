@@ -28,20 +28,20 @@ defmodule RelayTest do
   end
 
   defp assert_cds_response(streams, version_info, clusters) do
-    result_stream = GRPC.Stub.recv(streams[:cds])
-    GRPC.Stub.stream_send(streams[:cds], DiscoveryRequest.new())
+    GRPC.Stub.send_request(streams[:cds], DiscoveryRequest.new())
 
-    assert [response] = Enum.take(result_stream, 1)
+    assert {:ok, result_stream} = GRPC.Stub.recv(streams[:cds])
+    assert [{:ok, response}] = Enum.take(result_stream, 1)
     assert %DiscoveryResponse{version_info: ^version_info, resources: resources} = response
 
     assert resources |> Enum.map(fn any_res -> Cluster.decode(any_res.value) end) == clusters
   end
 
   defp assert_lds_response(streams, version_info, listeners) do
-    result_stream = GRPC.Stub.recv(streams[:lds])
-    GRPC.Stub.stream_send(streams[:lds], DiscoveryRequest.new())
+    GRPC.Stub.send_request(streams[:lds], DiscoveryRequest.new())
 
-    assert [response] = Enum.take(result_stream, 1)
+    assert {:ok, result_stream} = GRPC.Stub.recv(streams[:lds])
+    assert [{:ok, response}] = Enum.take(result_stream, 1)
     assert %DiscoveryResponse{version_info: ^version_info, resources: resources} = response
 
     assert resources |> Enum.map(fn any_res -> Listener.decode(any_res.value) end) == listeners
