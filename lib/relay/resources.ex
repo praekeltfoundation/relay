@@ -36,7 +36,7 @@ defmodule Relay.Resources do
     @type t :: %__MODULE__{
             name: String.t(),
             domains: [String.t()],
-            addresses: [{String.t(), integer}],
+            addresses: [{String.t(), :inet.port_number()}],
             marathon_acme_domains: [String.t()],
             redirect_to_https: boolean,
             cluster_opts: keyword,

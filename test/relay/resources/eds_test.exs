@@ -7,8 +7,6 @@ defmodule Relay.Resources.EDSTest do
   alias Envoy.Api.V2.Core.{Address, Locality, SocketAddress}
   alias Envoy.Api.V2.Endpoint.{Endpoint, LbEndpoint, LocalityLbEndpoints}
 
-  # @eds_type Cluster.DiscoveryType.value(:EDS)
-
   @simple_app_port_info %AppPortInfo{
     name: "/mc2_0",
     addresses: [{"10.70.4.100", 15979}]

@@ -38,7 +38,7 @@ defmodule Relay.Resources.EDS do
     )
   end
 
-  @spec lb_endpoint({String.t(), integer}, keyword) :: LbEndpoint.t()
+  @spec lb_endpoint({String.t(), :inet.port_number()}, keyword) :: LbEndpoint.t()
   defp lb_endpoint({address, port}, options) do
     LbEndpoint.new(
       [
