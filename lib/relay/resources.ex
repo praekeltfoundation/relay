@@ -24,17 +24,25 @@ defmodule Relay.Resources do
     defstruct [
       :name,
       domains: [],
+      addresses: [],
       marathon_acme_domains: [],
       redirect_to_https: false,
-      cluster_opts: []
+      cluster_opts: [],
+      cla_opts: [],
+      llb_endpoint_opts: [],
+      lb_endpoint_opts: []
     ]
 
     @type t :: %__MODULE__{
             name: String.t(),
             domains: [String.t()],
+            addresses: [{String.t(), integer}],
             marathon_acme_domains: [String.t()],
             redirect_to_https: boolean,
-            cluster_opts: keyword
+            cluster_opts: keyword,
+            cla_opts: keyword,
+            llb_endpoint_opts: keyword,
+            lb_endpoint_opts: keyword
           }
   end
 
