@@ -27,21 +27,43 @@ defmodule RelayTest do
     }
   end
 
-  defp assert_cds_response(streams, version_info, clusters) do
-    GRPC.Stub.send_request(streams[:cds], DiscoveryRequest.new())
+  defp recv_xds(streams) do
+    %{
+      # `GRPC.Stub.recv/1` will block until it receives headers so we must issue
+      # a request before we call it.
+      cds: streams[:cds] |> do_discovery_request() |> assert_response_stream(),
+      lds: streams[:lds] |> do_discovery_request() |> assert_response_stream()
+    }
+  end
 
-    assert {:ok, result_stream} = GRPC.Stub.recv(streams[:cds])
-    assert [{:ok, response}] = Enum.take(result_stream, 1)
+  defp do_discovery_request(stream), do: GRPC.Stub.send_request(stream, DiscoveryRequest.new())
+
+  defp assert_response_stream(stream) do
+    # `GRPC.Stub.recv/1` shouldn't be called multiple times on a single stream
+    # or else the client gets in a weird state.
+    assert {:ok, res_enum} = GRPC.Stub.recv(stream)
+    res_enum
+  end
+
+  defp assert_cds_request_response(streams, res_enums, version_info, clusters) do
+    do_discovery_request(streams[:cds])
+    assert_cds_response(res_enums, version_info, clusters)
+  end
+
+  defp assert_lds_request_response(streams, res_enums, version_info, clusters) do
+    do_discovery_request(streams[:lds])
+    assert_lds_response(res_enums, version_info, clusters)
+  end
+
+  defp assert_cds_response(res_enums, version_info, clusters) do
+    assert [{:ok, response}] = Enum.take(res_enums[:cds], 1)
     assert %DiscoveryResponse{version_info: ^version_info, resources: resources} = response
 
     assert resources |> Enum.map(fn any_res -> Cluster.decode(any_res.value) end) == clusters
   end
 
-  defp assert_lds_response(streams, version_info, listeners) do
-    GRPC.Stub.send_request(streams[:lds], DiscoveryRequest.new())
-
-    assert {:ok, result_stream} = GRPC.Stub.recv(streams[:lds])
-    assert [{:ok, response}] = Enum.take(result_stream, 1)
+  defp assert_lds_response(res_enums, version_info, listeners) do
+    assert [{:ok, response}] = Enum.take(res_enums[:lds], 1)
     assert %DiscoveryResponse{version_info: ^version_info, resources: resources} = response
 
     assert resources |> Enum.map(fn any_res -> Listener.decode(any_res.value) end) == listeners
@@ -75,8 +97,10 @@ defmodule RelayTest do
     end)
 
     streams = stream_xds()
-    assert_cds_response(streams, "1", demo_clusters())
-    assert_lds_response(streams, "1", demo_listeners())
+    res_enums = recv_xds(streams)
+
+    assert_cds_response(res_enums, "1", demo_clusters())
+    assert_lds_response(res_enums, "1", demo_listeners())
   end
 
   test "demo app sends multiple updates" do
@@ -87,20 +111,23 @@ defmodule RelayTest do
     t0 = Time.utc_now()
     # Initial update
     streams = stream_xds()
-    assert_cds_response(streams, "1", demo_clusters())
-    assert_lds_response(streams, "1", demo_listeners())
+    res_enums = recv_xds(streams)
+    assert_cds_response(res_enums, "1", demo_clusters())
+    assert_lds_response(res_enums, "1", demo_listeners())
+
     # Ad-hoc updates
     Demo.Marathon.update_state()
-    assert_cds_response(streams, "2", demo_clusters())
+    assert_cds_request_response(streams, res_enums, "2", demo_clusters())
     Demo.Certs.update_state()
-    assert_lds_response(streams, "2", demo_listeners())
+    assert_lds_request_response(streams, res_enums, "2", demo_listeners())
     Demo.Marathon.update_state()
-    assert_cds_response(streams, "3", demo_clusters())
+    assert_cds_request_response(streams, res_enums, "3", demo_clusters())
     t1 = Time.utc_now()
     assert Time.diff(t1, t0, :milliseconds) < 1_000
+
     # Scheduled update
-    assert_cds_response(streams, "4", demo_clusters())
-    assert_lds_response(streams, "3", demo_listeners())
+    assert_cds_request_response(streams, res_enums, "4", demo_clusters())
+    assert_lds_request_response(streams, res_enums, "3", demo_listeners())
     t2 = Time.utc_now()
     assert Time.diff(t2, t0, :milliseconds) < 1_500
   end
