@@ -31,7 +31,7 @@ defmodule Relay.Server.Macros do
 
         @spec unquote(stream_func)(Enumerable.t, Stream.t) :: :ok
         def unquote(stream_func)(req_stream, stream) do
-          Log.debug(fn -> {unquote(stream_func), self()} end)
+          Log.debug(fn -> inspect({unquote(stream_func), self()}) end)
           :ok = Publisher.subscribe(Publisher, @xds, self())
           handle_requests(req_stream, stream)
         end
