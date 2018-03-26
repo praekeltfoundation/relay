@@ -1,7 +1,6 @@
 %{
   "bunt": {:hex, :bunt, "0.2.0", "951c6e801e8b1d2cbe58ebbd3e616a869061ddadcc4863d0a2182541acae9a38", [:mix], [], "hexpm"},
   "certifi": {:hex, :certifi, "2.0.0", "a0c0e475107135f76b8c1d5bc7efb33cd3815cb3cf3dea7aefdd174dabead064", [:rebar3], [], "hexpm"},
-  "chatterbox": {:git, "https://github.com/tony612/chatterbox.git", "7fe9b6d89903c59359e4406842cb68ecfa1e9b5c", [branch: "my-fix"]},
   "conform": {:hex, :conform, "2.5.2", "7035787a9c09d28607745444e7a1700426dc47c452634a5694033fa2fbb3414c", [:mix], [{:neotoma, "~> 1.7.3", [hex: :neotoma, repo: "hexpm", optional: false]}], "hexpm"},
   "cowboy": {:hex, :cowboy, "2.2.0", "5233ed78afe96b19efd33b7bbcafd15e064b187c0c131c61d50fe69d88dc76fd", [:rebar3], [{:cowlib, "~> 2.1.0", [hex: :cowlib, repo: "hexpm", optional: false]}, {:ranch, "~> 1.4.0", [hex: :ranch, repo: "hexpm", optional: false]}], "hexpm"},
   "cowlib": {:hex, :cowlib, "2.1.0", "f73658b93dd043af40400c3e4fd997068ebd0c617f8c8f4cd003a1a78ebf94f5", [:rebar3], [], "hexpm"},
@@ -13,7 +12,6 @@
   "grpc": {:hex, :grpc, "0.3.0-alpha.1", "a43385d5b1974341fc4751b090b6528986f693d9637b8854de1dec14399e8cee", [:mix], [{:cowboy, "~> 2.2", [hex: :cowboy, repo: "hexpm", optional: false]}, {:gun, ">= 1.0.0-pre.5", [hex: :gun, repo: "hexpm", optional: false]}, {:protobuf, "~> 0.5", [hex: :protobuf, repo: "hexpm", optional: false]}], "hexpm"},
   "gun": {:hex, :gun, "1.0.0-pre.5", "69a11e259d5bf7fd9b1a74e1aa98e7979c2ae3ebbda27fe1b1c9cb4481f23ba3", [:rebar3], [{:cowlib, "~> 2.1", [hex: :cowlib, repo: "hexpm", optional: false]}, {:ranch, "~> 1.4", [hex: :ranch, repo: "hexpm", optional: false]}], "hexpm"},
   "hackney": {:hex, :hackney, "1.9.0", "51c506afc0a365868469dcfc79a9d0b94d896ec741cfd5bd338f49a5ec515bfe", [:rebar3], [{:certifi, "2.0.0", [hex: :certifi, repo: "hexpm", optional: false]}, {:idna, "5.1.0", [hex: :idna, repo: "hexpm", optional: false]}, {:metrics, "1.0.1", [hex: :metrics, repo: "hexpm", optional: false]}, {:mimerl, "1.0.2", [hex: :mimerl, repo: "hexpm", optional: false]}, {:ssl_verify_fun, "1.1.1", [hex: :ssl_verify_fun, repo: "hexpm", optional: false]}], "hexpm"},
-  "hpack": {:git, "https://github.com/joedevivo/hpack.git", "6b58b6231e9b6ab83096715120578976f72f4f7c", [tag: "0.2.3"]},
   "httpoison": {:hex, :httpoison, "1.0.0", "1f02f827148d945d40b24f0b0a89afe40bfe037171a6cf70f2486976d86921cd", [:mix], [{:hackney, "~> 1.8", [hex: :hackney, repo: "hexpm", optional: false]}], "hexpm"},
   "idna": {:hex, :idna, "5.1.0", "d72b4effeb324ad5da3cab1767cb16b17939004e789d8c0ad5b70f3cea20c89a", [:rebar3], [{:unicode_util_compat, "0.3.1", [hex: :unicode_util_compat, repo: "hexpm", optional: false]}], "hexpm"},
   "jsx": {:hex, :jsx, "2.8.3", "a05252d381885240744d955fbe3cf810504eb2567164824e19303ea59eef62cf", [:mix, :rebar3], [], "hexpm"},
