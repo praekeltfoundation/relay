@@ -30,11 +30,12 @@ defmodule Relay.MixProject do
     ]
   end
 
-  defp aliases,
-    do: [
+  defp aliases do
+    [
       # Don't start application for tests.
       test: "test --no-start"
     ]
+  end
 
   # Run "mix help deps" to learn about dependencies.
   defp deps do
