@@ -47,7 +47,7 @@ defmodule RelayTest do
     assert resources |> Enum.map(fn any_res -> Listener.decode(any_res.value) end) == listeners
   end
 
-  defp demo_clusters, do: Demo.Marathon.clusters()
+  defp demo_clusters, do: Demo.Marathon.app_endpoints() |> Resources.CDS.clusters()
   defp demo_listeners, do: Demo.Certs.sni_certs() |> Resources.LDS.listeners()
 
   test "starting the application starts everything" do

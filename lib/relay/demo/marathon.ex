@@ -1,5 +1,5 @@
 defmodule Relay.Demo.Marathon do
-  alias Relay.{Publisher, Resources}
+  alias Relay.Resources
   alias Relay.Marathon.{Adapter, App, Task}
 
   @demo_app %App{
@@ -57,26 +57,9 @@ defmodule Relay.Demo.Marathon do
 
   defp update_state(state) do
     v = "#{state.version}"
-    Publisher.update(Publisher, :cds, v, clusters())
-    Publisher.update(Publisher, :rds, v, routes())
-    Publisher.update(Publisher, :eds, v, endpoints())
+    Resources.update_app_endpoints(Resources, v, app_endpoints())
     %{state | version: state.version + 1}
   end
 
-  def clusters do
-    app_endpoints()
-    |> Resources.CDS.clusters()
-  end
-
   def app_endpoints(), do: Adapter.app_endpoints_for_app(@demo_app, [@demo_task])
-
-  def routes do
-    app_endpoints()
-    |> Resources.RDS.routes()
-  end
-
-  def endpoints do
-    app_endpoints()
-    |> Resources.EDS.cluster_load_assignments()
-  end
 end
