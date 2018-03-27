@@ -22,16 +22,14 @@ defmodule Relay.Resources.EDS do
       app_endpoint.addresses
       |> Enum.map(&lb_endpoint(&1, app_endpoint.lb_endpoint_opts))
 
-    default_locality = fetch_endpoints_config!(:locality) |> locality()
-    locality = Keyword.get(app_endpoint.llb_endpoint_opts, :locality, default_locality)
+    locality = Keyword.get(app_endpoint.llb_endpoint_opts, :locality, default_locality())
 
     ClusterLoadAssignment.new(
       [
         cluster_name: app_endpoint.name,
         endpoints: [
           LocalityLbEndpoints.new(
-            [locality: locality, lb_endpoints: lb_endpoints] ++
-              app_endpoint.llb_endpoint_opts
+            [locality: locality, lb_endpoints: lb_endpoints] ++ app_endpoint.llb_endpoint_opts
           )
         ]
       ] ++ app_endpoint.cla_opts
@@ -52,6 +50,11 @@ defmodule Relay.Resources.EDS do
 
   defp fetch_endpoints_config!(key), do: endpoints_config() |> Keyword.fetch!(key)
 
-  @spec locality(keyword) :: Locality.t()
-  defp locality(opts), do: opts |> Keyword.take([:region, :zone, :sub_zone]) |> Locality.new()
+  @spec default_locality() :: Locality.t()
+  def default_locality do
+    :locality
+    |> fetch_endpoints_config!()
+    |> Keyword.take([:region, :zone, :sub_zone])
+    |> Locality.new()
+  end
 end
