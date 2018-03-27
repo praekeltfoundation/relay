@@ -6,19 +6,9 @@
 
 include_patterns = ["*.exs", "{config,lib,test}/**/*.{ex,exs}"]
 
-ignore_paths = [
-  # TODO: Reduce this list
-  "config/config.exs"
-]
-
-inputs =
-  Enum.flat_map(include_patterns, fn pattern ->
-    Path.wildcard(pattern, match_dot: true)
-    |> Enum.filter(fn path -> not String.starts_with?(path, ignore_paths) end)
-  end)
-
 [
   import_deps: [:grpc, :protobuf],
-  inputs: inputs,
+  # The default glob pattern matching doesn't match files starting with a '.'
+  inputs: include_patterns |> Enum.flat_map(&Path.wildcard(&1, match_dot: true)),
   locals_without_parens: [xds_tests: 2]
 ]

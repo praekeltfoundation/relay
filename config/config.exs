@@ -29,12 +29,11 @@ use Mix.Config
 #
 #     import_config "#{Mix.env}.exs"
 
-config :relay, [
+config :relay,
   listen: [
     address: "127.0.0.1",
     port: 5000
   ],
-
   envoy: [
     cluster_name: "xds_cluster",
     max_obj_name_length: 60,
@@ -82,7 +81,6 @@ config :relay, [
     ],
     clusters: [
       connect_timeout: 5_000,
-
       endpoints: [
         locality: [
           region: "default",
@@ -90,20 +88,16 @@ config :relay, [
           sub_zone: ""
         ]
       ]
-    ],
+    ]
   ],
-
   marathon: [
     urls: ["http://localhost:8080"],
     events_timeout: 60_000
   ],
-
   marathon_lb: [
     group: "external"
   ],
-
   marathon_acme: [
     app_id: "/marathon-acme",
     port_index: 0
   ]
-]
