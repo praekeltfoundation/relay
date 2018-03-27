@@ -86,11 +86,16 @@ defmodule Relay.Resources.LDS do
   @spec listener_config(atom) :: keyword
   defp listener_config(listener), do: fetch_envoy_config!(:listeners) |> Keyword.fetch!(listener)
 
-  defp get_listener_config(listener, key, default),
-    do: listener |> listener_config() |> Keyword.get(key, default)
-
   defp fetch_listener_config!(listener, key),
     do: listener |> listener_config() |> Keyword.fetch!(key)
+
+  @spec get_route_config_name(atom) :: String.t()
+  def get_route_config_name(listener) do
+    listener
+    |> listener_config()
+    |> Keyword.get(:route_config_name, Atom.to_string(listener))
+    |> truncate_obj_name()
+  end
 
   defp listener_address(listener) do
     listen = fetch_listener_config!(listener, :listen)
@@ -108,12 +113,10 @@ defmodule Relay.Resources.LDS do
   @spec http_connection_manager(atom, keyword) :: HttpConnectionManager.t()
   defp http_connection_manager(listener, options) do
     config = fetch_listener_config!(listener, :http_connection_manager)
-
-    default_name = Atom.to_string(listener)
-    route_config_name = get_listener_config(listener, :route_config_name, default_name)
-    stat_prefix = Keyword.get(config, :stat_prefix, default_name)
-
+    stat_prefix = Keyword.get(config, :stat_prefix, Atom.to_string(listener))
     access_log = Keyword.get(config, :access_log) |> access_logs_from_config()
+
+    route_config_name = get_route_config_name(listener)
 
     {options, router_opts} = Keyword.pop(options, :router_opts, [])
 

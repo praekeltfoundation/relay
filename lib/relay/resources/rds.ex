@@ -2,7 +2,7 @@ defmodule Relay.Resources.RDS do
   @moduledoc """
   Builds Envoy RouteConfiguration values from cluster resources.
   """
-  alias Relay.Resources.AppEndpoint
+  alias Relay.Resources.{AppEndpoint, LDS}
 
   alias Envoy.Api.V2.RouteConfiguration
   alias Envoy.Api.V2.Route.{RedirectAction, Route, RouteAction, RouteMatch, VirtualHost}
@@ -17,10 +17,10 @@ defmodule Relay.Resources.RDS do
 
   @spec route_configuration(atom, [AppEndpoint.t()]) :: RouteConfiguration.t()
   defp route_configuration(listener, app_endpoints) do
-    # TODO: Use route config name from config
-    name = Atom.to_string(listener)
+    route_config_name = LDS.get_route_config_name(listener)
+
     vhosts = app_endpoints |> Enum.map(&virtual_host(listener, &1))
-    RouteConfiguration.new(name: name, virtual_hosts: vhosts)
+    RouteConfiguration.new(name: route_config_name, virtual_hosts: vhosts)
   end
 
   @spec virtual_host(atom, AppEndpoint.t()) :: VirtualHost.t()
