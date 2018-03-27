@@ -156,6 +156,30 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       hidden: false,
       to: "relay.envoy.clusters.connect_timeout"
     ],
+    "relay.envoy.clusters.endpoints.locality.region": [
+      commented: false,
+      datatype: :binary,
+      default: "default",
+      doc: "Default locality region for upstream endpoints",
+      hidden: false,
+      to: "relay.envoy.clusters.endpoints.locality.region"
+    ],
+    "relay.envoy.clusters.endpoints.locality.zone": [
+      commented: false,
+      datatype: :binary,
+      default: "default",
+      doc: "Default locality zone for upstream endpoints",
+      hidden: false,
+      to: "relay.envoy.clusters.endpoints.locality.zone"
+    ],
+    "relay.envoy.clusters.endpoints.locality.sub_zone": [
+      commented: false,
+      datatype: :binary,
+      default: "",
+      doc: "Default locality sub-zone for upstream endpoints",
+      hidden: false,
+      to: "relay.envoy.clusters.endpoints.locality.sub_zone"
+    ],
     "relay.marathon.urls": [
       commented: false,
       datatype: [list: :binary],

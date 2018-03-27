@@ -35,7 +35,7 @@ defmodule Relay.Resources.CDS do
   end
 
   @spec clusters_config() :: keyword
-  defp clusters_config(), do: fetch_envoy_config!(:clusters)
+  def clusters_config(), do: fetch_envoy_config!(:clusters)
 
   defp fetch_clusters_config!(key), do: clusters_config() |> Keyword.fetch!(key)
 end

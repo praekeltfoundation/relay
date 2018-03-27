@@ -2,13 +2,11 @@ defmodule Relay.Resources.EDS do
   @moduledoc """
   Builds Envoy ClusterLoadAssignment values from cluster resources.
   """
-  alias Relay.Resources.{AppEndpoint, Common}
+  alias Relay.Resources.{AppEndpoint, Common, CDS}
 
   alias Envoy.Api.V2.ClusterLoadAssignment
   alias Envoy.Api.V2.Core.Locality
   alias Envoy.Api.V2.Endpoint.{Endpoint, LbEndpoint, LocalityLbEndpoints}
-
-  @default_locality Locality.new(region: "default")
 
   @doc """
   Create ClusterLoadAssignments for the given app_endpoints.
@@ -24,12 +22,15 @@ defmodule Relay.Resources.EDS do
       app_endpoint.addresses
       |> Enum.map(&lb_endpoint(&1, app_endpoint.lb_endpoint_opts))
 
+    default_locality = fetch_endpoints_config!(:locality) |> locality()
+    locality = Keyword.get(app_endpoint.llb_endpoint_opts, :locality, default_locality)
+
     ClusterLoadAssignment.new(
       [
         cluster_name: app_endpoint.name,
         endpoints: [
           LocalityLbEndpoints.new(
-            [locality: @default_locality, lb_endpoints: lb_endpoints] ++
+            [locality: locality, lb_endpoints: lb_endpoints] ++
               app_endpoint.llb_endpoint_opts
           )
         ]
@@ -45,4 +46,12 @@ defmodule Relay.Resources.EDS do
       ] ++ options
     )
   end
+
+  @spec endpoints_config() :: keyword
+  defp endpoints_config, do: CDS.clusters_config() |> Keyword.fetch!(:endpoints)
+
+  defp fetch_endpoints_config!(key), do: endpoints_config() |> Keyword.fetch!(key)
+
+  @spec locality(keyword) :: Locality.t()
+  defp locality(opts), do: opts |> Keyword.take([:region, :zone, :sub_zone]) |> Locality.new()
 end

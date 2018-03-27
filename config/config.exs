@@ -81,8 +81,16 @@ config :relay, [
       ]
     ],
     clusters: [
-      connect_timeout: 5_000
-    ]
+      connect_timeout: 5_000,
+
+      endpoints: [
+        locality: [
+          region: "default",
+          zone: "default",
+          sub_zone: ""
+        ]
+      ]
+    ],
   ],
 
   marathon: [
