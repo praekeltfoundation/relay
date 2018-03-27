@@ -38,20 +38,12 @@ defmodule Relay.Resources.RDS do
 
   @spec app_endpoint_routes(atom, AppEndpoint.t()) :: [Route.t()]
   defp app_endpoint_routes(:http, app_endpoint) do
-    primary_route_action =
-      if app_endpoint.redirect_to_https do
-        {:redirect, RedirectAction.new(https_redirect: true)}
-      else
-        # TODO: Does the cluster name here need to be truncated?
-        {:route, RouteAction.new(cluster_specifier: {:cluster, app_endpoint.name})}
-      end
-
     primary_route =
-      Route.new(
-        action: primary_route_action,
-        # TODO: Support path-based routing
-        match: RouteMatch.new(path_specifier: {:prefix, "/"})
-      )
+      if app_endpoint.redirect_to_https do
+        https_redirect_route()
+      else
+        app_endpoint_route(app_endpoint)
+      end
 
     case app_endpoint.marathon_acme_domains do
       # No marathon-acme domain--don't route to marathon-acme
@@ -65,14 +57,38 @@ defmodule Relay.Resources.RDS do
 
   defp app_endpoint_routes(:https, app_endpoint) do
     # TODO: Do we want an HTTPS route for apps without certificates?
-    [
-      Route.new(
-        # TODO: Does the cluster name here need to be truncated?
-        action: {:route, RouteAction.new(cluster_specifier: {:cluster, app_endpoint.name})},
-        # TODO: Support path-based routing
-        match: RouteMatch.new(path_specifier: {:prefix, "/"})
-      )
-    ]
+    [app_endpoint_route(app_endpoint)]
+  end
+
+  @spec app_endpoint_route(AppEndpoint.t()) :: Route.t()
+  defp app_endpoint_route(%AppEndpoint{route_opts: options} = app_endpoint) do
+    Route.new(
+      [
+        action: {:route, app_endpoint_route_action(app_endpoint)},
+        match: app_endpoint_route_match(app_endpoint)
+      ] ++ options
+    )
+  end
+
+  @spec app_endpoint_route_action(AppEndpoint.t()) :: RouteAction.t()
+  defp app_endpoint_route_action(%AppEndpoint{name: name, route_action_opts: options}) do
+    # TODO: Does the cluster name here need to be truncated?
+    RouteAction.new([cluster_specifier: {:cluster, name}] ++ options)
+  end
+
+  @spec app_endpoint_route_match(AppEndpoint.t()) :: RouteMatch.t()
+  defp app_endpoint_route_match(%AppEndpoint{route_match_opts: options}) do
+    # TODO: Support path-based routing
+    RouteMatch.new([path_specifier: {:prefix, "/"}] ++ options)
+  end
+
+  @spec https_redirect_route() :: Route.t()
+  defp https_redirect_route do
+    # The HTTPS redirect route is simple and can't be customized per-app
+    Route.new(
+      action: {:redirect, RedirectAction.new(https_redirect: true)},
+      match: RouteMatch.new(path_specifier: {:prefix, "/"})
+    )
   end
 
   @spec marathon_acme_route() :: Route.t()

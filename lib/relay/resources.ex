@@ -34,7 +34,10 @@ defmodule Relay.Resources do
       llb_endpoint_opts: [],
       lb_endpoint_opts: [],
       # RDS
-      vhost_opts: []
+      vhost_opts: [],
+      route_opts: [],
+      route_match_opts: [],
+      route_action_opts: []
     ]
 
     @type t :: %__MODULE__{
@@ -47,7 +50,10 @@ defmodule Relay.Resources do
             cla_opts: keyword,
             llb_endpoint_opts: keyword,
             lb_endpoint_opts: keyword,
-            vhost_opts: keyword
+            vhost_opts: keyword,
+            route_opts: keyword,
+            route_match_opts: keyword,
+            route_action_opts: keyword
           }
   end
 
