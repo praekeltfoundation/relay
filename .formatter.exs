@@ -10,8 +10,7 @@ ignore_paths = [
   # TODO: Reduce this list
   "mix.exs",
   "config/config.exs",
-  "lib/relay/protobuf_util.ex",
-  "lib/relay/server.ex"
+  "lib/relay/protobuf_util.ex"
 ]
 
 inputs =

@@ -1,6 +1,10 @@
 defmodule Relay.Server.Macros do
   @moduledoc false
 
+  # This function is a hack to work around coverage issues. Any line matching
+  # ~r/mk_server_func\(/ is ignored by the coverage tool.
+  defp mk_server_func(prefix, resources), do: :"#{prefix}_#{resources}"
+
   defmacro discovery_service(
              name,
              xds: xds,
@@ -9,8 +13,8 @@ defmodule Relay.Server.Macros do
              resources: resources,
              resource_type: resource_type
            ) do
-    stream_func = :"stream_#{resources}" # noqa excoveralls ignores macros
-    fetch_func = :"fetch_#{resources}" # noqa
+    stream_func = mk_server_func("stream", resources)
+    fetch_func = mk_server_func("fetch", resources)
 
     quote do
       defmodule unquote(name) do
