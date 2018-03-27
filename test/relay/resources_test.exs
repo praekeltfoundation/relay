@@ -49,7 +49,7 @@ defmodule Relay.ResourcesTest do
     do: assert(get_pub_state(pub, :cds) == {version, CDS.clusters(app_endpoints)})
 
   defp assert_rds(pub, version, app_endpoints),
-    do: assert(get_pub_state(pub, :rds) == {version, RDS.routes(app_endpoints)})
+    do: assert(get_pub_state(pub, :rds) == {version, RDS.route_configurations(app_endpoints)})
 
   defp assert_eds(pub, version, app_endpoints),
     do: assert(get_pub_state(pub, :eds) == {version, EDS.cluster_load_assignments(app_endpoints)})

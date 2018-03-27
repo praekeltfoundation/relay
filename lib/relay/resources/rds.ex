@@ -12,8 +12,8 @@ defmodule Relay.Resources.RDS do
   @doc """
   Create Clusters for the given app_endpoints.
   """
-  @spec routes([AppEndpoint.t()]) :: [RouteConfiguration.t()]
-  def routes(apps), do: Enum.map(@listeners, &route_configuration(&1, apps))
+  @spec route_configurations([AppEndpoint.t()]) :: [RouteConfiguration.t()]
+  def route_configurations(apps), do: Enum.map(@listeners, &route_configuration(&1, apps))
 
   @spec route_configuration(atom, [AppEndpoint.t()]) :: RouteConfiguration.t()
   defp route_configuration(listener, app_endpoints) do

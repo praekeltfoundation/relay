@@ -12,7 +12,7 @@ defmodule Relay.Resources.RDSTest do
   }
 
   test "simple app routes" do
-    assert [http_config, https_config] = RDS.routes([@simple_app_endpoint])
+    assert [http_config, https_config] = RDS.route_configurations([@simple_app_endpoint])
 
     assert %RouteConfiguration{
              name: "http",
@@ -31,7 +31,7 @@ defmodule Relay.Resources.RDSTest do
   test "multiple simple apps" do
     simple_app_endpoint2 = %{@simple_app_endpoint | name: "/mc3_0"}
 
-    assert [http_config, https_config] = RDS.routes([@simple_app_endpoint, simple_app_endpoint2])
+    assert [http_config, https_config] = RDS.route_configurations([@simple_app_endpoint, simple_app_endpoint2])
 
     assert %RouteConfiguration{
              name: "http",
@@ -57,7 +57,7 @@ defmodule Relay.Resources.RDSTest do
     assert [
              %RouteConfiguration{name: "http", virtual_hosts: [http_vhost]},
              %RouteConfiguration{name: "https", virtual_hosts: [https_vhost]}
-           ] = RDS.routes([@simple_app_endpoint])
+           ] = RDS.route_configurations([@simple_app_endpoint])
 
     assert %VirtualHost{
              name: "http_/mc2_0",
@@ -91,7 +91,7 @@ defmodule Relay.Resources.RDSTest do
     assert [
              %RouteConfiguration{name: "http", virtual_hosts: [http_vhost]},
              %RouteConfiguration{name: "https"}
-           ] = RDS.routes([app_endpoint])
+           ] = RDS.route_configurations([app_endpoint])
 
     assert %VirtualHost{
              name: "http_/mc2_0",
@@ -116,7 +116,7 @@ defmodule Relay.Resources.RDSTest do
     assert [
              %RouteConfiguration{name: "http", virtual_hosts: [http_vhost]},
              %RouteConfiguration{name: "https"}
-           ] = RDS.routes([app_endpoint])
+           ] = RDS.route_configurations([app_endpoint])
 
     assert %VirtualHost{
              name: "http_/mc2_0",

@@ -108,7 +108,7 @@ defmodule Relay.Resources do
 
   defp publish_rds(pub, state) do
     {version, app_endpoints} = state.app_endpoints
-    Publisher.update(pub, :rds, version, RDS.routes(app_endpoints))
+    Publisher.update(pub, :rds, version, RDS.route_configurations(app_endpoints))
   end
 
   defp publish_eds(pub, state) do
