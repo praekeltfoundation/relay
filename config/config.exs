@@ -79,6 +79,9 @@ config :relay, [
           ]
         ]
       ]
+    ],
+    clusters: [
+      connect_timeout: 5_000
     ]
   ],
 

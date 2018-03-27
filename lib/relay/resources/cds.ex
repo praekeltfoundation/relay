@@ -7,10 +7,6 @@ defmodule Relay.Resources.CDS do
 
   alias Envoy.Api.V2.Cluster
 
-  alias Google.Protobuf.Duration
-
-  @default_cluster_connect_timeout Duration.new(seconds: 5)
-
   @doc """
   Create Clusters for the given app_endpoints.
   """
@@ -21,6 +17,9 @@ defmodule Relay.Resources.CDS do
 
   @spec cluster(AppEndpoint.t()) :: Cluster.t()
   defp cluster(%AppEndpoint{name: service_name, cluster_opts: options}) do
+    default_connect_timeout = fetch_clusters_config!(:connect_timeout) |> duration()
+    connect_timeout = Keyword.get(options, :connect_timeout, default_connect_timeout)
+
     Cluster.new(
       [
         name: truncate_obj_name(service_name),
@@ -30,8 +29,13 @@ defmodule Relay.Resources.CDS do
             eds_config: api_config_source(),
             service_name: service_name
           ),
-        connect_timeout: Keyword.get(options, :connect_timeout, @default_cluster_connect_timeout)
+        connect_timeout: connect_timeout
       ] ++ options
     )
   end
+
+  @spec clusters_config() :: keyword
+  defp clusters_config(), do: fetch_envoy_config!(:clusters)
+
+  defp fetch_clusters_config!(key), do: clusters_config() |> Keyword.fetch!(key)
 end

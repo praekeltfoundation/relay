@@ -1,5 +1,6 @@
 defmodule Relay.Resources.Common do
   alias Envoy.Api.V2.Core.{Address, ApiConfigSource, ConfigSource, SocketAddress}
+  alias Google.Protobuf.Duration
 
   @truncated_name_prefix "[...]"
 
@@ -51,5 +52,17 @@ defmodule Relay.Resources.Common do
   def socket_address(address, port) do
     sock = SocketAddress.new(address: address, port_specifier: {:port_value, port})
     Address.new(address: {:socket_address, sock})
+  end
+
+  @spec duration(integer) :: Duration.t()
+  def duration(0), do: Duration.new(seconds: 0, nanos: 0)
+
+  def duration(milliseconds) do
+    Duration.new(
+      seconds: div(milliseconds, 1000),
+      # :erlang.rem/2 considers the sign of the nominator, while Integer.mod/2
+      # only considers the sign of the denominator
+      nanos: :erlang.rem(milliseconds, 1000) * 1_000_000
+    )
   end
 end
