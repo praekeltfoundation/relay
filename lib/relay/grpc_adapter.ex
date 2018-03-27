@@ -31,7 +31,7 @@ defmodule Relay.GRPCAdapter do
   @spec now() :: integer
   defp now(), do: System.monotonic_time(:milliseconds)
 
-  @spec retry_start((() -> {:ok, any} | {:error, any}), integer) :: {:ok, pid} | {:error, any}
+  @spec retry_start((() -> {:ok, pid} | {:error, any}), integer) :: {:ok, pid} | {:error, any}
   defp retry_start(start_fun, deadline) do
     result = start_fun.()
     if (now() + @retry_interval < deadline) and retry?(result) do
@@ -42,7 +42,7 @@ defmodule Relay.GRPCAdapter do
     end
   end
 
-  @spec retry?({:ok, any} | {:error, any}) :: boolean
+  @spec retry?({:ok, pid} | {:error, any}) :: boolean
   defp retry?({:error, {:shutdown, {:failed_to_start_child, _, reason}}}),
     do: retry?({:error, reason})
   defp retry?({:error, {:listen_error, _, :eaddrinuse}}), do: true
