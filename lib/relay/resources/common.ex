@@ -1,4 +1,8 @@
 defmodule Relay.Resources.Common do
+  @moduledoc """
+  Common functionality used by multiple resource types.
+  """
+
   alias Envoy.Api.V2.Core.{Address, ApiConfigSource, ConfigSource, SocketAddress}
   alias Google.Protobuf.Duration
 

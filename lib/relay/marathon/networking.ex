@@ -34,8 +34,8 @@ defmodule Relay.Marathon.Networking do
 
   # Ports list
 
-  @spec ports_list(map) :: [:inet.port_number]
-  def ports_list(app), do: networking_mode(app) |> ports_list(app)
+  @spec ports_list(map) :: [:inet.port_number()]
+  def ports_list(app), do: app |> networking_mode() |> ports_list(app)
 
   defp ports_list(:host, app), do: port_definitions_ports(app)
 
@@ -80,7 +80,7 @@ defmodule Relay.Marathon.Networking do
   Get the address (IP or hostname) for a task given the app's networking mode
   and a task definition.
   """
-  @spec task_address(networking_mode, map) :: String.t
+  @spec task_address(networking_mode, map) :: String.t()
   def task_address(:container, task), do: task_ip_address(task)
 
   def task_address(_networking_mode, task), do: task_host(task)
@@ -100,7 +100,7 @@ defmodule Relay.Marathon.Networking do
   Get the ports for a task given the app's networking mode and a task
   definition.
   """
-  @spec task_ports(networking_mode, map) :: [:inet.port_number] | nil
+  @spec task_ports(networking_mode, map) :: [:inet.port_number()] | nil
   def task_ports(:host = _networking_mode, %{"ports" => ports} = _task), do: ports
 
   def task_ports(:"container/bridge", %{"ports" => ports}), do: ports

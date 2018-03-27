@@ -5,9 +5,9 @@ script:
   # This is basically `mix test` with coverage enabled.
   - mix coveralls.json
   - mix format --check-formatted
-  # TODO: Remove the category whitelist once we've configured credo to our
-  # liking made the necessary fixes in the code.
-  - mix credo --only warning,consistency
+  # This will mention FIXME and TODO comments without failing, any other issue
+  # fails the build.
+  - mix credo
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

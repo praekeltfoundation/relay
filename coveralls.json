@@ -4,6 +4,6 @@
     "gen"
   ],
   "custom_stop_words": [
-    "#\s*noqa"
+    "mk_server_func\("
   ]
 }

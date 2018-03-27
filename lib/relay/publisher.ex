@@ -1,4 +1,9 @@
 defmodule Relay.Publisher do
+  @moduledoc """
+  A GenServer that maintains Envoy resources state and publishes it to any
+  process that subscribes.
+  """
+
   use GenServer
 
   alias Envoy.Api.V2.{Cluster, ClusterLoadAssignment, Listener, RouteConfiguration}
@@ -17,36 +22,41 @@ defmodule Relay.Publisher do
   end
 
   defmodule Resources do
+    @moduledoc false
     defstruct version_info: "", resources: [], subscribers: MapSet.new()
+
     @type t :: %__MODULE__{
-      version_info: String.t,
-      resources: [Cluster.t | ClusterLoadAssignment.t | Listener.t | RouteConfiguration.t],
-      subscribers: %MapSet{} # No way to type the elements of MapSet
-    }
+            version_info: String.t(),
+            resources: [
+              Cluster.t() | ClusterLoadAssignment.t() | Listener.t() | RouteConfiguration.t()
+            ],
+            # No way to type the elements of MapSet
+            subscribers: %MapSet{}
+          }
   end
 
   ## Client interface
 
   defguardp is_xds(xds) when xds in @discovery_services
 
-  @spec subscribe(GenServer.server, discovery_service, subscriber) :: :ok
+  @spec subscribe(GenServer.server(), discovery_service, subscriber) :: :ok
   def subscribe(server, xds, pid) when is_xds(xds),
     do: GenServer.call(server, {:subscribe, xds, pid})
 
-  @spec unsubscribe(GenServer.server, discovery_service, subscriber) :: :ok
+  @spec unsubscribe(GenServer.server(), discovery_service, subscriber) :: :ok
   def unsubscribe(server, xds, pid) when is_xds(xds),
     do: GenServer.call(server, {:unsubscribe, xds, pid})
 
-  @spec update(GenServer.server, :lds, String.t, [Listener.t]) :: :ok
-  @spec update(GenServer.server, :rds, String.t, [RouteConfiguration.t]) :: :ok
-  @spec update(GenServer.server, :cds, String.t, [Cluster.t]) :: :ok
-  @spec update(GenServer.server, :eds, String.t, [ClusterLoadAssignment.t]) :: :ok
+  @spec update(GenServer.server(), :lds, String.t(), [Listener.t()]) :: :ok
+  @spec update(GenServer.server(), :rds, String.t(), [RouteConfiguration.t()]) :: :ok
+  @spec update(GenServer.server(), :cds, String.t(), [Cluster.t()]) :: :ok
+  @spec update(GenServer.server(), :eds, String.t(), [ClusterLoadAssignment.t()]) :: :ok
   def update(server, xds, version_info, resources) when is_xds(xds),
     do: GenServer.call(server, {:update, xds, version_info, resources})
 
   ## Server callbacks
 
-  @spec init(:ok) :: {:ok, %{discovery_service => Resources.t}}
+  @spec init(:ok) :: {:ok, %{discovery_service => Resources.t()}}
   def init(:ok) do
     {:ok, Map.new(Enum.map(@discovery_services, fn xds -> {xds, %Resources{}} end))}
   end
