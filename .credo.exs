@@ -12,6 +12,9 @@
         {Credo.Check.Design.TagTODO, exit_status: 0},
         {Credo.Check.Design.TagFIXME, exit_status: 0},
 
+        # Sometimes Foo.Bar.thing is cleaner than an alias
+        {Credo.Check.Design.AliasUsage, if_nested_deeper_than: 2},
+
         # mix format defaults to a line length of 98
         {Credo.Check.Readability.MaxLineLength, max_length: 98},
 
@@ -20,7 +23,8 @@
 
         # Sometimes it makes sense to start a pipe chain with a function call
         {Credo.Check.Refactor.PipeChainStart,
-         excluded_functions: ["Map.new"], excluded_argument_types: [:atom, :binary]}
+         excluded_functions: ["Map.new", "Atom.to_string", "Keyword.get"],
+         excluded_argument_types: [:atom, :binary]}
       ]
     }
   ]

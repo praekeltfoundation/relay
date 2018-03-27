@@ -15,7 +15,6 @@ ignore_paths = [
   "lib/relay/certs.ex",
   "lib/relay/demo/certs.ex",
   "lib/relay/grpc_adapter.ex",
-  "lib/relay/marathon/adapter.ex",
   "lib/relay/marathon/app.ex",
   "lib/relay/marathon/labels.ex",
   "lib/relay/marathon/networking.ex",

@@ -1,4 +1,7 @@
 defmodule Relay.Resources.LDS do
+  @moduledoc """
+  Builds Envoy Listener values from cluster resources.
+  """
   alias Relay.{ProtobufUtil, Resources.CertInfo}
   import Relay.Resources.Common
 
@@ -84,9 +87,10 @@ defmodule Relay.Resources.LDS do
   defp listener_config(listener), do: fetch_envoy_config!(:listeners) |> Keyword.fetch!(listener)
 
   defp get_listener_config(listener, key, default),
-    do: listener_config(listener) |> Keyword.get(key, default)
+    do: listener |> listener_config() |> Keyword.get(key, default)
 
-  defp fetch_listener_config!(listener, key), do: listener_config(listener) |> Keyword.fetch!(key)
+  defp fetch_listener_config!(listener, key),
+    do: listener |> listener_config() |> Keyword.fetch!(key)
 
   defp listener_address(listener) do
     listen = fetch_listener_config!(listener, :listen)

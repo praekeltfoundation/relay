@@ -24,7 +24,7 @@ defmodule Relay.SupervisorTest do
   end
 
   defp assert_example_response do
-    assert_cds_response(Demo.Marathon.clusters())
+    assert_cds_response(Demo.Marathon.app_endpoints() |> Resources.CDS.clusters())
     assert_lds_response(Demo.Certs.sni_certs() |> Resources.LDS.listeners())
   end
 
