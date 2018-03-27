@@ -2,7 +2,8 @@ defmodule Relay.Resources.CDS do
   @moduledoc """
   Builds Envoy Cluster values from cluster resources.
   """
-  alias Relay.Resources.{AppEndpoint, Common}
+  alias Relay.Resources.AppEndpoint
+  import Relay.Resources.Common
 
   alias Envoy.Api.V2.Cluster
 
@@ -22,11 +23,11 @@ defmodule Relay.Resources.CDS do
   defp cluster(%AppEndpoint{name: service_name, cluster_opts: options}) do
     Cluster.new(
       [
-        name: Common.truncate_obj_name(service_name),
+        name: truncate_obj_name(service_name),
         type: Cluster.DiscoveryType.value(:EDS),
         eds_cluster_config:
           Cluster.EdsClusterConfig.new(
-            eds_config: Common.api_config_source(),
+            eds_config: api_config_source(),
             service_name: service_name
           ),
         connect_timeout: Keyword.get(options, :connect_timeout, @default_cluster_connect_timeout)
