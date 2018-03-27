@@ -1,4 +1,8 @@
 defmodule Relay.Demo.Certs do
+  @moduledoc """
+  Demo certificate data source.
+  """
+
   alias Relay.{Certs, Resources}
 
   @demo_pem """
@@ -53,6 +57,7 @@ defmodule Relay.Demo.Certs do
   use GenServer
 
   defmodule State do
+    @moduledoc false
     defstruct delay: 1_000, version: 1
   end
 
@@ -60,7 +65,7 @@ defmodule Relay.Demo.Certs do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
-  def update_state(), do: GenServer.call(__MODULE__, :update_state)
+  def update_state, do: GenServer.call(__MODULE__, :update_state)
 
   # Callbacks
 
@@ -87,7 +92,7 @@ defmodule Relay.Demo.Certs do
     %{state | version: state.version + 1}
   end
 
-  def sni_certs(), do: [pem_to_cert_info(@demo_pem)]
+  def sni_certs, do: [pem_to_cert_info(@demo_pem)]
 
   defp pem_to_cert_info(cert_bundle) do
     {:ok, key} = Certs.get_key(cert_bundle)

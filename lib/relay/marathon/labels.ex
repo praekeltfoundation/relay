@@ -1,4 +1,8 @@
 defmodule Relay.Marathon.Labels do
+  @moduledoc """
+  Extracts information from Marathon app labels.
+  """
+
   @type labels :: %{optional(String.t) => String.t}
 
   @doc """

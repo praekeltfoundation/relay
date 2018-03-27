@@ -1,4 +1,6 @@
 defmodule Relay.Server.Macros do
+  @moduledoc false
+
   defmacro discovery_service(
              name,
              xds: xds,
@@ -26,8 +28,8 @@ defmodule Relay.Server.Macros do
         @xds unquote(xds)
         @type_url unquote(type_url)
 
-        def xds(), do: @xds
-        def type_url(), do: @type_url
+        def xds, do: @xds
+        def type_url, do: @type_url
 
         @spec unquote(stream_func)(Enumerable.t, Stream.t) :: Stream.t
         def unquote(stream_func)(req_enum, stream0) do
@@ -78,6 +80,10 @@ defmodule Relay.Server.Macros do
 end
 
 defmodule Relay.Server do
+  @moduledoc """
+  GRPC API for Envoy to use for service discovery.
+  """
+
   import Relay.Server.Macros
 
   discovery_service(

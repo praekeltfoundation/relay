@@ -29,7 +29,7 @@ defmodule Relay.GRPCAdapter do
   end
 
   @spec now() :: integer
-  defp now(), do: System.monotonic_time(:milliseconds)
+  defp now, do: System.monotonic_time(:milliseconds)
 
   @spec retry_start((() -> {:ok, pid} | {:error, any}), integer) :: {:ok, pid} | {:error, any}
   defp retry_start(start_fun, deadline) do

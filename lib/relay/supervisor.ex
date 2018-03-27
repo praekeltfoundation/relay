@@ -46,7 +46,7 @@ defmodule Relay.Supervisor do
 
     @spec parse_ip_address(String.t()) :: :inet.ip_address()
     defp parse_ip_address(addr) do
-      {:ok, address} = String.to_charlist(addr) |> :inet.parse_address()
+      {:ok, address} = addr |> String.to_charlist() |> :inet.parse_address()
       address
     end
   end

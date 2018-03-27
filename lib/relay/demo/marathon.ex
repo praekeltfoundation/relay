@@ -1,4 +1,8 @@
 defmodule Relay.Demo.Marathon do
+  @moduledoc """
+  Demo marathon data source.
+  """
+
   alias Relay.Resources
   alias Relay.Marathon.{Adapter, App, Task}
 
@@ -27,6 +31,7 @@ defmodule Relay.Demo.Marathon do
   use GenServer
 
   defmodule State do
+    @moduledoc false
     defstruct delay: 1_000, version: 1
   end
 
@@ -34,7 +39,7 @@ defmodule Relay.Demo.Marathon do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
-  def update_state(), do: GenServer.call(__MODULE__, :update_state)
+  def update_state, do: GenServer.call(__MODULE__, :update_state)
 
   # Callbacks
 
@@ -61,5 +66,5 @@ defmodule Relay.Demo.Marathon do
     %{state | version: state.version + 1}
   end
 
-  def app_endpoints(), do: Adapter.app_endpoints_for_app(@demo_app, [@demo_task])
+  def app_endpoints, do: Adapter.app_endpoints_for_app(@demo_app, [@demo_task])
 end

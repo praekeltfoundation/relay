@@ -35,7 +35,7 @@ defmodule Relay.Marathon.Networking do
   # Ports list
 
   @spec ports_list(map) :: [:inet.port_number]
-  def ports_list(app), do: networking_mode(app) |> ports_list(app)
+  def ports_list(app), do: app |> networking_mode() |> ports_list(app)
 
   defp ports_list(:host, app), do: port_definitions_ports(app)
 

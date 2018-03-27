@@ -1,4 +1,8 @@
 defmodule Relay.Marathon.App do
+  @moduledoc """
+  Turns Marathon API JSON into consistent App objects.
+  """
+
   alias Relay.Marathon.{Labels, Networking}
 
   @enforce_keys [:id, :networking_mode, :ports_list, :port_indices_in_group, :labels, :version]

@@ -1,4 +1,9 @@
 defmodule Relay.Publisher do
+  @moduledoc """
+  A GenServer that maintains Envoy resources state and publishes it to any
+  process that subscribes.
+  """
+
   use GenServer
 
   alias Envoy.Api.V2.{Cluster, ClusterLoadAssignment, Listener, RouteConfiguration}
@@ -17,6 +22,7 @@ defmodule Relay.Publisher do
   end
 
   defmodule Resources do
+    @moduledoc false
     defstruct version_info: "", resources: [], subscribers: MapSet.new()
     @type t :: %__MODULE__{
       version_info: String.t,

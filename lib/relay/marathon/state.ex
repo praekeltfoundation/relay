@@ -1,4 +1,8 @@
 defmodule Relay.Marathon.State do
+  @moduledoc """
+  Box to keep Marathon state all neatly organised in.
+  """
+
   alias Relay.Marathon.{App, Task}
 
   defstruct apps: %{}, tasks: %{}, app_tasks: %{}

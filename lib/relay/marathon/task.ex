@@ -1,4 +1,8 @@
 defmodule Relay.Marathon.Task do
+  @moduledoc """
+  Turns Marathon API JSON into consistent Task objects.
+  """
+
   alias Relay.Marathon.{App, Networking}
 
   defstruct [:id, :app_id, :address, :ports, :version]
