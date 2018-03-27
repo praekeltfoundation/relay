@@ -2,8 +2,7 @@ defmodule Relay.Resources.EDS do
   @moduledoc """
   Builds Envoy ClusterLoadAssignment values from cluster resources.
   """
-  alias Relay.Resources.{AppPortInfo, Common}
-  alias Relay.Resources.AppPortInfo
+  alias Relay.Resources.{AppEndpoint, Common}
 
   alias Envoy.Api.V2.ClusterLoadAssignment
   alias Envoy.Api.V2.Core.Locality
@@ -12,29 +11,29 @@ defmodule Relay.Resources.EDS do
   @default_locality Locality.new(region: "default")
 
   @doc """
-  Create ClusterLoadAssignments for the given app_port_infos.
+  Create ClusterLoadAssignments for the given app_endpoints.
   """
-  @spec cluster_load_assignments([AppPortInfo.t()]) :: [ClusterLoadAssignment.t()]
-  def cluster_load_assignments(app_port_infos) do
-    Enum.map(app_port_infos, &cluster_load_assignment/1)
+  @spec cluster_load_assignments([AppEndpoint.t()]) :: [ClusterLoadAssignment.t()]
+  def cluster_load_assignments(app_endpoints) do
+    Enum.map(app_endpoints, &cluster_load_assignment/1)
   end
 
-  @spec cluster_load_assignment(AppPortInfo.t()) :: ClusterLoadAssignment.t()
-  defp cluster_load_assignment(app_port_info) do
+  @spec cluster_load_assignment(AppEndpoint.t()) :: ClusterLoadAssignment.t()
+  defp cluster_load_assignment(app_endpoint) do
     lb_endpoints =
-      app_port_info.addresses
-      |> Enum.map(&lb_endpoint(&1, app_port_info.lb_endpoint_opts))
+      app_endpoint.addresses
+      |> Enum.map(&lb_endpoint(&1, app_endpoint.lb_endpoint_opts))
 
     ClusterLoadAssignment.new(
       [
-        cluster_name: app_port_info.name,
+        cluster_name: app_endpoint.name,
         endpoints: [
           LocalityLbEndpoints.new(
             [locality: @default_locality, lb_endpoints: lb_endpoints] ++
-              app_port_info.llb_endpoint_opts
+              app_endpoint.llb_endpoint_opts
           )
         ]
-      ] ++ app_port_info.cla_opts
+      ] ++ app_endpoint.cla_opts
     )
   end
 

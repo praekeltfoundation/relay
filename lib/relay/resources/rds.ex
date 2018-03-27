@@ -2,7 +2,7 @@ defmodule Relay.Resources.RDS do
   @moduledoc """
   Builds Envoy RouteConfiguration values from cluster resources.
   """
-  alias Relay.Resources.AppPortInfo
+  alias Relay.Resources.AppEndpoint
 
   alias Envoy.Api.V2.RouteConfiguration
   alias Envoy.Api.V2.Route.{RedirectAction, Route, RouteAction, RouteMatch, VirtualHost}
@@ -10,38 +10,38 @@ defmodule Relay.Resources.RDS do
   @listeners [:http, :https]
 
   @doc """
-  Create Clusters for the given app_port_infos.
+  Create Clusters for the given app_endpoints.
   """
-  @spec routes([AppPortInfo.t()]) :: [RouteConfiguration.t()]
-  def routes(apps), do: Enum.map(@listeners, &app_infos_route_configuration(&1, apps))
+  @spec routes([AppEndpoint.t()]) :: [RouteConfiguration.t()]
+  def routes(apps), do: Enum.map(@listeners, &route_configuration(&1, apps))
 
-  @spec app_infos_route_configuration(atom, [AppPortInfo.t()]) :: RouteConfiguration.t()
-  defp app_infos_route_configuration(listener, app_infos) do
+  @spec route_configuration(atom, [AppEndpoint.t()]) :: RouteConfiguration.t()
+  defp route_configuration(listener, app_endpoints) do
     # TODO: Use route config name from config
     name = Atom.to_string(listener)
-    vhosts = app_infos |> Enum.map(&app_info_virtual_host(listener, &1))
+    vhosts = app_endpoints |> Enum.map(&virtual_host(listener, &1))
     RouteConfiguration.new(name: name, virtual_hosts: vhosts)
   end
 
-  @spec app_info_virtual_host(atom, AppPortInfo.t()) :: VirtualHost.t()
-  defp app_info_virtual_host(listener, app_info) do
+  @spec virtual_host(atom, AppEndpoint.t()) :: VirtualHost.t()
+  defp virtual_host(listener, app_endpoint) do
     VirtualHost.new(
       # TODO: Do VirtualHost names need to be truncated?
-      name: "#{listener}_#{app_info.name}",
+      name: "#{listener}_#{app_endpoint.name}",
       # TODO: Validate domains
-      domains: app_info.domains,
-      routes: app_info_routes(listener, app_info)
+      domains: app_endpoint.domains,
+      routes: app_endpoint_routes(listener, app_endpoint)
     )
   end
 
-  @spec app_info_routes(atom, AppPortInfo.t()) :: [Route.t()]
-  defp app_info_routes(:http, app_info) do
+  @spec app_endpoint_routes(atom, AppEndpoint.t()) :: [Route.t()]
+  defp app_endpoint_routes(:http, app_endpoint) do
     primary_route_action =
-      if app_info.redirect_to_https do
+      if app_endpoint.redirect_to_https do
         {:redirect, RedirectAction.new(https_redirect: true)}
       else
         # TODO: Does the cluster name here need to be truncated?
-        {:route, RouteAction.new(cluster_specifier: {:cluster, app_info.name})}
+        {:route, RouteAction.new(cluster_specifier: {:cluster, app_endpoint.name})}
       end
 
     primary_route =
@@ -51,7 +51,7 @@ defmodule Relay.Resources.RDS do
         match: RouteMatch.new(path_specifier: {:prefix, "/"})
       )
 
-    case app_info.marathon_acme_domains do
+    case app_endpoint.marathon_acme_domains do
       # No marathon-acme domain--don't route to marathon-acme
       [] ->
         [primary_route]
@@ -61,12 +61,12 @@ defmodule Relay.Resources.RDS do
     end
   end
 
-  defp app_info_routes(:https, app_info) do
+  defp app_endpoint_routes(:https, app_endpoint) do
     # TODO: Do we want an HTTPS route for apps without certificates?
     [
       Route.new(
         # TODO: Does the cluster name here need to be truncated?
-        action: {:route, RouteAction.new(cluster_specifier: {:cluster, app_info.name})},
+        action: {:route, RouteAction.new(cluster_specifier: {:cluster, app_endpoint.name})},
         # TODO: Support path-based routing
         match: RouteMatch.new(path_specifier: {:prefix, "/"})
       )

@@ -64,19 +64,19 @@ defmodule Relay.Demo.Marathon do
   end
 
   def clusters do
-    app_port_infos()
+    app_endpoints()
     |> Resources.CDS.clusters()
   end
 
-  def app_port_infos(), do: Adapter.app_port_infos_for_app(@demo_app, [@demo_task])
+  def app_endpoints(), do: Adapter.app_endpoints_for_app(@demo_app, [@demo_task])
 
   def routes do
-    app_port_infos()
+    app_endpoints()
     |> Resources.RDS.routes()
   end
 
   def endpoints do
-    app_port_infos()
+    app_endpoints()
     |> Resources.EDS.cluster_load_assignments()
   end
 end

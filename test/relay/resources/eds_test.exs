@@ -1,19 +1,19 @@
 defmodule Relay.Resources.EDSTest do
   use ExUnit.Case, async: true
 
-  alias Relay.Resources.{AppPortInfo, EDS}
+  alias Relay.Resources.{AppEndpoint, EDS}
 
   alias Envoy.Api.V2.ClusterLoadAssignment
   alias Envoy.Api.V2.Core.{Address, Locality, SocketAddress}
   alias Envoy.Api.V2.Endpoint.{Endpoint, LbEndpoint, LocalityLbEndpoints}
 
-  @simple_app_port_info %AppPortInfo{
+  @simple_app_endpoint %AppEndpoint{
     name: "/mc2_0",
     addresses: [{"10.70.4.100", 15979}]
   }
 
   test "simple cluster load assignment" do
-    assert [cla] = EDS.cluster_load_assignments([@simple_app_port_info])
+    assert [cla] = EDS.cluster_load_assignments([@simple_app_endpoint])
 
     assert %ClusterLoadAssignment{
              cluster_name: "/mc2_0",
@@ -42,8 +42,8 @@ defmodule Relay.Resources.EDSTest do
   end
 
   test "simple cluster load assignment no addresses" do
-    app_port_info = %AppPortInfo{@simple_app_port_info | addresses: []}
-    assert [cla] = EDS.cluster_load_assignments([app_port_info])
+    app_endpoint = %AppEndpoint{@simple_app_endpoint | addresses: []}
+    assert [cla] = EDS.cluster_load_assignments([app_endpoint])
 
     assert %ClusterLoadAssignment{
              cluster_name: "/mc2_0",
@@ -59,12 +59,12 @@ defmodule Relay.Resources.EDSTest do
   end
 
   test "simple cluster load assignment two addresses" do
-    app_port_info = %AppPortInfo{
-      @simple_app_port_info
+    app_endpoint = %AppEndpoint{
+      @simple_app_endpoint
       | addresses: [{"10.70.4.100", 15979}, {"10.70.4.101", 15980}]
     }
 
-    assert [cla] = EDS.cluster_load_assignments([app_port_info])
+    assert [cla] = EDS.cluster_load_assignments([app_endpoint])
 
     assert %ClusterLoadAssignment{
              cluster_name: "/mc2_0",
@@ -107,14 +107,14 @@ defmodule Relay.Resources.EDSTest do
   test "cluster load assignment with options" do
     alias Google.Protobuf.{UInt32Value, UInt64Value}
 
-    app_port_info = %AppPortInfo{
-      @simple_app_port_info
+    app_endpoint = %AppEndpoint{
+      @simple_app_endpoint
       | cla_opts: [policy: ClusterLoadAssignment.Policy.new(drop_overload: 5.0)],
         llb_endpoint_opts: [load_balancing_weight: UInt64Value.new(value: 42)],
         lb_endpoint_opts: [load_balancing_weight: UInt32Value.new(value: 13)]
     }
 
-    assert [cla] = EDS.cluster_load_assignments([app_port_info])
+    assert [cla] = EDS.cluster_load_assignments([app_endpoint])
 
     assert %ClusterLoadAssignment{
              policy: %ClusterLoadAssignment.Policy{drop_overload: 5.0},

@@ -2,7 +2,7 @@ defmodule Relay.Marathon.AdapterTest do
   use ExUnit.Case, async: true
 
   alias Relay.Marathon.{Adapter, App, Task}
-  alias Relay.Resources
+  alias Relay.Resources.AppEndpoint
 
   alias Envoy.Api.V2.Cluster
 
@@ -38,10 +38,10 @@ defmodule Relay.Marathon.AdapterTest do
     version: "2017-11-10T08:43:59.890Z"
   }
 
-  test "simple app_port_info no tasks" do
-    assert [app_port_info] = Adapter.app_port_infos_for_app(@test_app, [])
+  test "simple app_endpoint no tasks" do
+    assert [app_endpoint] = Adapter.app_endpoints_for_app(@test_app, [])
 
-    assert app_port_info == %Resources.AppPortInfo{
+    assert app_endpoint == %AppEndpoint{
              name: "/mc2_0",
              domains: ["mc2.example.org"],
              addresses: [],
@@ -52,68 +52,68 @@ defmodule Relay.Marathon.AdapterTest do
            }
   end
 
-  test "simple app_port_info one task" do
-    assert [app_port_info] = Adapter.app_port_infos_for_app(@test_app, [@test_task])
+  test "simple app_endpoint one task" do
+    assert [app_endpoint] = Adapter.app_endpoints_for_app(@test_app, [@test_task])
 
-    assert app_port_info == %Resources.AppPortInfo{
+    assert app_endpoint == %AppEndpoint{
              name: "/mc2_0",
              domains: ["mc2.example.org"],
              addresses: [{"10.70.4.100", 15979}]
            }
   end
 
-  test "simple app_port_info two tasks" do
-    assert [app_port_info] = Adapter.app_port_infos_for_app(@test_app, [@test_task, @test_task_2])
+  test "simple app_endpoint two tasks" do
+    assert [app_endpoint] = Adapter.app_endpoints_for_app(@test_app, [@test_task, @test_task_2])
 
-    assert app_port_info == %Resources.AppPortInfo{
+    assert app_endpoint == %AppEndpoint{
              name: "/mc2_0",
              domains: ["mc2.example.org"],
              addresses: [{"10.70.4.100", 15979}, {"10.70.4.101", 15980}]
            }
   end
 
-  test "app_port_info with cluster_opts" do
+  test "app_endpoint with cluster_opts" do
     connect_timeout = Duration.new(seconds: 10)
     lb_policy = Cluster.LbPolicy.value(:MAGLEV)
 
-    assert [app_port_info] =
-             Adapter.app_port_infos_for_app(
+    assert [app_endpoint] =
+             Adapter.app_endpoints_for_app(
                @test_app,
                [],
                cluster_opts: [connect_timeout: connect_timeout, lb_policy: lb_policy]
              )
 
-    assert app_port_info == %Resources.AppPortInfo{
+    assert app_endpoint == %AppEndpoint{
              name: "/mc2_0",
              domains: ["mc2.example.org"],
              cluster_opts: [connect_timeout: connect_timeout, lb_policy: lb_policy]
            }
   end
 
-  test "app_port_info with https redirect" do
+  test "app_endpoint with https redirect" do
     app = %{
       @test_app
       | labels: @test_app.labels |> Map.put("HAPROXY_0_REDIRECT_TO_HTTPS", "true")
     }
 
-    assert [app_port_info] = Adapter.app_port_infos_for_app(app, [])
+    assert [app_endpoint] = Adapter.app_endpoints_for_app(app, [])
 
-    assert app_port_info == %Resources.AppPortInfo{
+    assert app_endpoint == %AppEndpoint{
              name: "/mc2_0",
              domains: ["mc2.example.org"],
              redirect_to_https: true
            }
   end
 
-  test "app_port_info with marathon_acme_domains" do
+  test "app_endpoint with marathon_acme_domains" do
     app = %{
       @test_app
       | labels: @test_app.labels |> Map.put("MARATHON_ACME_0_DOMAIN", "mc2.example.org")
     }
 
-    assert [app_port_info] = Adapter.app_port_infos_for_app(app, [])
+    assert [app_endpoint] = Adapter.app_endpoints_for_app(app, [])
 
-    assert app_port_info == %Resources.AppPortInfo{
+    assert app_endpoint == %AppEndpoint{
              name: "/mc2_0",
              domains: ["mc2.example.org"],
              marathon_acme_domains: ["mc2.example.org"]

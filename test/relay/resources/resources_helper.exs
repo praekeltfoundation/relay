@@ -1,5 +1,5 @@
 defmodule LDSHelper do
-  alias Relay.Resources
+  alias Relay.Resources.CertInfo
 
   alias Envoy.Api.V2.Core.{Address, DataSource, SocketAddress}
 
@@ -18,7 +18,7 @@ defmodule LDSHelper do
       {%{sni_domains: domains}, tls_context} ->
         [cert] = tls_context.common_tls_context.tls_certificates
 
-        %Resources.CertInfo{
+        %CertInfo{
           domains: domains,
           key: unwrap_ds(cert.private_key),
           cert_chain: unwrap_ds(cert.certificate_chain)

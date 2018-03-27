@@ -1,7 +1,7 @@
 defmodule Relay.Resources.CDSTest do
   use ExUnit.Case, async: true
 
-  alias Relay.Resources
+  alias Relay.Resources.{AppEndpoint, CDS}
 
   alias Envoy.Api.V2.Cluster
   alias Envoy.Api.V2.Core.ConfigSource
@@ -9,13 +9,13 @@ defmodule Relay.Resources.CDSTest do
 
   @eds_type Cluster.DiscoveryType.value(:EDS)
 
-  @simple_app_port_info %Resources.AppPortInfo{
+  @simple_app_endpoint %AppEndpoint{
     name: "/mc2_0",
     cluster_opts: []
   }
 
   test "simple cluster" do
-    assert [cluster] = Resources.CDS.clusters([@simple_app_port_info])
+    assert [cluster] = CDS.clusters([@simple_app_endpoint])
 
     assert %Cluster{
              name: "/mc2_0",
@@ -34,15 +34,15 @@ defmodule Relay.Resources.CDSTest do
     connect_timeout = Duration.new(seconds: 10)
     lb_policy = Cluster.LbPolicy.value(:MAGLEV)
 
-    app_port_info = %Resources.AppPortInfo{
-      @simple_app_port_info
+    app_endpoint = %AppEndpoint{
+      @simple_app_endpoint
       | cluster_opts: [
           connect_timeout: connect_timeout,
           lb_policy: lb_policy
         ]
     }
 
-    assert [cluster] = Resources.CDS.clusters([app_port_info])
+    assert [cluster] = CDS.clusters([app_endpoint])
 
     assert %Cluster{
              name: "/mc2_0",
@@ -59,12 +59,12 @@ defmodule Relay.Resources.CDSTest do
   end
 
   test "cluster with long name" do
-    app_port_info = %Resources.AppPortInfo{
-      @simple_app_port_info
+    app_endpoint = %AppEndpoint{
+      @simple_app_endpoint
       | name: "/organisation/my_long_group_name/subgroup3456/application2934_0"
     }
 
-    assert [cluster] = Resources.CDS.clusters([app_port_info])
+    assert [cluster] = CDS.clusters([app_endpoint])
 
     assert %Cluster{
              name: "[...]ation/my_long_group_name/subgroup3456/application2934_0"

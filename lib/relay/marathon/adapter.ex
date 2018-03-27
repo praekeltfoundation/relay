@@ -1,9 +1,9 @@
 defmodule Relay.Marathon.Adapter do
   alias Relay.Marathon.{App, Task}
-  alias Relay.Resources.AppPortInfo
+  alias Relay.Resources.AppEndpoint
 
   @doc """
-  Create AppPortInfos for the given app and its tasks. These AppPortInfos will
+  Create AppEndpoints for the given app and its tasks. These AppEndpoints will
   contain only the basic app information required to build the various Envoy
   resources. Additional options may be specified in the `options` keyword list
   using the following keys:
@@ -13,14 +13,14 @@ defmodule Relay.Marathon.Adapter do
     - LocalityLbEndpoints: `:llb_endpoint_opts`
       - LbEndpoint: `:lb_endpoint_opts`
   """
-  @spec app_port_infos_for_app(App.t, [Task.t], keyword) :: [AppPortInfo.t]
-  def app_port_infos_for_app(%App{port_indices_in_group: port_indices} = app, tasks, options \\ []),
-    do: Enum.map(port_indices, &app_port_info_for_app_port(app, tasks, &1, options))
+  @spec app_endpoints_for_app(App.t, [Task.t], keyword) :: [AppEndpoint.t]
+  def app_endpoints_for_app(%App{port_indices_in_group: port_indices} = app, tasks, options \\ []),
+    do: Enum.map(port_indices, &app_endpoint_for_app_port(app, tasks, &1, options))
 
-  @spec app_port_info_for_app_port(App.t, [Task.t], non_neg_integer, keyword) :: AppPortInfo.t
-  defp app_port_info_for_app_port(app, tasks, port_index, options) do
+  @spec app_endpoint_for_app_port(App.t, [Task.t], non_neg_integer, keyword) :: AppEndpoint.t
+  defp app_endpoint_for_app_port(app, tasks, port_index, options) do
     # TODO: Validate options keys?
-    %AppPortInfo{
+    %AppEndpoint{
       name: "#{app.id}_#{port_index}",
       domains: App.marathon_lb_vhost(app, port_index),
       addresses: Enum.map(tasks, &{&1.address, Enum.at(&1.ports, port_index)}),

@@ -6,6 +6,7 @@ defmodule Relay.Resources do
   """
 
   alias Relay.Publisher
+  alias __MODULE__.{CertInfo, AppEndpoint, LDS}
 
   defmodule CertInfo do
     @moduledoc "Certificate data for SNI."
@@ -18,8 +19,7 @@ defmodule Relay.Resources do
           }
   end
 
-  # FIXME: This needs a better name.
-  defmodule AppPortInfo do
+  defmodule AppEndpoint do
     @moduledoc "All the stuff we need to know about a cluster 'application'."
     defstruct [
       :name,
@@ -50,17 +50,18 @@ defmodule Relay.Resources do
 
   defmodule State do
     @moduledoc false
-    defstruct sni_certs: {"", []}
+    defstruct sni_certs: {"", []}, app_endpoints: {"", []}
 
     @type t :: %__MODULE__{
-            sni_certs: {String.t(), [Relay.Resources.CertInfo.t()]}
+            sni_certs: {String.t(), [CertInfo.t()]},
+            app_endpoints: {String.t(), [AppEndpoint.t()]}
           }
   end
 
   ## Client interface
 
   def start_link(opts \\ []) do
-    {publisher, opts} = Keyword.pop(opts, :publisher, Relay.Publisher)
+    {publisher, opts} = Keyword.pop(opts, :publisher, Publisher)
     GenServer.start_link(__MODULE__, publisher, opts)
   end
 
@@ -85,7 +86,7 @@ defmodule Relay.Resources do
 
   defp publish_lds(pub, state) do
     {version, cert_infos} = state.sni_certs
-    listeners = Relay.Resources.LDS.listeners(cert_infos)
+    listeners = LDS.listeners(cert_infos)
     Publisher.update(pub, :lds, version, listeners)
   end
 
