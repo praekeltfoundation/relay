@@ -6,6 +6,7 @@ defmodule Relay.Resources.CDS do
   import Relay.Resources.Common
 
   alias Envoy.Api.V2.Cluster
+  alias Google.Protobuf.Duration
 
   @doc """
   Create Clusters for the given app_endpoints.
