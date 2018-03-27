@@ -156,7 +156,7 @@ defmodule Relay.Marathon.AppTest do
              },
              networking_mode: :"container/bridge",
              ports_list: [80],
-             port_indices_in_group: [0],
+             port_indices: [0],
              version: "2017-11-08T15:06:31.066Z"
            }
   end
@@ -167,14 +167,14 @@ defmodule Relay.Marathon.AppTest do
              labels: %{},
              networking_mode: :host,
              ports_list: [0],
-             port_indices_in_group: [],
+             port_indices: [],
              version: "2018-03-02T09:31:54.763Z"
            }
   end
 
   test "port indices in group" do
-    assert %App{port_indices_in_group: []} = App.from_definition(@test_app, "internal")
-    assert %App{port_indices_in_group: [0]} = App.from_definition(@test_app, "external")
+    assert %App{port_indices: []} = App.from_definition(@test_app, "internal")
+    assert %App{port_indices: [0]} = App.from_definition(@test_app, "external")
   end
 
   test "label getters" do
