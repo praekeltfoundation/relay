@@ -26,11 +26,13 @@ defmodule Relay.Resources.RDS do
   @spec virtual_host(atom, AppEndpoint.t()) :: VirtualHost.t()
   defp virtual_host(listener, app_endpoint) do
     VirtualHost.new(
-      # TODO: Do VirtualHost names need to be truncated?
-      name: "#{listener}_#{app_endpoint.name}",
-      # TODO: Validate domains
-      domains: app_endpoint.domains,
-      routes: app_endpoint_routes(listener, app_endpoint)
+      [
+        # TODO: Do VirtualHost names need to be truncated?
+        name: "#{listener}_#{app_endpoint.name}",
+        # TODO: Validate domains
+        domains: app_endpoint.domains,
+        routes: app_endpoint_routes(listener, app_endpoint)
+      ] ++ app_endpoint.vhost_opts
     )
   end
 

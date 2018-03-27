@@ -28,6 +28,35 @@ defmodule Relay.Resources.RDSTest do
     assert Protobuf.Validator.valid?(https_config)
   end
 
+  test "routes with vhost options" do
+    alias Envoy.Api.V2.Core.{HeaderValue, HeaderValueOption}
+    alias Google.Protobuf.BoolValue
+
+    response_headers_to_add =
+      HeaderValueOption.new(
+        header: HeaderValue.new(key: "Strict-Transport-Security", value: "max-age=31536000"),
+        append: BoolValue.new(value: false)
+      )
+
+    app_endpoint = %AppEndpoint{
+      @simple_app_endpoint
+      | vhost_opts: [response_headers_to_add: response_headers_to_add]
+    }
+
+    assert [http_config, https_config] = RDS.route_configurations([app_endpoint])
+
+    assert %RouteConfiguration{
+             virtual_hosts: [%VirtualHost{response_headers_to_add: ^response_headers_to_add}]
+           } = http_config
+
+    assert %RouteConfiguration{
+             virtual_hosts: [%VirtualHost{response_headers_to_add: ^response_headers_to_add}]
+           } = https_config
+
+    assert Protobuf.Validator.valid?(http_config)
+    assert Protobuf.Validator.valid?(https_config)
+  end
+
   test "multiple simple apps" do
     simple_app_endpoint2 = %{@simple_app_endpoint | name: "/mc3_0"}
 
