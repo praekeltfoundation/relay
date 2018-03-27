@@ -18,12 +18,8 @@ defmodule Relay.Marathon.Adapter do
       - LbEndpoint: `:lb_endpoint_opts`
   """
   @spec app_endpoints_for_app(App.t(), [Task.t()], keyword) :: [AppEndpoint.t()]
-  def app_endpoints_for_app(
-        %App{port_indices_in_group: port_indices} = app,
-        tasks,
-        options \\ []
-      ),
-      do: Enum.map(port_indices, &app_endpoint_for_app_port(app, tasks, &1, options))
+  def app_endpoints_for_app(%App{port_indices: port_indices} = app, tasks, options \\ []),
+    do: Enum.map(port_indices, &app_endpoint_for_app_port(app, tasks, &1, options))
 
   @spec app_endpoint_for_app_port(App.t(), [Task.t()], non_neg_integer, keyword) ::
           AppEndpoint.t()

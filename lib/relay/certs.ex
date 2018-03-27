@@ -1,6 +1,9 @@
 defmodule Relay.Certs do
+  @moduledoc """
+  Utilities for working with PEM-encoded certificates.
+  """
 
-  @typep pem_entry :: :public_key.pem_entry
+  @typep pem_entry :: :public_key.pem_entry()
 
   # This is a somewhat loose regex designed to exclude things that obviously
   # aren't hostnames. It will allow some non-hostnames, because full validation
@@ -22,9 +25,10 @@ defmodule Relay.Certs do
   Extracts the subject CNs and SAN DNS names from the given certificate to
   determine which SNI hostnames to serve it for.
   """
-  @spec get_hostnames(:relay_pk_utils.cert) :: [String.t]
+  @spec get_hostnames(:relay_pk_utils.cert()) :: [String.t()]
   def get_hostnames(cert) do
-    :relay_pk_utils.get_cert_names(cert)
+    cert
+    |> :relay_pk_utils.get_cert_names()
     |> Enum.map(&to_string/1)
     |> Enum.filter(&String.match?(&1, @hostname_regex))
     |> Enum.uniq()
@@ -35,7 +39,8 @@ defmodule Relay.Certs do
   """
   @spec get_certs(binary | [pem_entry]) :: [pem_entry]
   def get_certs(pem_data) do
-    pem_decode(pem_data)
+    pem_data
+    |> pem_decode()
     |> Enum.filter(fn {pem_type, _, _} -> pem_type == :Certificate end)
   end
 
@@ -45,7 +50,8 @@ defmodule Relay.Certs do
   """
   @spec get_key(binary | [pem_entry]) :: {:ok, pem_entry} | :error
   def get_key(pem_data) do
-    pem_decode(pem_data)
+    pem_data
+    |> pem_decode()
     |> Enum.filter(fn {pem_type, _, _} -> pem_type in @key_types end)
     |> Enum.fetch(0)
   end
@@ -58,15 +64,15 @@ defmodule Relay.Certs do
   to support self-signed certs (which may look a lot like CA certs), we assume
   that if there's only one cert in the PEM data it's the one we want.
   """
-  @spec get_end_entity_hostnames(binary | [pem_entry]) :: [String.t]
+  @spec get_end_entity_hostnames(binary | [pem_entry]) :: [String.t()]
   def get_end_entity_hostnames(pem_data) do
-    get_certs(pem_data)
+    pem_data
+    |> get_certs()
     |> get_end_entity_certs()
     |> Enum.flat_map(&get_hostnames/1)
     |> Enum.uniq()
   end
 
   defp get_end_entity_certs([cert]), do: [cert]
-  defp get_end_entity_certs(certs),
-    do: :relay_pk_utils.get_end_entity_certs(certs)
+  defp get_end_entity_certs(certs), do: :relay_pk_utils.get_end_entity_certs(certs)
 end

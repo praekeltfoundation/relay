@@ -32,9 +32,11 @@ defmodule Relay.Supervisor do
         Relay.Server.ListenerDiscoveryService,
         Relay.Server.RouteDiscoveryService,
         Relay.Server.ClusterDiscoveryService,
-        Relay.Server.EndpointDiscoveryService,
+        Relay.Server.EndpointDiscoveryService
       ]
+
       opts = [adapter: Relay.GRPCAdapter, ip: parse_ip_address(addr)]
+
       children = [
         {Relay.Demo.Marathon, []},
         {Relay.Demo.Certs, []},
@@ -46,7 +48,7 @@ defmodule Relay.Supervisor do
 
     @spec parse_ip_address(String.t()) :: :inet.ip_address()
     defp parse_ip_address(addr) do
-      {:ok, address} = String.to_charlist(addr) |> :inet.parse_address()
+      {:ok, address} = addr |> String.to_charlist() |> :inet.parse_address()
       address
     end
   end
@@ -55,8 +57,9 @@ defmodule Relay.Supervisor do
     children = [
       {Relay.Publisher, [name: Relay.Publisher]},
       {Relay.Resources, [name: Relay.Resources]},
-      {FrontendSupervisor, {addr, port}},
+      {FrontendSupervisor, {addr, port}}
     ]
+
     Supervisor.init(children, strategy: :rest_for_one)
   end
 end

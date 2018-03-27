@@ -15,7 +15,7 @@ defmodule MarathonClient do
   @spec stream_events(String.t(), [pid], non_neg_integer) :: GenServer.on_start()
   def stream_events(base_url, listeners, timeout \\ 60_000) do
     url = base_url <> "/v2/events"
-    MarathonClient.SSEClient.start_link({url, listeners, timeout})
+    __MODULE__.SSEClient.start_link({url, listeners, timeout})
   end
 
   defp marathon_response(%Response{status_code: 200, body: body}), do: Poison.decode(body)

@@ -14,5 +14,4 @@ defmodule Relay do
 
     Supervisor.start_link({addr, port}, name: Supervisor)
   end
-
 end
