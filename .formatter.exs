@@ -9,8 +9,7 @@ include_patterns = ["*.exs", "{config,lib,test}/**/*.{ex,exs}"]
 ignore_paths = [
   # TODO: Reduce this list
   "mix.exs",
-  "config/config.exs",
-  "lib/relay/protobuf_util.ex"
+  "config/config.exs"
 ]
 
 inputs =
