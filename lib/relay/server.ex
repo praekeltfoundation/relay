@@ -31,26 +31,26 @@ defmodule Relay.Server.Macros do
         def xds, do: @xds
         def type_url, do: @type_url
 
-        @spec unquote(stream_func)(Enumerable.t, Stream.t) :: Stream.t
+        @spec unquote(stream_func)(Enumerable.t(), Stream.t()) :: Stream.t()
         def unquote(stream_func)(req_enum, stream0) do
           Log.debug(fn -> inspect({unquote(stream_func), self()}) end)
           :ok = Publisher.subscribe(Publisher, @xds, self())
           handle_requests(req_enum, stream0)
         end
 
-        @spec unquote(fetch_func)(DiscoveryRequest.t, Stream.t) :: DiscoveryResponse.t
+        @spec unquote(fetch_func)(DiscoveryRequest.t(), Stream.t()) :: DiscoveryResponse.t()
         def unquote(fetch_func)(_request, _stream) do
           raise GRPC.RPCError, status: GRPC.Status.unimplemented(), message: "not implemented"
         end
 
-        @spec handle_requests(Enumerable.t, Stream.t) :: Stream.t
+        @spec handle_requests(Enumerable.t(), Stream.t()) :: Stream.t()
         defp handle_requests(req_enum, stream0) do
           # We must use the `Stream` returned by `GRPC.Server.send_reply` for
           # each subsequent request and return the final `Stream`.
           req_enum |> Enum.reduce(stream0, &handle_request(&1, &2))
         end
 
-        @spec handle_request(DiscoveryRequest.t, Stream.t) :: Stream.t
+        @spec handle_request(DiscoveryRequest.t(), Stream.t()) :: Stream.t()
         defp handle_request(_request, stream) do
           # TODO: How to handle errors?
           # FIXME: What if we get multiple updates between requests?
@@ -60,11 +60,11 @@ defmodule Relay.Server.Macros do
           end
         end
 
-        @spec send_reply(Stream.t, String.t, [unquote(resource_type).t]) :: Stream.t
+        @spec send_reply(Stream.t(), String.t(), [unquote(resource_type).t]) :: Stream.t()
         defp send_reply(stream, version_info, resources),
           do: GRPC.Server.send_reply(stream, mkresponse(version_info, resources))
 
-        @spec mkresponse(String.t, [unquote(resource_type).t]) :: DiscoveryResponse.t
+        @spec mkresponse(String.t(), [unquote(resource_type).t]) :: DiscoveryResponse.t()
         defp mkresponse(version_info, resources) do
           typed_resources = resources |> Enum.map(&ProtobufUtil.mkany(@type_url, &1))
 

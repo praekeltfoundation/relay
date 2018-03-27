@@ -32,9 +32,11 @@ defmodule Relay.Supervisor do
         Relay.Server.ListenerDiscoveryService,
         Relay.Server.RouteDiscoveryService,
         Relay.Server.ClusterDiscoveryService,
-        Relay.Server.EndpointDiscoveryService,
+        Relay.Server.EndpointDiscoveryService
       ]
+
       opts = [adapter: Relay.GRPCAdapter, ip: parse_ip_address(addr)]
+
       children = [
         {Relay.Demo.Marathon, []},
         {Relay.Demo.Certs, []},
@@ -55,8 +57,9 @@ defmodule Relay.Supervisor do
     children = [
       {Relay.Publisher, [name: Relay.Publisher]},
       {Relay.Resources, [name: Relay.Resources]},
-      {FrontendSupervisor, {addr, port}},
+      {FrontendSupervisor, {addr, port}}
     ]
+
     Supervisor.init(children, strategy: :rest_for_one)
   end
 end

@@ -40,8 +40,9 @@ defmodule Relay.Marathon.App do
 
   defp port_indices_in_group([], _labels, _group), do: []
 
-  @spec port_indices_in_group([:inet.port_number()], %{String.t() => String.t()}, String.t()) ::
-          [non_neg_integer]
+  @spec port_indices_in_group([:inet.port_number()], %{String.t() => String.t()}, String.t()) :: [
+          non_neg_integer
+        ]
   defp port_indices_in_group(ports_list, labels, group) do
     0..(length(ports_list) - 1)
     |> Enum.filter(fn port_index -> Labels.marathon_lb_group(labels, port_index) == group end)

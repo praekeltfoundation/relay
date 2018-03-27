@@ -3,7 +3,7 @@ defmodule Relay.Certs do
   Utilities for working with PEM-encoded certificates.
   """
 
-  @typep pem_entry :: :public_key.pem_entry
+  @typep pem_entry :: :public_key.pem_entry()
 
   # This is a somewhat loose regex designed to exclude things that obviously
   # aren't hostnames. It will allow some non-hostnames, because full validation
@@ -25,7 +25,7 @@ defmodule Relay.Certs do
   Extracts the subject CNs and SAN DNS names from the given certificate to
   determine which SNI hostnames to serve it for.
   """
-  @spec get_hostnames(:relay_pk_utils.cert) :: [String.t]
+  @spec get_hostnames(:relay_pk_utils.cert()) :: [String.t()]
   def get_hostnames(cert) do
     cert
     |> :relay_pk_utils.get_cert_names()
@@ -64,7 +64,7 @@ defmodule Relay.Certs do
   to support self-signed certs (which may look a lot like CA certs), we assume
   that if there's only one cert in the PEM data it's the one we want.
   """
-  @spec get_end_entity_hostnames(binary | [pem_entry]) :: [String.t]
+  @spec get_end_entity_hostnames(binary | [pem_entry]) :: [String.t()]
   def get_end_entity_hostnames(pem_data) do
     pem_data
     |> get_certs()
@@ -74,6 +74,5 @@ defmodule Relay.Certs do
   end
 
   defp get_end_entity_certs([cert]), do: [cert]
-  defp get_end_entity_certs(certs),
-    do: :relay_pk_utils.get_end_entity_certs(certs)
+  defp get_end_entity_certs(certs), do: :relay_pk_utils.get_end_entity_certs(certs)
 end

@@ -10,20 +10,8 @@ ignore_paths = [
   # TODO: Reduce this list
   "mix.exs",
   "config/config.exs",
-  "lib/log_wrapper.ex",
-  "lib/relay.ex",
-  "lib/relay/certs.ex",
-  "lib/relay/demo/certs.ex",
-  "lib/relay/grpc_adapter.ex",
-  "lib/relay/marathon/app.ex",
-  "lib/relay/marathon/labels.ex",
-  "lib/relay/marathon/networking.ex",
-  "lib/relay/marathon/state.ex",
-  "lib/relay/marathon/task.ex",
   "lib/relay/protobuf_util.ex",
-  "lib/relay/publisher.ex",
-  "lib/relay/server.ex",
-  "lib/relay/supervisor.ex"
+  "lib/relay/server.ex"
 ]
 
 inputs =

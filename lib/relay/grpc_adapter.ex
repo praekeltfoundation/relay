@@ -24,7 +24,7 @@ defmodule Relay.GRPCAdapter do
   # Override start_link to add our own retry-with-timeout logic.
   @spec start_link(atom, GRPC.Server.servers_map(), [any]) :: {:ok, pid} | {:error, any}
   def start_link(scheme, servers, args) do
-    start_fun = fn() -> GAC.start_link(scheme, servers, args) end
+    start_fun = fn -> GAC.start_link(scheme, servers, args) end
     retry_start(start_fun, now() + @retry_timeout)
   end
 
@@ -34,7 +34,8 @@ defmodule Relay.GRPCAdapter do
   @spec retry_start((() -> {:ok, pid} | {:error, any}), integer) :: {:ok, pid} | {:error, any}
   defp retry_start(start_fun, deadline) do
     result = start_fun.()
-    if (now() + @retry_interval < deadline) and retry?(result) do
+
+    if now() + @retry_interval < deadline and retry?(result) do
       Process.sleep(@retry_interval)
       retry_start(start_fun, deadline)
     else
@@ -45,15 +46,17 @@ defmodule Relay.GRPCAdapter do
   @spec retry?({:ok, pid} | {:error, any}) :: boolean
   defp retry?({:error, {:shutdown, {:failed_to_start_child, _, reason}}}),
     do: retry?({:error, reason})
+
   defp retry?({:error, {:listen_error, _, :eaddrinuse}}), do: true
   defp retry?(_), do: false
 
-
   # Override child_spec to replace the adapter module with our own.
-  @spec child_spec(GRPC.Server.servers_map(), non_neg_integer, Keyword.t()) :: Supervisor.Spec.spec()
+  @spec child_spec(GRPC.Server.servers_map(), non_neg_integer, Keyword.t()) ::
+          Supervisor.Spec.spec()
   def child_spec(servers, port, opts) do
     {ref, {_module, func, args}, type, timeout, kind, modules} =
       GAC.child_spec(servers, port, opts)
+
     {ref, {__MODULE__, func, args}, type, timeout, kind, modules}
   end
 end

@@ -3,12 +3,12 @@ defmodule Relay.Marathon.Labels do
   Extracts information from Marathon app labels.
   """
 
-  @type labels :: %{optional(String.t) => String.t}
+  @type labels :: %{optional(String.t()) => String.t()}
 
   @doc """
   Get the marathon-lb group for the given port index.
   """
-  @spec marathon_lb_group(labels, non_neg_integer) :: String.t | nil
+  @spec marathon_lb_group(labels, non_neg_integer) :: String.t() | nil
   def marathon_lb_group(app_labels, port_index) do
     default = app_label(app_labels, "GROUP", "HAPROXY")
     port_label(app_labels, "GROUP", port_index, "HAPROXY", default)
@@ -24,14 +24,14 @@ defmodule Relay.Marathon.Labels do
   @doc """
   Get the list of marathon-lb vhosts for the given port index.
   """
-  @spec marathon_lb_vhost(labels, non_neg_integer) :: [String.t]
+  @spec marathon_lb_vhost(labels, non_neg_integer) :: [String.t()]
   def marathon_lb_vhost(app_labels, port_index),
     do: domains_label(app_labels, "VHOST", port_index, "HAPROXY")
 
   @doc """
   Get the list of marathon-acme domains for the given port index.
   """
-  @spec marathon_acme_domain(labels, non_neg_integer) :: [String.t]
+  @spec marathon_acme_domain(labels, non_neg_integer) :: [String.t()]
   def marathon_acme_domain(app_labels, port_index),
     do: domains_label(app_labels, "DOMAIN", port_index, "MARATHON_ACME")
 
@@ -52,6 +52,6 @@ defmodule Relay.Marathon.Labels do
     do: Map.get(app_labels, Enum.join(parts, "_"), default)
 
   @doc false
-  @spec parse_domains_label(String.t) :: [String.t]
+  @spec parse_domains_label(String.t()) :: [String.t()]
   def parse_domains_label(label), do: label |> String.replace(",", " ") |> String.split()
 end
