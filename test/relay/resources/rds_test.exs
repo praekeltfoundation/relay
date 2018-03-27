@@ -31,7 +31,8 @@ defmodule Relay.Resources.RDSTest do
   test "multiple simple apps" do
     simple_app_endpoint2 = %{@simple_app_endpoint | name: "/mc3_0"}
 
-    assert [http_config, https_config] = RDS.route_configurations([@simple_app_endpoint, simple_app_endpoint2])
+    assert [http_config, https_config] =
+             RDS.route_configurations([@simple_app_endpoint, simple_app_endpoint2])
 
     assert %RouteConfiguration{
              name: "http",
