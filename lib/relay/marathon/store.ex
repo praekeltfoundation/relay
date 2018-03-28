@@ -142,7 +142,7 @@ defmodule Relay.Marathon.Store do
     @spec new_state(t, keyword) :: t
     defp new_state(state, updates), do: struct(state, [version: new_version()] ++ updates)
 
-    @spec new_version() :: {integer, integer}
+    @spec new_version() :: String.t()
     defp new_version do
       time = DateTime.utc_now() |> DateTime.truncate(:second) |> DateTime.to_iso8601()
 
