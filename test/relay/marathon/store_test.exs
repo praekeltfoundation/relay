@@ -38,7 +38,7 @@ defmodule Relay.Marathon.StoreTest do
   end
 
   defp assert_empty_state(store),
-    do: assert get_state(store) == %Store.State{apps: %{}, tasks: %{}, app_tasks: %{}}
+    do: assert(get_state(store) == %Store.State{apps: %{}, tasks: %{}, app_tasks: %{}})
 
   test "update app not existing", %{store: store} do
     %App{id: app_id} = @test_app
@@ -46,10 +46,10 @@ defmodule Relay.Marathon.StoreTest do
     assert Store.update_app(store, @test_app) == :ok
 
     assert get_state(store) == %Store.State{
-      apps: %{app_id => @test_app},
-      app_tasks: %{app_id => MapSet.new()},
-      tasks: %{}
-    }
+             apps: %{app_id => @test_app},
+             app_tasks: %{app_id => MapSet.new()},
+             tasks: %{}
+           }
   end
 
   test "update app same version", %{store: store} do
@@ -59,10 +59,10 @@ defmodule Relay.Marathon.StoreTest do
     assert Store.update_app(store, @test_app) == :ok
 
     assert get_state(store) == %Store.State{
-      apps: %{app_id => @test_app},
-      app_tasks: %{app_id => MapSet.new()},
-      tasks: %{}
-    }
+             apps: %{app_id => @test_app},
+             app_tasks: %{app_id => MapSet.new()},
+             tasks: %{}
+           }
   end
 
   test "update app new version", %{store: store} do
@@ -103,19 +103,20 @@ defmodule Relay.Marathon.StoreTest do
     assert Store.update_task(store, @test_task) == :ok
 
     assert get_state(store) == %Store.State{
-      apps: %{app_id => @test_app},
-      tasks: %{task_id => @test_task},
-      app_tasks: %{app_id => MapSet.new([task_id])}
-    }
+             apps: %{app_id => @test_app},
+             tasks: %{task_id => @test_task},
+             app_tasks: %{app_id => MapSet.new([task_id])}
+           }
   end
 
   test "update task without app", %{store: store} do
     %Task{id: task_id, app_id: app_id} = @test_task
 
     import ExUnit.CaptureLog
+
     assert capture_log(fn ->
-      assert Store.update_task(store, @test_task) == :ok
-    end) =~ "Unable to find app '#{app_id}' for task '#{task_id}'. Task update ignored."
+             assert Store.update_task(store, @test_task) == :ok
+           end) =~ "Unable to find app '#{app_id}' for task '#{task_id}'. Task update ignored."
 
     assert_empty_state(store)
   end
@@ -153,11 +154,12 @@ defmodule Relay.Marathon.StoreTest do
     assert Store.delete_task(store, task_id) == :ok
 
     empty_set = MapSet.new()
+
     assert %Store.State{
-      apps: %{^app_id => @test_app},
-      tasks: %{},
-      app_tasks: %{^app_id => ^empty_set}
-    } = get_state(store)
+             apps: %{^app_id => @test_app},
+             tasks: %{},
+             app_tasks: %{^app_id => ^empty_set}
+           } = get_state(store)
   end
 
   test "delete task does not exist", %{store: store} do
@@ -196,8 +198,8 @@ defmodule Relay.Marathon.StoreTest do
     assert Store.update_task(store, task2) == :ok
 
     assert get_state(store) |> Store.State.get_apps_and_tasks() == [
-      {app2, []},
-      {@test_app, [task2, @test_task]}
-    ]
+             {app2, []},
+             {@test_app, [task2, @test_task]}
+           ]
   end
 end
