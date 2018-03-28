@@ -45,11 +45,13 @@ defmodule Envoy.Api.V2.Core.BindConfig do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          source_address: Envoy.Api.V2.Core.SocketAddress.t()
+          source_address: Envoy.Api.V2.Core.SocketAddress.t(),
+          freebind: boolean
         }
-  defstruct [:source_address]
+  defstruct [:source_address, :freebind]
 
   field :source_address, 1, type: Envoy.Api.V2.Core.SocketAddress
+  field :freebind, 2, type: :bool
 end
 
 defmodule Envoy.Api.V2.Core.Address do

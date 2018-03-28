@@ -9,10 +9,10 @@ defmodule Relay.ProtobufUtilTest do
       use Protobuf, syntax: :proto3
 
       @type t :: %__MODULE__{
-        foo: integer,
-        bar: boolean,
-        baz: String.t
-      }
+              foo: integer,
+              bar: boolean,
+              baz: String.t()
+            }
       defstruct [:foo, :bar, :baz]
 
       field :foo, 1, type: :uint32
@@ -24,12 +24,12 @@ defmodule Relay.ProtobufUtilTest do
     struct = ProtobufUtil.mkstruct(proto)
 
     assert struct == %Struct{
-      fields: %{
-        "foo" => %Value{kind: {:number_value, 123}},
-        "bar" => %Value{kind: {:bool_value, true}},
-        "baz" => %Value{kind: {:string_value, "abc"}},
-      }
-    }
+             fields: %{
+               "foo" => %Value{kind: {:number_value, 123}},
+               "bar" => %Value{kind: {:bool_value, true}},
+               "baz" => %Value{kind: {:string_value, "abc"}}
+             }
+           }
   end
 
   test "unset fields not packed" do
@@ -37,9 +37,9 @@ defmodule Relay.ProtobufUtilTest do
       use Protobuf, syntax: :proto3
 
       @type t :: %__MODULE__{
-        bar: boolean,
-        baz: Struct.t
-      }
+              bar: boolean,
+              baz: Struct.t()
+            }
       defstruct [:bar, :baz]
 
       field :bar, 1, type: :bool
@@ -57,8 +57,8 @@ defmodule Relay.ProtobufUtilTest do
       use Protobuf, syntax: :proto3
 
       @type t :: %__MODULE__{
-        foo: integer
-      }
+              foo: integer
+            }
       defstruct [:foo]
 
       field :foo, 1, type: :uint32
@@ -68,8 +68,8 @@ defmodule Relay.ProtobufUtilTest do
       use Protobuf, syntax: :proto3
 
       @type t :: %__MODULE__{
-        bar: NestedType.t
-      }
+              bar: NestedType.t()
+            }
       defstruct [:bar]
 
       field :bar, 1, type: NestedType
@@ -79,13 +79,16 @@ defmodule Relay.ProtobufUtilTest do
     struct = ProtobufUtil.mkstruct(proto)
 
     assert struct == %Struct{
-      fields: %{
-        "bar" => %Value{kind: {:struct_value, %Struct{
-          fields: %{
-            "foo" => %Value{kind: {:number_value, 123}}},
-          }}},
-      }
-    }
+             fields: %{
+               "bar" => %Value{
+                 kind:
+                   {:struct_value,
+                    %Struct{
+                      fields: %{"foo" => %Value{kind: {:number_value, 123}}}
+                    }}
+               }
+             }
+           }
   end
 
   test "nested struct packed as struct" do
@@ -93,25 +96,29 @@ defmodule Relay.ProtobufUtilTest do
       use Protobuf, syntax: :proto3
 
       @type t :: %__MODULE__{
-        foo: Struct.t
-      }
+              foo: Struct.t()
+            }
       defstruct [:foo]
 
       field :foo, 1, type: Struct
     end
 
-    proto = StructType.new(
-      foo: Struct.new(fields: %{"bar" => Value.new(kind: {:string_value, "abc"})}))
+    proto =
+      StructType.new(foo: Struct.new(fields: %{"bar" => Value.new(kind: {:string_value, "abc"})}))
+
     struct = ProtobufUtil.mkstruct(proto)
 
     assert struct == %Struct{
-      fields: %{
-        "foo" => %Value{kind: {:struct_value, %Struct{
-          fields: %{
-            "bar" => %Value{kind: {:string_value, "abc"}}},
-          }}},
-      }
-    }
+             fields: %{
+               "foo" => %Value{
+                 kind:
+                   {:struct_value,
+                    %Struct{
+                      fields: %{"bar" => %Value{kind: {:string_value, "abc"}}}
+                    }}
+               }
+             }
+           }
   end
 
   test "list values packed" do
@@ -119,8 +126,8 @@ defmodule Relay.ProtobufUtilTest do
       use Protobuf, syntax: :proto3
 
       @type t :: %__MODULE__{
-        foo: [String.t],
-      }
+              foo: [String.t()]
+            }
       defstruct [:foo]
 
       field :foo, 1, repeated: true, type: :string
@@ -130,13 +137,19 @@ defmodule Relay.ProtobufUtilTest do
     struct = ProtobufUtil.mkstruct(proto)
 
     assert struct == %Struct{
-      fields: %{
-        "foo" => %Value{kind: {:list_value, %ListValue{values: [
-          %Value{kind: {:string_value, "abc"}},
-          %Value{kind: {:string_value, "def"}},
-        ]}}},
-      }
-    }
+             fields: %{
+               "foo" => %Value{
+                 kind:
+                   {:list_value,
+                    %ListValue{
+                      values: [
+                        %Value{kind: {:string_value, "abc"}},
+                        %Value{kind: {:string_value, "def"}}
+                      ]
+                    }}
+               }
+             }
+           }
   end
 
   test "oneof values packed" do
@@ -144,9 +157,9 @@ defmodule Relay.ProtobufUtilTest do
       use Protobuf, syntax: :proto3
 
       @type t :: %__MODULE__{
-        foobar: {atom, any},
-        baz: String.t
-      }
+              foobar: {atom, any},
+              baz: String.t()
+            }
       defstruct [:foobar, :baz]
 
       oneof :foobar, 0
@@ -159,11 +172,11 @@ defmodule Relay.ProtobufUtilTest do
     struct = ProtobufUtil.mkstruct(proto)
 
     assert struct == %Struct{
-      fields: %{
-        "bar" => %Value{kind: {:bool_value, true}},
-        "baz" => %Value{kind: {:string_value, "def"}},
-      }
-    }
+             fields: %{
+               "bar" => %Value{kind: {:bool_value, true}},
+               "baz" => %Value{kind: {:string_value, "def"}}
+             }
+           }
   end
 
   test "unset oneof values not packed" do
@@ -171,9 +184,9 @@ defmodule Relay.ProtobufUtilTest do
       use Protobuf, syntax: :proto3
 
       @type t :: %__MODULE__{
-        foobar: {atom, any},
-        baz: String.t
-      }
+              foobar: {atom, any},
+              baz: String.t()
+            }
       defstruct [:foobar, :baz]
 
       oneof :foobar, 0
@@ -186,8 +199,8 @@ defmodule Relay.ProtobufUtilTest do
     struct = ProtobufUtil.mkstruct(proto)
 
     assert struct == %Struct{
-      fields: %{"baz" => %Value{kind: {:string_value, "def"}}}
-    }
+             fields: %{"baz" => %Value{kind: {:string_value, "def"}}}
+           }
   end
 
   test "protobufs validated before packing" do
@@ -195,8 +208,8 @@ defmodule Relay.ProtobufUtilTest do
       use Protobuf, syntax: :proto3
 
       @type t :: %__MODULE__{
-        foo: integer
-      }
+              foo: integer
+            }
       defstruct [:foo]
 
       field :foo, 1, type: :uint32
@@ -204,9 +217,11 @@ defmodule Relay.ProtobufUtilTest do
 
     proto = ValidatedType.new(foo: "ghi")
 
-    assert_raise Protobuf.InvalidError, "Relay.ProtobufUtilTest.ValidatedType#foo is invalid!", fn ->
-      ProtobufUtil.mkstruct(proto)
-    end
+    assert_raise Protobuf.InvalidError,
+                 "Relay.ProtobufUtilTest.ValidatedType#foo is invalid!",
+                 fn ->
+                   ProtobufUtil.mkstruct(proto)
+                 end
   end
 
   test "structs serialize and deserialize to the same thing" do
@@ -214,9 +229,9 @@ defmodule Relay.ProtobufUtilTest do
       use Protobuf, syntax: :proto3
 
       @type t :: %__MODULE__{
-        foo: String.t,
-        bar: String.t
-      }
+              foo: String.t(),
+              bar: String.t()
+            }
       defstruct [:foo, :bar]
 
       field :foo, 1, type: :string
@@ -235,9 +250,9 @@ defmodule Relay.ProtobufUtilTest do
       use Protobuf, syntax: :proto3
 
       @type t :: %__MODULE__{
-        foobar: {atom, any},
-        baz: String.t
-      }
+              foobar: {atom, any},
+              baz: String.t()
+            }
       defstruct [:foobar, :baz]
 
       oneof :foobar, 0

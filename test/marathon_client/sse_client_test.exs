@@ -94,9 +94,10 @@ defmodule MarathonClient.SSEClientTest do
 
     # Capture the error that gets logged outside our control.
     import ExUnit.CaptureLog
+
     assert capture_log(fn ->
-      # Wait for the timeout.
-      assert_receive {:DOWN, ^ref, :process, _, {:closed, :timeout}}, 150
-    end) =~ ~r/\[error\] .* terminating\n\*\* \(stop\) \{:closed, :timeout\}/
+             # Wait for the timeout.
+             assert_receive {:DOWN, ^ref, :process, _, {:closed, :timeout}}, 150
+           end) =~ ~r/\[error\] .* terminating\n\*\* \(stop\) \{:closed, :timeout\}/
   end
 end

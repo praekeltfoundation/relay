@@ -12,11 +12,13 @@ defmodule Relay.MixProject do
       test_coverage: [tool: ExCoveralls],
       aliases: aliases(),
       preferred_cli_env: [
-        "coveralls": :test,
+        coveralls: :test,
         "coveralls.json": :test,
         "coveralls.detail": :test,
+        credo: :test
       ],
       dialyzer: dialyzer(),
+      elixirc_paths: ["lib", "gen"]
     ]
   end
 
@@ -28,35 +30,43 @@ defmodule Relay.MixProject do
     ]
   end
 
-  defp aliases, do: [
-    # Don't start application for tests.
-    test: "test --no-start",
-  ]
+  defp aliases do
+    [
+      # Don't start application for tests.
+      test: "test --no-start"
+    ]
+  end
 
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:grpc, github: "tony612/grpc-elixir"},
-
+      {:grpc, "~> 0.3.0-alpha.1"},
+      # 2018-03-26: grpc has the dependency `{:gun, "~> 1.0.0-pre.5"}` which
+      # actually pulls in 1.0.0-pre.4b which causes errors with GRPC streams
+      # that return an error code.
+      {:gun, "1.0.0-pre.5"},
       # 2017-12-13: The latest hackney release (1.10.1) has a bug in async
       # request cleanup: https://github.com/benoitc/hackney/issues/447 The
       # partial fix in master leaves us with a silent deadlock, so for now
       # we'll use an earlier version.
       {:hackney, "~> 1.9.0"},
-      {:httpoison, "~> 0.13"},
-
+      {:httpoison, "~> 1.0"},
       {:poison, "~> 3.1"},
+      {:conform, "~> 2.2"},
 
       # Test deps.
-      {:sse_test_server,
-       git: "https://github.com/praekeltfoundation/sse_test_server.git",
-       ref: "d8917d260685a306834a476a7457469be590c4d4",
-       only: :test,
-       # We need this installed, but we don't want to run its app.
-       app: false},
-
+      {
+        :sse_test_server,
+        git: "https://github.com/praekeltfoundation/sse_test_server.git",
+        ref: "d8917d260685a306834a476a7457469be590c4d4",
+        only: :test,
+        app: false
+      },
       {:excoveralls, "~> 0.8", only: :test},
+
+      # Dev/test tools.
       {:dialyxir, "~> 0.5", only: :dev, runtime: false},
+      {:credo, "~> 0.9", only: [:dev, :test], runtime: false}
     ]
   end
 
@@ -76,8 +86,8 @@ defmodule Relay.MixProject do
         # The dialyzer docs indicate that the race condition check can
         # sometimes take a whole lot of time.
         :race_conditions,
-        :underspecs,
-      ],
+        :underspecs
+      ]
     ]
   end
 end

@@ -13,7 +13,7 @@ defmodule Relay.Marathon.StoreTest do
     },
     networking_mode: :"container/bridge",
     ports_list: [80],
-    port_indices_in_group: [0],
+    port_indices: [0],
     version: "2017-11-08T15:06:31.066Z"
   }
 

@@ -27,24 +27,27 @@ defmodule Relay.ProtobufUtil do
 
   The Protobuf struct will be validated before packing.
   """
-  @spec mkstruct(struct) :: Struct.t
+  @spec mkstruct(struct) :: Struct.t()
   def mkstruct(%mod{} = struct) do
     Protobuf.Validator.validate!(struct)
 
     message_props = mod.__message_props__()
     oneofs = oneof_actual_vals(message_props, struct)
 
-    fields = message_props.field_props |> Enum.reduce(%{}, fn {_, field_prop}, acc ->
-      source = if field_prop.oneof, do: oneofs, else: struct
-      value = Map.get(source, field_prop.name_atom)
+    fields =
+      Enum.reduce(message_props.field_props, %{}, fn {_, field_prop}, acc ->
+        source = if field_prop.oneof, do: oneofs, else: struct
+        value = Map.get(source, field_prop.name_atom)
 
-      default = Protobuf.Builder.field_default(message_props.syntax, field_prop)
-      case value do
-        nil      -> acc
-        ^default -> acc
-        _        -> Map.put(acc, field_prop.name, struct_value(value))
-      end
-    end)
+        default = Protobuf.Builder.field_default(message_props.syntax, field_prop)
+
+        case value do
+          nil -> acc
+          ^default -> acc
+          _ -> Map.put(acc, field_prop.name, struct_value(value))
+        end
+      end)
+
     Struct.new(fields: fields)
   end
 
@@ -68,7 +71,6 @@ defmodule Relay.ProtobufUtil do
   @doc """
   Encode a Protobuf struct into a Google.Protobuf.Any type.
   """
-  @spec mkany(String.t, struct) :: Any.t
-  def mkany(type_url, %mod{} = value), do:
-    Any.new(type_url: type_url, value: mod.encode(value))
+  @spec mkany(String.t(), struct) :: Any.t()
+  def mkany(type_url, %mod{} = value), do: Any.new(type_url: type_url, value: mod.encode(value))
 end

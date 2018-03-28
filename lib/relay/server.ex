@@ -1,4 +1,10 @@
 defmodule Relay.Server.Macros do
+  @moduledoc false
+
+  # This function is a hack to work around coverage issues. Any line matching
+  # ~r/mk_server_func\(/ is ignored by the coverage tool.
+  defp mk_server_func(prefix, resources), do: :"#{prefix}_#{resources}"
+
   defmacro discovery_service(
              name,
              xds: xds,
@@ -7,14 +13,17 @@ defmodule Relay.Server.Macros do
              resources: resources,
              resource_type: resource_type
            ) do
-    stream_func = :"stream_#{resources}" # noqa excoveralls ignores macros
-    fetch_func = :"fetch_#{resources}" # noqa
+    stream_func = mk_server_func("stream", resources)
+    fetch_func = mk_server_func("fetch", resources)
 
     quote do
       defmodule unquote(name) do
         use GRPC.Server, service: unquote(service)
 
-        alias Relay.{ProtobufUtil, Store}
+        require LogWrapper
+        alias LogWrapper, as: Log
+
+        alias Relay.{ProtobufUtil, Publisher}
         alias Envoy.Api.V2.{DiscoveryRequest, DiscoveryResponse}
         alias GRPC.Server.Stream
 
@@ -23,43 +32,43 @@ defmodule Relay.Server.Macros do
         @xds unquote(xds)
         @type_url unquote(type_url)
 
-        def xds(), do: @xds
-        def type_url(), do: @type_url
+        def xds, do: @xds
+        def type_url, do: @type_url
 
-        @spec unquote(stream_func)(Enumerable.t, Stream.t) :: :ok
-        def unquote(stream_func)(req_stream, stream) do
-          IO.inspect({unquote(stream_func), self()})
-
-          :ok = Store.subscribe(Store, @xds, self())
-          handle_requests(req_stream, stream)
+        @spec unquote(stream_func)(Enumerable.t(), Stream.t()) :: Stream.t()
+        def unquote(stream_func)(req_enum, stream0) do
+          Log.debug(fn -> inspect({unquote(stream_func), self()}) end)
+          :ok = Publisher.subscribe(Publisher, @xds, self())
+          handle_requests(req_enum, stream0)
         end
 
-        @spec unquote(fetch_func)(DiscoveryRequest.t, Stream.t) :: DiscoveryResponse.t
+        @spec unquote(fetch_func)(DiscoveryRequest.t(), Stream.t()) :: DiscoveryResponse.t()
         def unquote(fetch_func)(_request, _stream) do
           raise GRPC.RPCError, status: GRPC.Status.unimplemented(), message: "not implemented"
         end
 
-        # Enum.each returns :ok
-        @spec handle_requests(Enumerable.t, Stream.t) :: :ok
-        defp handle_requests(req_stream, stream),
-          do: req_stream |> Enum.each(&handle_request(&1, stream))
+        @spec handle_requests(Enumerable.t(), Stream.t()) :: Stream.t()
+        defp handle_requests(req_enum, stream0) do
+          # We must use the `Stream` returned by `GRPC.Server.send_reply` for
+          # each subsequent request and return the final `Stream`.
+          req_enum |> Enum.reduce(stream0, &handle_request(&1, &2))
+        end
 
-        @spec handle_request(DiscoveryRequest.t, Stream.t) :: any
+        @spec handle_request(DiscoveryRequest.t(), Stream.t()) :: Stream.t()
         defp handle_request(_request, stream) do
           # TODO: How to handle errors?
           # FIXME: What if we get multiple updates between requests?
           receive do
             {@xds, version_info, resources} ->
-              stream_send_response(stream, version_info, resources)
+              send_reply(stream, version_info, resources)
           end
         end
 
-        @spec stream_send_response(Stream.t, String.t, [unquote(resource_type).t]) :: any
-        defp stream_send_response(stream, version_info, resources) do
-          GRPC.Server.stream_send(stream, mkresponse(version_info, resources))
-        end
+        @spec send_reply(Stream.t(), String.t(), [unquote(resource_type).t]) :: Stream.t()
+        defp send_reply(stream, version_info, resources),
+          do: GRPC.Server.send_reply(stream, mkresponse(version_info, resources))
 
-        @spec mkresponse(String.t, [unquote(resource_type).t]) :: DiscoveryResponse.t
+        @spec mkresponse(String.t(), [unquote(resource_type).t]) :: DiscoveryResponse.t()
         defp mkresponse(version_info, resources) do
           typed_resources = resources |> Enum.map(&ProtobufUtil.mkany(@type_url, &1))
 
@@ -75,6 +84,10 @@ defmodule Relay.Server.Macros do
 end
 
 defmodule Relay.Server do
+  @moduledoc """
+  GRPC API for Envoy to use for service discovery.
+  """
+
   import Relay.Server.Macros
 
   discovery_service(

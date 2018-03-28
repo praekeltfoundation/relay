@@ -14,6 +14,7 @@ defmodule Relay.Marathon.LabelsTest do
       "HAPROXY_GROUP" => "internal",
       "HAPROXY_0_GROUP" => "external"
     }
+
     assert Labels.marathon_lb_group(port_and_app_label, 0) == "external"
 
     no_label = %{"HAPROXY_1_GROUP" => "external"}

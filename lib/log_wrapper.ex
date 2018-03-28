@@ -1,5 +1,4 @@
 defmodule LogWrapper do
-
   @moduledoc """
   LogWrapper is a wrapper around the `Logger` module that exists solely to
   throw away return values. This gets rid of dialyzer `unmatched_returns`

@@ -1,14 +1,18 @@
 defmodule Relay.Marathon.App do
+  @moduledoc """
+  Turns Marathon API JSON into consistent App objects.
+  """
+
   alias Relay.Marathon.{Labels, Networking}
 
-  @enforce_keys [:id, :networking_mode, :ports_list, :port_indices_in_group, :labels, :version]
-  defstruct [:id, :networking_mode, :ports_list, :port_indices_in_group, :labels, :version]
+  @enforce_keys [:id, :networking_mode, :ports_list, :port_indices, :labels, :version]
+  defstruct [:id, :networking_mode, :ports_list, :port_indices, :labels, :version]
 
   @type t :: %__MODULE__{
           id: String.t(),
           networking_mode: Networking.networking_mode(),
-          ports_list: [Networking.port_number()],
-          port_indices_in_group: [non_neg_integer],
+          ports_list: [:inet.port_number()],
+          port_indices: [non_neg_integer],
           labels: Labels.labels(),
           version: String.t()
         }
@@ -21,7 +25,7 @@ defmodule Relay.Marathon.App do
       id: id,
       networking_mode: Networking.networking_mode(app),
       ports_list: ports_list,
-      port_indices_in_group: port_indices_in_group(ports_list, labels, group),
+      port_indices: port_indices(ports_list, labels, group),
       labels: labels,
       version: version(app)
     }
@@ -34,11 +38,10 @@ defmodule Relay.Marathon.App do
       ),
       do: from_definition(definition, group)
 
-  defp port_indices_in_group([], _labels, _group), do: []
+  defp port_indices([], _labels, _group), do: []
 
-  @spec port_indices_in_group([Networking.port_number()], %{String.t() => String.t()}, String.t()) ::
-          [non_neg_integer]
-  defp port_indices_in_group(ports_list, labels, group) do
+  @spec port_indices([:inet.port_number()], Labels.labels(), String.t()) :: [non_neg_integer]
+  defp port_indices(ports_list, labels, group) do
     0..(length(ports_list) - 1)
     |> Enum.filter(fn port_index -> Labels.marathon_lb_group(labels, port_index) == group end)
   end

@@ -4,6 +4,10 @@ elixir: '1.6'
 script:
   # This is basically `mix test` with coverage enabled.
   - mix coveralls.json
+  - mix format --check-formatted
+  # This will mention FIXME and TODO comments without failing, any other issue
+  # fails the build.
+  - mix credo
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
