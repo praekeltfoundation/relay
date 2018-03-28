@@ -8,15 +8,12 @@ defmodule Relay.GenData do
 
   @doc "Generate domains."
   def domain do
+    prefix = StreamData.member_of([[], ["www"]])
+    suffix = StreamData.member_of(["com", "org", "net", "health", "yt"])
     segment = StreamData.string(:alphanumeric, min_length: 1, max_length: 50)
+    segments = StreamData.list_of(segment, min_length: 1, max_length: 3)
 
-    %{
-      prefix: StreamData.member_of([[], ["www"]]),
-      suffix: StreamData.member_of(["com", "org", "net", "health", "yt"]),
-      segments: StreamData.list_of(segment, min_length: 1, max_length: 3)
-    }
-    |> StreamData.fixed_map()
-    |> StreamData.bind(fn %{prefix: prefix, suffix: suffix, segments: segments} ->
+    StreamData.bind({prefix, segments, suffix}, fn {prefix, segments, suffix} ->
       [prefix, segments, [suffix]]
       |> Enum.concat()
       |> Enum.join(".")
