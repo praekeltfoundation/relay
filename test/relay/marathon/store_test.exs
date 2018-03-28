@@ -49,7 +49,7 @@ defmodule Relay.Marathon.StoreTest do
     state
   end
 
-  defp get_state_version(store), do: get_state(store) |> Map.fetch!(:version)
+  defp get_state_version(store), do: store |> get_state() |> Map.fetch!(:version)
 
   defp assert_empty_state(store),
     do: assert(%Store.State{apps: %{}, tasks: %{}, app_tasks: %{}} = get_state(store))
@@ -325,7 +325,7 @@ defmodule Relay.Marathon.StoreTest do
 
   test "update task same version", %{store: store} do
     assert Store.update_app(store, @test_app) == :ok
-    get_state_version(store) |> assert_app_updates()
+    store |> get_state_version() |> assert_app_updates()
 
     %Task{id: task_id} = @test_task
     assert Store.update_task(store, @test_task) == :ok
@@ -343,7 +343,7 @@ defmodule Relay.Marathon.StoreTest do
 
   test "update task new version", %{store: store} do
     assert Store.update_app(store, @test_app) == :ok
-    get_state_version(store) |> assert_app_updates()
+    store |> get_state_version() |> assert_app_updates()
 
     %Task{id: task_id, version: task_version} = @test_task
     assert Store.update_task(store, @test_task) == :ok
@@ -363,7 +363,7 @@ defmodule Relay.Marathon.StoreTest do
 
   test "delete task", %{store: store} do
     assert Store.update_app(store, @test_app) == :ok
-    get_state_version(store) |> assert_app_updates()
+    store |> get_state_version() |> assert_app_updates()
 
     %Task{id: task_id, app_id: app_id} = @test_task
     assert Store.update_task(store, @test_task) == :ok
@@ -397,7 +397,7 @@ defmodule Relay.Marathon.StoreTest do
   test "delete app deletes tasks", %{store: store} do
     %App{id: app_id} = @test_app
     assert Store.update_app(store, @test_app) == :ok
-    get_state_version(store) |> assert_app_updates()
+    store |> get_state_version() |> assert_app_updates()
 
     assert Store.update_task(store, @test_task) == :ok
     version1 = get_state_version(store)

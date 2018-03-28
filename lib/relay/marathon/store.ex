@@ -301,7 +301,8 @@ defmodule Relay.Marathon.Store do
 
   defp update_app_endpoints(resources, state) do
     app_endpoints =
-      State.get_apps_and_tasks(state)
+      state
+      |> State.get_apps_and_tasks()
       |> Enum.flat_map(fn {app, tasks} -> Adapter.app_endpoints_for_app(app, tasks) end)
 
     Resources.update_app_endpoints(resources, state.version, app_endpoints)
