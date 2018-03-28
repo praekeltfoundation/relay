@@ -4,7 +4,8 @@ defmodule Relay.Marathon.Store do
   and triggers updates when a new version of an app or task is stored.
   """
 
-  alias Relay.Marathon.{App, Task}
+  alias Relay.Marathon.{Adapter, App, Task}
+  alias Relay.Resources
 
   use LogWrapper, as: Log
 
@@ -133,7 +134,8 @@ defmodule Relay.Marathon.Store do
 
   @spec start_link(keyword) :: GenServer.on_start()
   def start_link(opts \\ []) do
-    GenServer.start_link(__MODULE__, :ok, opts)
+    {resources, opts} = Keyword.pop(opts, :resources, Resources)
+    GenServer.start_link(__MODULE__, resources, opts)
   end
 
   @doc """
@@ -162,48 +164,49 @@ defmodule Relay.Marathon.Store do
   @spec delete_task(GenServer.server(), String.t()) :: :ok
   def delete_task(store, task_id), do: GenServer.call(store, {:delete_task, task_id})
 
-  def init(_arg) do
-    {:ok, %State{}}
+  @spec init(GenServer.server()) :: {:ok, {GenServer.server(), State.t()}}
+  def init(resources) do
+    {:ok, {resources, %State{}}}
   end
 
-  def handle_call({:update_app, %App{id: id, version: version} = app}, _from, state) do
+  def handle_call({:update_app, %App{id: id, version: version} = app}, _from, {resources, state}) do
     {old_app, new_state} = State.get_and_update_app(state, app)
 
     case old_app do
       %App{version: existing_version} when version > existing_version ->
         Log.debug("App '#{id}' updated: #{existing_version} -> #{version}")
-        notify_updated_app()
+        notify_updated_app(resources, new_state)
 
       %App{version: existing_version} ->
         Log.debug("App '#{id}' unchanged: #{version} <= #{existing_version}")
 
       nil ->
         Log.info("App '#{id}' with version #{version} added")
-        notify_updated_app()
+        notify_updated_app(resources, new_state)
     end
 
-    {:reply, :ok, new_state}
+    {:reply, :ok, {resources, new_state}}
   end
 
-  def handle_call({:delete_app, id}, _from, state) do
+  def handle_call({:delete_app, id}, _from, {resources, state}) do
     {app, new_state} = State.pop_app(state, id)
 
     case app do
       %App{version: version} ->
         Log.info("App '#{id}' with version #{version} deleted")
-        notify_updated_app()
+        notify_updated_app(resources, new_state)
 
       nil ->
         Log.debug("App '#{id}' not present/already deleted")
     end
 
-    {:reply, :ok, new_state}
+    {:reply, :ok, {resources, new_state}}
   end
 
   def handle_call(
         {:update_task, %Task{id: id, app_id: app_id, version: version} = task},
         _from,
-        state
+        {resources, state}
       ) do
     new_state =
       try do
@@ -212,14 +215,14 @@ defmodule Relay.Marathon.Store do
         case old_task do
           %Task{version: existing_version} when version > existing_version ->
             Log.debug("Task '#{id}' updated: #{existing_version} -> #{version}")
-            notify_updated_task()
+            notify_updated_task(resources, new_state)
 
           %Task{version: existing_version} ->
             Log.debug("Task '#{id}' unchanged: #{version} <= #{existing_version}")
 
           nil ->
             Log.info("Task '#{id}' with version #{version} added")
-            notify_updated_task()
+            notify_updated_task(resources, new_state)
         end
 
         new_state
@@ -229,32 +232,62 @@ defmodule Relay.Marathon.Store do
           state
       end
 
-    {:reply, :ok, new_state}
+    {:reply, :ok, {resources, new_state}}
   end
 
-  def handle_call({:delete_task, id}, _from, state) do
+  def handle_call({:delete_task, id}, _from, {resources, state}) do
     {task, new_state} = State.pop_task(state, id)
 
     case task do
       %Task{version: version} ->
         Log.info("Task '#{id}' with version #{version} deleted")
-        notify_updated_task()
+        notify_updated_task(resources, new_state)
 
       nil ->
         Log.debug("Task '#{id}' not present/already deleted")
     end
 
-    {:reply, :ok, new_state}
+    {:reply, :ok, {resources, new_state}}
   end
 
   # For testing only
-  def handle_call(:_get_state, _from, state), do: {:reply, {:ok, state}, state}
+  def handle_call(:_get_state, _from, {resources, state}),
+    do: {:reply, {:ok, state}, {resources, state}}
 
-  defp notify_updated_app do
-    Log.debug("An app was updated, we should update CDS and RDS...")
+  @spec notify_updated_app(GenServer.server(), State.t()) :: :ok
+  defp notify_updated_app(resources, state) do
+    Log.debug("An app was updated, updating app endpoints")
+    # TODO: Split CDS/RDS from EDS updates in Resources so that this does
+    # something different from notify_updated_task/1
+    update_app_endpoints(resources, state)
   end
 
-  defp notify_updated_task do
-    Log.debug("A task was updated, we should updated EDS...")
+  @spec notify_updated_task(GenServer.server(), State.t()) :: :ok
+  defp notify_updated_task(resources, state) do
+    Log.debug("A task was updated, updating app endpoints...")
+    # TODO: Split CDS/RDS from EDS updates in Resources so that this does
+    # something different from notify_updated_app/1
+    update_app_endpoints(resources, state)
+  end
+
+  @spec update_app_endpoints(GenServer.server(), State.t()) :: :ok
+  defp update_app_endpoints(resources, %State{apps: apps}) when apps == %{},
+    do: Resources.update_app_endpoints(resources, "", [])
+
+  defp update_app_endpoints(resources, state) do
+    apps_and_tasks = State.get_apps_and_tasks(state)
+
+    # Get the max version of any app or task
+    # FIXME: We can't actually use this for an Envoy version :-(
+    version =
+      apps_and_tasks
+      |> Enum.flat_map(fn {app, tasks} -> [app.version | tasks |> Enum.map(& &1.version)] end)
+      |> Enum.max()
+
+    app_endpoints =
+      apps_and_tasks
+      |> Enum.flat_map(fn {app, tasks} -> Adapter.app_endpoints_for_app(app, tasks) end)
+
+    Resources.update_app_endpoints(resources, version, app_endpoints)
   end
 end
