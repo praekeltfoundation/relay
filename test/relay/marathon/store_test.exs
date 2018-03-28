@@ -185,7 +185,7 @@ defmodule Relay.Marathon.StoreTest do
     assert Store.update_app(store, @test_app) == :ok
     assert Store.update_app(store, app2) == :ok
 
-    assert get_state(store) |> Store.State.get_apps() == [app2, @test_app]
+    assert store |> get_state() |> Store.State.get_apps() == [app2, @test_app]
   end
 
   test "get apps and tasks", %{store: store} do
@@ -197,7 +197,7 @@ defmodule Relay.Marathon.StoreTest do
     assert Store.update_task(store, @test_task) == :ok
     assert Store.update_task(store, task2) == :ok
 
-    assert get_state(store) |> Store.State.get_apps_and_tasks() == [
+    assert store |> get_state() |> Store.State.get_apps_and_tasks() == [
              {app2, []},
              {@test_app, [task2, @test_task]}
            ]

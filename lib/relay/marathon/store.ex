@@ -1,4 +1,9 @@
 defmodule Relay.Marathon.Store do
+  @moduledoc """
+  A store for Marathon apps and tasks. Keeps a mapping of apps to their tasks
+  and triggers updates when a new version of an app or task is stored.
+  """
+
   alias Relay.Marathon.{App, Task}
 
   use LogWrapper, as: Log
@@ -6,6 +11,8 @@ defmodule Relay.Marathon.Store do
   use GenServer
 
   defmodule State do
+    @moduledoc false
+
     defstruct apps: %{}, tasks: %{}, app_tasks: %{}
 
     @type t :: %__MODULE__{
@@ -23,7 +30,8 @@ defmodule Relay.Marathon.Store do
 
     @spec get_apps_and_tasks(t) :: [{App.t(), [Task.t()]}]
     def get_apps_and_tasks(%__MODULE__{} = state) do
-      get_apps(state)
+      state
+      |> get_apps()
       |> Enum.map(fn %App{id: app_id} = app ->
         tasks =
           state.app_tasks[app_id]
