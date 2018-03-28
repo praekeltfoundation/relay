@@ -1,7 +1,11 @@
+Code.require_file(Path.join([__DIR__, "..", "gen_data.exs"]))
+
 defmodule Relay.Resources.LDSTest do
   use ExUnit.Case, async: true
+  use ExUnitProperties
 
   alias Relay.Resources.{CertInfo, LDS}
+  alias Relay.GenData
 
   alias Envoy.Api.V2.Core.{Address, DataSource, SocketAddress}
 
@@ -58,5 +62,15 @@ defmodule Relay.Resources.LDSTest do
     assert [http, https] = LDS.listeners([@cert_info_1, @cert_info_2])
     assert listener_info(http) == {"http", 8080, [nil]}
     assert listener_info(https) == {"https", 8443, [@cert_info_1, @cert_info_2]}
+  end
+
+  property "certs are added to HTTPS listener" do
+    gen_cert_infos = StreamData.list_of(GenData.cert_info(), max_length: 20)
+
+    check all cert_infos <- gen_cert_infos do
+      assert [http, https] = LDS.listeners(cert_infos)
+      assert listener_info(http) == {"http", 8080, [nil]}
+      assert listener_info(https) == {"https", 8443, cert_infos}
+    end
   end
 end

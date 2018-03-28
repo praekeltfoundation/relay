@@ -49,4 +49,6 @@ defmodule TestHelpers do
   end
 end
 
+Application.ensure_all_started(:stream_data)
+
 ExUnit.start()
