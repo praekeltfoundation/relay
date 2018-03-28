@@ -49,21 +49,23 @@ defmodule Relay.Marathon.StoreTest do
     state
   end
 
-  defp assert_empty_state(store),
-    do: assert(get_state(store) == %Store.State{apps: %{}, tasks: %{}, app_tasks: %{}})
+  defp get_state_version(store), do: get_state(store) |> Map.fetch!(:version)
 
-  defp assert_app_updates(app_version) do
+  defp assert_empty_state(store),
+    do: assert(%Store.State{apps: %{}, tasks: %{}, app_tasks: %{}} = get_state(store))
+
+  defp assert_app_updates(version) do
     # Assert we receive RDS, CDS, & EDS messages but without any endpoints
-    assert_receive_routes(app_version)
-    assert_receive_clusters(app_version)
-    assert_receive_endpoints_empty(app_version)
+    assert_receive_routes(version)
+    assert_receive_clusters(version)
+    assert_receive_endpoints_empty(version)
   end
 
-  defp assert_task_updates(task_version) do
+  defp assert_task_updates(version) do
     # Assert we receive RDS, CDS, & EDS messages but with endpoints this time
-    assert_receive_routes(task_version)
-    assert_receive_clusters(task_version)
-    assert_receive_endpoints(task_version)
+    assert_receive_routes(version)
+    assert_receive_clusters(version)
+    assert_receive_endpoints(version)
   end
 
   defp assert_receive_routes(version) do
@@ -169,10 +171,19 @@ defmodule Relay.Marathon.StoreTest do
                    100
   end
 
-  defp assert_empty_updates do
-    assert_receive {:rds, "", []}, 100
-    assert_receive {:cds, "", []}
-    assert_receive {:eds, "", []}
+  defp assert_empty_updates(version) do
+    alias Envoy.Api.V2.RouteConfiguration
+
+    # Unfortunately the RDS response is not completely empty
+    assert_receive {:rds, ^version,
+                    [
+                      %RouteConfiguration{name: "http", virtual_hosts: []},
+                      %RouteConfiguration{name: "https", virtual_hosts: []}
+                    ]},
+                   100
+
+    assert_receive {:cds, ^version, []}
+    assert_receive {:eds, ^version, []}
   end
 
   defp refute_updates do
@@ -182,42 +193,63 @@ defmodule Relay.Marathon.StoreTest do
   end
 
   test "update app not existing", %{store: store} do
-    %App{id: app_id, version: app_version} = @test_app
+    %App{id: app_id} = @test_app
+    version0 = get_state_version(store)
 
     assert Store.update_app(store, @test_app) == :ok
 
-    assert get_state(store) == %Store.State{
-             apps: %{app_id => @test_app},
-             app_tasks: %{app_id => MapSet.new()},
-             tasks: %{}
-           }
+    # App is stored in state
+    empty_set = MapSet.new()
 
-    assert_app_updates(app_version)
+    assert %Store.State{
+             version: version1,
+             apps: %{^app_id => @test_app},
+             app_tasks: %{^app_id => ^empty_set},
+             tasks: %{}
+           } = get_state(store)
+
+    # Version has increased
+    assert version1 > version0
+
+    # An update was sent
+    assert_app_updates(version1)
   end
 
   test "update app same version", %{store: store} do
-    %App{id: app_id, version: app_version} = @test_app
+    %App{id: app_id} = @test_app
 
     assert Store.update_app(store, @test_app) == :ok
-    assert Store.update_app(store, @test_app) == :ok
 
-    assert get_state(store) == %Store.State{
-             apps: %{app_id => @test_app},
-             app_tasks: %{app_id => MapSet.new()},
+    empty_set = MapSet.new()
+
+    assert %Store.State{
+             version: version,
+             apps: %{^app_id => @test_app},
+             app_tasks: %{^app_id => ^empty_set},
              tasks: %{}
-           }
+           } = get_state(store)
 
     # We should receive one update...
-    assert_app_updates(app_version)
+    assert_app_updates(version)
 
-    # ...but no more than that
+    assert Store.update_app(store, @test_app) == :ok
+    # ...state version should not have changed
+    assert %Store.State{
+             version: ^version,
+             apps: %{^app_id => @test_app},
+             app_tasks: %{^app_id => ^empty_set},
+             tasks: %{}
+           } = get_state(store)
+
+    # ...and no updates
     refute_updates()
   end
 
   test "update app new version", %{store: store} do
     %App{id: app_id, version: app_version} = @test_app
     assert Store.update_app(store, @test_app) == :ok
-    assert_app_updates(app_version)
+    version1 = get_state_version(store)
+    assert_app_updates(version1)
 
     app2_version = "2017-11-10T15:06:31.066Z"
     assert app2_version > app_version
@@ -225,18 +257,25 @@ defmodule Relay.Marathon.StoreTest do
 
     assert Store.update_app(store, app2) == :ok
 
-    assert %Store.State{apps: %{^app_id => ^app2}} = get_state(store)
-    assert_app_updates(app2_version)
+    assert %Store.State{version: version2, apps: %{^app_id => ^app2}} = get_state(store)
+
+    assert version2 > version1
+    assert_app_updates(version2)
   end
 
   test "delete app", %{store: store} do
-    %App{id: app_id, version: app_version} = @test_app
+    %App{id: app_id} = @test_app
     assert Store.update_app(store, @test_app) == :ok
-    assert_app_updates(app_version)
+    version1 = get_state_version(store)
+    assert_app_updates(version1)
 
     assert Store.delete_app(store, app_id) == :ok
     assert_empty_state(store)
-    assert_empty_updates()
+
+    # Version has increased and an update sent
+    version2 = get_state_version(store)
+    assert version2 > version1
+    assert_empty_updates(version2)
   end
 
   test "delete app does not exist", %{store: store} do
@@ -250,20 +289,24 @@ defmodule Relay.Marathon.StoreTest do
   end
 
   test "update task not existing", %{store: store} do
-    %App{version: app_version} = @test_app
     assert Store.update_app(store, @test_app) == :ok
-    assert_app_updates(app_version)
+    version1 = get_state_version(store)
+    assert_app_updates(version1)
 
-    %Task{id: task_id, app_id: app_id, version: task_version} = @test_task
+    %Task{id: task_id, app_id: app_id} = @test_task
     assert Store.update_task(store, @test_task) == :ok
 
-    assert get_state(store) == %Store.State{
-             apps: %{app_id => @test_app},
-             tasks: %{task_id => @test_task},
-             app_tasks: %{app_id => MapSet.new([task_id])}
-           }
-    # In this case the versions are all the task version because that is newer
-    assert_task_updates(task_version)
+    app_tasks = MapSet.new([task_id])
+
+    assert %Store.State{
+             version: version2,
+             apps: %{^app_id => @test_app},
+             tasks: %{^task_id => @test_task},
+             app_tasks: %{^app_id => ^app_tasks}
+           } = get_state(store)
+
+    assert version2 > version1
+    assert_task_updates(version2)
   end
 
   test "update task without app", %{store: store} do
@@ -281,28 +324,31 @@ defmodule Relay.Marathon.StoreTest do
   end
 
   test "update task same version", %{store: store} do
-    %App{version: app_version} = @test_app
     assert Store.update_app(store, @test_app) == :ok
-    assert_app_updates(app_version)
+    get_state_version(store) |> assert_app_updates()
 
-    %Task{id: task_id, version: task_version} = @test_task
+    %Task{id: task_id} = @test_task
     assert Store.update_task(store, @test_task) == :ok
+    version = get_state_version(store)
+    # First task addition triggers update...
+    assert_task_updates(version)
+
     assert Store.update_task(store, @test_task) == :ok
 
-    assert %Store.State{tasks: %{^task_id => @test_task}} = get_state(store)
-    # There should be only one update due to the `update_task` calls
-    assert_task_updates(task_version)
+    # ...version and task haven't changed
+    assert %Store.State{version: ^version, tasks: %{^task_id => @test_task}} = get_state(store)
+    # ...and no further updates
     refute_updates()
   end
 
   test "update task new version", %{store: store} do
-    %App{version: app_version} = @test_app
     assert Store.update_app(store, @test_app) == :ok
-    assert_app_updates(app_version)
+    get_state_version(store) |> assert_app_updates()
 
     %Task{id: task_id, version: task_version} = @test_task
     assert Store.update_task(store, @test_task) == :ok
-    assert_task_updates(task_version)
+    version1 = get_state_version(store)
+    assert_task_updates(version1)
 
     task2_version = "2017-11-10T15:06:31.066Z"
     assert task2_version > task_version
@@ -310,30 +356,34 @@ defmodule Relay.Marathon.StoreTest do
 
     assert Store.update_task(store, task2)
 
-    assert %Store.State{tasks: %{^task_id => ^task2}} = get_state(store)
-    assert_task_updates(task2_version)
+    assert %Store.State{version: version2, tasks: %{^task_id => ^task2}} = get_state(store)
+    assert version2 > version1
+    assert_task_updates(version2)
   end
 
   test "delete task", %{store: store} do
-    %App{version: app_version} = @test_app
     assert Store.update_app(store, @test_app) == :ok
-    assert_app_updates(app_version)
+    get_state_version(store) |> assert_app_updates()
 
-    %Task{id: task_id, app_id: app_id, version: task_version} = @test_task
+    %Task{id: task_id, app_id: app_id} = @test_task
     assert Store.update_task(store, @test_task) == :ok
-    assert_task_updates(task_version)
+    version1 = get_state_version(store)
+    assert_task_updates(version1)
 
     assert Store.delete_task(store, task_id) == :ok
 
     empty_set = MapSet.new()
 
     assert %Store.State{
+             version: version2,
              apps: %{^app_id => @test_app},
              tasks: %{},
              app_tasks: %{^app_id => ^empty_set}
            } = get_state(store)
+
+    assert version2 > version1
     # Only app information available now
-    assert_app_updates(app_version)
+    assert_app_updates(version2)
   end
 
   test "delete task does not exist", %{store: store} do
@@ -345,18 +395,21 @@ defmodule Relay.Marathon.StoreTest do
   end
 
   test "delete app deletes tasks", %{store: store} do
-    %App{id: app_id, version: app_version} = @test_app
+    %App{id: app_id} = @test_app
     assert Store.update_app(store, @test_app) == :ok
-    assert_app_updates(app_version)
+    get_state_version(store) |> assert_app_updates()
 
-    %Task{version: task_version} = @test_task
     assert Store.update_task(store, @test_task) == :ok
-    assert_task_updates(task_version)
+    version1 = get_state_version(store)
+    assert_task_updates(version1)
 
     assert Store.delete_app(store, app_id) == :ok
 
     assert_empty_state(store)
-    assert_empty_updates()
+
+    version2 = get_state_version(store)
+    assert version2 > version1
+    assert_empty_updates(version2)
   end
 
   test "get apps", %{store: store} do

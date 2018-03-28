@@ -14,13 +14,16 @@ defmodule Relay.Marathon.Store do
   defmodule State do
     @moduledoc false
 
-    defstruct apps: %{}, tasks: %{}, app_tasks: %{}
+    defstruct [:version, apps: %{}, tasks: %{}, app_tasks: %{}]
 
     @type t :: %__MODULE__{
+            version: String.t(),
             apps: %{optional(String.t()) => App.t()},
             tasks: %{optional(String.t()) => Task.t()},
             app_tasks: %{optional(String.t()) => String.t()}
           }
+
+    def new, do: %State{version: new_version()}
 
     @spec get_apps(t) :: [App.t()]
     def get_apps(%__MODULE__{apps: apps}) do
@@ -61,12 +64,17 @@ defmodule Relay.Marathon.Store do
     end
 
     @spec put_app(t, App.t()) :: t
-    defp put_app(%__MODULE__{apps: apps, app_tasks: app_tasks} = state, %App{id: id} = app),
-      do: %{state | apps: Map.put(apps, id, app), app_tasks: Map.put(app_tasks, id, MapSet.new())}
+    defp put_app(%__MODULE__{apps: apps, app_tasks: app_tasks} = state, %App{id: id} = app) do
+      new_state(
+        state,
+        apps: Map.put(apps, id, app),
+        app_tasks: Map.put(app_tasks, id, MapSet.new())
+      )
+    end
 
     @spec replace_app!(t, App.t()) :: t
     defp replace_app!(%__MODULE__{apps: apps} = state, %App{id: id} = app),
-      do: %{state | apps: Map.replace!(apps, id, app)}
+      do: new_state(state, apps: Map.replace!(apps, id, app))
 
     @spec pop_app(t, String.t()) :: {App.t() | nil, t}
     def pop_app(%__MODULE__{apps: apps, tasks: tasks, app_tasks: app_tasks} = state, id) do
@@ -75,7 +83,7 @@ defmodule Relay.Marathon.Store do
           {tasks_for_app, new_app_tasks} = Map.pop(app_tasks, id)
           new_tasks = Map.drop(tasks, tasks_for_app)
 
-          {app, %{state | apps: new_apps, tasks: new_tasks, app_tasks: new_app_tasks}}
+          {app, new_state(state, apps: new_apps, tasks: new_tasks, app_tasks: new_app_tasks)}
 
         {nil, _} ->
           {nil, state}
@@ -107,16 +115,16 @@ defmodule Relay.Marathon.Store do
            %__MODULE__{tasks: tasks, app_tasks: app_tasks} = state,
            %Task{id: id, app_id: app_id} = task
          ) do
-      %{
-        state
-        | tasks: Map.put(tasks, id, task),
-          app_tasks: Map.update!(app_tasks, app_id, fn tasks -> MapSet.put(tasks, id) end)
-      }
+      new_state(
+        state,
+        tasks: Map.put(tasks, id, task),
+        app_tasks: Map.update!(app_tasks, app_id, fn tasks -> MapSet.put(tasks, id) end)
+      )
     end
 
     @spec replace_task!(t, Task.t()) :: t
     defp replace_task!(%__MODULE__{tasks: tasks} = state, %Task{id: id} = task),
-      do: %{state | tasks: Map.replace!(tasks, id, task)}
+      do: new_state(state, tasks: Map.replace!(tasks, id, task))
 
     @spec pop_task(t, String.t()) :: {Task.t() | nil, t}
     def pop_task(%__MODULE__{tasks: tasks, app_tasks: app_tasks} = state, id) do
@@ -124,11 +132,28 @@ defmodule Relay.Marathon.Store do
         {%Task{app_id: app_id} = task, new_tasks} ->
           new_app_tasks = Map.update!(app_tasks, app_id, &MapSet.delete(&1, id))
 
-          {task, %{state | tasks: new_tasks, app_tasks: new_app_tasks}}
+          {task, new_state(state, tasks: new_tasks, app_tasks: new_app_tasks)}
 
         {nil, _} ->
           {nil, state}
       end
+    end
+
+    @spec new_state(t, keyword) :: t
+    defp new_state(state, updates), do: struct(state, [version: new_version()] ++ updates)
+
+    @spec new_version() :: {integer, integer}
+    defp new_version do
+      time = DateTime.utc_now() |> DateTime.truncate(:second) |> DateTime.to_iso8601()
+
+      # Take last 6 digits of unique_integer and pad with leading 0's.
+      number =
+        System.unique_integer([:monotonic, :positive])
+        |> Integer.mod(1_000_000)
+        |> Integer.to_string()
+        |> String.pad_leading(6, "0")
+
+      "#{time}-#{number}"
     end
   end
 
@@ -166,7 +191,7 @@ defmodule Relay.Marathon.Store do
 
   @spec init(GenServer.server()) :: {:ok, {GenServer.server(), State.t()}}
   def init(resources) do
-    {:ok, {resources, %State{}}}
+    {:ok, {resources, State.new()}}
   end
 
   def handle_call({:update_app, %App{id: id, version: version} = app}, _from, {resources, state}) do
@@ -271,23 +296,14 @@ defmodule Relay.Marathon.Store do
   end
 
   @spec update_app_endpoints(GenServer.server(), State.t()) :: :ok
-  defp update_app_endpoints(resources, %State{apps: apps}) when apps == %{},
-    do: Resources.update_app_endpoints(resources, "", [])
+  defp update_app_endpoints(resources, %State{version: version, apps: apps}) when apps == %{},
+    do: Resources.update_app_endpoints(resources, version, [])
 
   defp update_app_endpoints(resources, state) do
-    apps_and_tasks = State.get_apps_and_tasks(state)
-
-    # Get the max version of any app or task
-    # FIXME: We can't actually use this for an Envoy version :-(
-    version =
-      apps_and_tasks
-      |> Enum.flat_map(fn {app, tasks} -> [app.version | tasks |> Enum.map(& &1.version)] end)
-      |> Enum.max()
-
     app_endpoints =
-      apps_and_tasks
+      State.get_apps_and_tasks(state)
       |> Enum.flat_map(fn {app, tasks} -> Adapter.app_endpoints_for_app(app, tasks) end)
 
-    Resources.update_app_endpoints(resources, version, app_endpoints)
+    Resources.update_app_endpoints(resources, state.version, app_endpoints)
   end
 end
