@@ -2,9 +2,7 @@ defmodule Relay.Resources.RDS do
   @moduledoc """
   Builds Envoy RouteConfiguration values from cluster resources.
   """
-  alias Relay.Resources.{AppEndpoint, LDS}
-
-  import Relay.Resources.Config, only: [fetch_marathon_acme_config!: 1]
+  alias Relay.Resources.{AppEndpoint, Config, LDS}
 
   alias Envoy.Api.V2.RouteConfiguration
   alias Envoy.Api.V2.Route.{RedirectAction, Route, RouteAction, RouteMatch, VirtualHost}
@@ -95,8 +93,8 @@ defmodule Relay.Resources.RDS do
 
   @spec marathon_acme_route() :: Route.t()
   defp marathon_acme_route do
-    app_id = fetch_marathon_acme_config!(:app_id)
-    port_index = fetch_marathon_acme_config!(:port_index)
+    app_id = Config.fetch_marathon_acme!(:app_id)
+    port_index = Config.fetch_marathon_acme!(:port_index)
     # TODO: Does the cluster name here need to be truncated?
     cluster = "#{app_id}_#{port_index}"
 

@@ -2,12 +2,11 @@ defmodule Relay.Resources.LDS do
   @moduledoc """
   Builds Envoy Listener values from cluster resources.
   """
-  alias Relay.{ProtobufUtil, Resources.CertInfo}
+  alias Relay.ProtobufUtil
+  alias Relay.Resources.{CertInfo, Config}
 
   import Relay.Resources.Common,
     only: [api_config_source: 0, socket_address: 2, truncate_obj_name: 1]
-
-  import Relay.Resources.Config, only: [fetch_listener_config!: 2, get_listener_config: 3]
 
   alias Envoy.Api.V2.Core.DataSource
   alias Envoy.Api.V2.Listener
@@ -90,12 +89,12 @@ defmodule Relay.Resources.LDS do
   @spec get_route_config_name(atom) :: String.t()
   def get_route_config_name(listener) do
     listener
-    |> get_listener_config(:route_config_name, Atom.to_string(listener))
+    |> Config.get_listener(:route_config_name, Atom.to_string(listener))
     |> truncate_obj_name()
   end
 
   defp listener_address(listener) do
-    listen = fetch_listener_config!(listener, :listen)
+    listen = Config.fetch_listener!(listener, :listen)
     socket_address(Keyword.fetch!(listen, :address), Keyword.fetch!(listen, :port))
   end
 
@@ -109,7 +108,7 @@ defmodule Relay.Resources.LDS do
 
   @spec http_connection_manager(atom, keyword) :: HttpConnectionManager.t()
   defp http_connection_manager(listener, options) do
-    config = fetch_listener_config!(listener, :http_connection_manager)
+    config = Config.fetch_listener!(listener, :http_connection_manager)
     stat_prefix = Keyword.get(config, :stat_prefix, Atom.to_string(listener))
     access_log = Keyword.get(config, :access_log) |> access_logs_from_config()
 
@@ -140,7 +139,7 @@ defmodule Relay.Resources.LDS do
 
   @spec router(atom, keyword) :: Router.t()
   defp router(listener, options) do
-    config = fetch_listener_config!(listener, :router)
+    config = Config.fetch_listener!(listener, :router)
     upstream_log = Keyword.get(config, :upstream_log) |> access_logs_from_config()
 
     Router.new([upstream_log: upstream_log] ++ options)

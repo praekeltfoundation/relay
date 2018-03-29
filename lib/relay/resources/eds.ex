@@ -2,9 +2,8 @@ defmodule Relay.Resources.EDS do
   @moduledoc """
   Builds Envoy ClusterLoadAssignment values from cluster resources.
   """
-  alias Relay.Resources.AppEndpoint
+  alias Relay.Resources.{AppEndpoint, Config}
   import Relay.Resources.Common, only: [socket_address: 2]
-  import Relay.Resources.Config, only: [fetch_endpoints_config!: 1]
 
   alias Envoy.Api.V2.ClusterLoadAssignment
   alias Envoy.Api.V2.Core.Locality
@@ -46,7 +45,7 @@ defmodule Relay.Resources.EDS do
   @spec default_locality() :: Locality.t()
   def default_locality do
     :locality
-    |> fetch_endpoints_config!()
+    |> Config.fetch_endpoints!()
     |> Keyword.take([:region, :zone, :sub_zone])
     |> Locality.new()
   end

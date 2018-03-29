@@ -2,7 +2,7 @@ defmodule Relay.Resources.Common do
   @moduledoc """
   Common functionality used by multiple resource types.
   """
-  import Relay.Resources.Config, only: [fetch_envoy_config!: 1]
+  alias Relay.Resources.Config
 
   alias Envoy.Api.V2.Core.{Address, ApiConfigSource, ConfigSource, SocketAddress}
   alias Google.Protobuf.Duration
@@ -11,7 +11,7 @@ defmodule Relay.Resources.Common do
 
   @spec api_config_source(keyword) :: ConfigSource.t()
   def api_config_source(options \\ []) do
-    cluster_name = fetch_envoy_config!(:cluster_name)
+    cluster_name = Config.fetch_envoy!(:cluster_name)
 
     ConfigSource.new(
       config_source_specifier:
@@ -34,7 +34,7 @@ defmodule Relay.Resources.Common do
   """
   @spec truncate_obj_name(String.t()) :: String.t()
   def truncate_obj_name(name) do
-    max_size = fetch_envoy_config!(:max_obj_name_length)
+    max_size = Config.fetch_envoy!(:max_obj_name_length)
 
     case byte_size(name) do
       size when size > max_size ->
