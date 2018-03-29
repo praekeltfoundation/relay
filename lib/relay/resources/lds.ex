@@ -2,8 +2,11 @@ defmodule Relay.Resources.LDS do
   @moduledoc """
   Builds Envoy Listener values from cluster resources.
   """
-  alias Relay.{ProtobufUtil, Resources.CertInfo}
-  import Relay.Resources.Common
+  alias Relay.ProtobufUtil
+  alias Relay.Resources.{CertInfo, Config}
+
+  import Relay.Resources.Common,
+    only: [api_config_source: 0, socket_address: 2, truncate_obj_name: 1]
 
   alias Envoy.Api.V2.Core.DataSource
   alias Envoy.Api.V2.Listener
@@ -83,17 +86,8 @@ defmodule Relay.Resources.LDS do
     )
   end
 
-  @spec listener_config(atom) :: keyword
-  defp listener_config(listener), do: fetch_envoy_config!(:listeners) |> Keyword.fetch!(listener)
-
-  defp get_listener_config(listener, key, default),
-    do: listener |> listener_config() |> Keyword.get(key, default)
-
-  defp fetch_listener_config!(listener, key),
-    do: listener |> listener_config() |> Keyword.fetch!(key)
-
   defp listener_address(listener) do
-    listen = fetch_listener_config!(listener, :listen)
+    listen = Config.fetch_listener!(listener, :listen)
     socket_address(Keyword.fetch!(listen, :address), Keyword.fetch!(listen, :port))
   end
 
@@ -107,13 +101,12 @@ defmodule Relay.Resources.LDS do
 
   @spec http_connection_manager(atom, keyword) :: HttpConnectionManager.t()
   defp http_connection_manager(listener, options) do
-    config = fetch_listener_config!(listener, :http_connection_manager)
-
-    default_name = Atom.to_string(listener)
-    route_config_name = get_listener_config(listener, :route_config_name, default_name)
-    stat_prefix = Keyword.get(config, :stat_prefix, default_name)
-
+    config = Config.fetch_listener!(listener, :http_connection_manager)
+    stat_prefix = Keyword.get(config, :stat_prefix, Atom.to_string(listener))
     access_log = Keyword.get(config, :access_log) |> access_logs_from_config()
+
+    # TODO: Validate that the configured name is less than max_obj_name_length
+    route_config_name = Config.get_listener_route_config_name(listener)
 
     {options, router_opts} = Keyword.pop(options, :router_opts, [])
 
@@ -140,7 +133,7 @@ defmodule Relay.Resources.LDS do
 
   @spec router(atom, keyword) :: Router.t()
   defp router(listener, options) do
-    config = fetch_listener_config!(listener, :router)
+    config = Config.fetch_listener!(listener, :router)
     upstream_log = Keyword.get(config, :upstream_log) |> access_logs_from_config()
 
     Router.new([upstream_log: upstream_log] ++ options)

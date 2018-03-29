@@ -2,20 +2,16 @@ defmodule Relay.Resources.Common do
   @moduledoc """
   Common functionality used by multiple resource types.
   """
+  alias Relay.Resources.Config
 
   alias Envoy.Api.V2.Core.{Address, ApiConfigSource, ConfigSource, SocketAddress}
+  alias Google.Protobuf.Duration
 
   @truncated_name_prefix "[...]"
 
-  @spec envoy_config() :: keyword
-  def envoy_config, do: Application.fetch_env!(:relay, :envoy)
-
-  @spec fetch_envoy_config!(atom) :: any
-  def fetch_envoy_config!(key), do: envoy_config() |> Keyword.fetch!(key)
-
   @spec api_config_source(keyword) :: ConfigSource.t()
   def api_config_source(options \\ []) do
-    cluster_name = fetch_envoy_config!(:cluster_name)
+    cluster_name = Config.fetch_envoy!(:cluster_name)
 
     ConfigSource.new(
       config_source_specifier:
@@ -38,7 +34,7 @@ defmodule Relay.Resources.Common do
   """
   @spec truncate_obj_name(String.t()) :: String.t()
   def truncate_obj_name(name) do
-    max_size = fetch_envoy_config!(:max_obj_name_length)
+    max_size = Config.fetch_envoy!(:max_obj_name_length)
 
     case byte_size(name) do
       size when size > max_size ->
@@ -55,5 +51,17 @@ defmodule Relay.Resources.Common do
   def socket_address(address, port) do
     sock = SocketAddress.new(address: address, port_specifier: {:port_value, port})
     Address.new(address: {:socket_address, sock})
+  end
+
+  @spec duration(integer) :: Duration.t()
+  def duration(0), do: Duration.new(seconds: 0, nanos: 0)
+
+  def duration(milliseconds) do
+    Duration.new(
+      seconds: div(milliseconds, 1000),
+      # :erlang.rem/2 considers the sign of the numerator, while Integer.mod/2
+      # only considers the sign of the denominator
+      nanos: :erlang.rem(milliseconds, 1000) * 1_000_000
+    )
   end
 end

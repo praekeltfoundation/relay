@@ -148,6 +148,38 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       hidden: false,
       to: "relay.envoy.listeners"
     ],
+    "relay.envoy.clusters.connect_timeout": [
+      commented: false,
+      datatype: :integer,
+      default: 5_000,
+      doc: "Default connect timeout for upstream clusters (ms)",
+      hidden: false,
+      to: "relay.envoy.clusters.connect_timeout"
+    ],
+    "relay.envoy.clusters.endpoints.locality.region": [
+      commented: false,
+      datatype: :binary,
+      default: "default",
+      doc: "Default locality region for upstream endpoints",
+      hidden: false,
+      to: "relay.envoy.clusters.endpoints.locality.region"
+    ],
+    "relay.envoy.clusters.endpoints.locality.zone": [
+      commented: false,
+      datatype: :binary,
+      default: "default",
+      doc: "Default locality zone for upstream endpoints",
+      hidden: false,
+      to: "relay.envoy.clusters.endpoints.locality.zone"
+    ],
+    "relay.envoy.clusters.endpoints.locality.sub_zone": [
+      commented: false,
+      datatype: :binary,
+      default: "",
+      doc: "Default locality sub-zone for upstream endpoints",
+      hidden: false,
+      to: "relay.envoy.clusters.endpoints.locality.sub_zone"
+    ],
     "relay.marathon.urls": [
       commented: false,
       datatype: [list: :binary],
@@ -160,7 +192,7 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       commented: false,
       datatype: :integer,
       default: 60000,
-      doc: "Timeout value for Marathon's event stream",
+      doc: "Timeout value for Marathon's event stream (ms)",
       hidden: false,
       to: "relay.marathon.events_timeout"
     ],
