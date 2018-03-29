@@ -3,7 +3,7 @@ defmodule Relay.Resources.CDS do
   Builds Envoy Cluster values from cluster resources.
   """
   alias Relay.Resources.AppEndpoint
-  import Relay.Resources.Common
+  import Relay.Resources.Common, only: [api_config_source: 0, duration: 1, truncate_obj_name: 1]
   import Relay.Resources.Config, only: [fetch_clusters_config!: 1]
 
   alias Envoy.Api.V2.Cluster

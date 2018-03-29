@@ -3,7 +3,9 @@ defmodule Relay.Resources.LDS do
   Builds Envoy Listener values from cluster resources.
   """
   alias Relay.{ProtobufUtil, Resources.CertInfo}
-  import Relay.Resources.Common
+
+  import Relay.Resources.Common,
+    only: [api_config_source: 0, socket_address: 2, truncate_obj_name: 1]
 
   import Relay.Resources.Config, only: [fetch_listener_config!: 2, get_listener_config: 3]
 
