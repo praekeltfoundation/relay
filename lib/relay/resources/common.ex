@@ -2,17 +2,12 @@ defmodule Relay.Resources.Common do
   @moduledoc """
   Common functionality used by multiple resource types.
   """
+  import Relay.Resources.Config, only: [fetch_envoy_config!: 1]
 
   alias Envoy.Api.V2.Core.{Address, ApiConfigSource, ConfigSource, SocketAddress}
   alias Google.Protobuf.Duration
 
   @truncated_name_prefix "[...]"
-
-  @spec envoy_config() :: keyword
-  def envoy_config, do: Application.fetch_env!(:relay, :envoy)
-
-  @spec fetch_envoy_config!(atom) :: any
-  def fetch_envoy_config!(key), do: envoy_config() |> Keyword.fetch!(key)
 
   @spec api_config_source(keyword) :: ConfigSource.t()
   def api_config_source(options \\ []) do

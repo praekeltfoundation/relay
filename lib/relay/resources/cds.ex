@@ -4,6 +4,7 @@ defmodule Relay.Resources.CDS do
   """
   alias Relay.Resources.AppEndpoint
   import Relay.Resources.Common
+  import Relay.Resources.Config, only: [fetch_clusters_config!: 1]
 
   alias Envoy.Api.V2.Cluster
   alias Google.Protobuf.Duration
@@ -33,11 +34,6 @@ defmodule Relay.Resources.CDS do
       ] ++ options
     )
   end
-
-  @spec clusters_config() :: keyword
-  def clusters_config(), do: fetch_envoy_config!(:clusters)
-
-  defp fetch_clusters_config!(key), do: clusters_config() |> Keyword.fetch!(key)
 
   @spec default_connect_timeout() :: Duration.t()
   def default_connect_timeout, do: :connect_timeout |> fetch_clusters_config!() |> duration()

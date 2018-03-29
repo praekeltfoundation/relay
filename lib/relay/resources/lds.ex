@@ -5,6 +5,8 @@ defmodule Relay.Resources.LDS do
   alias Relay.{ProtobufUtil, Resources.CertInfo}
   import Relay.Resources.Common
 
+  import Relay.Resources.Config, only: [fetch_listener_config!: 2, get_listener_config: 3]
+
   alias Envoy.Api.V2.Core.DataSource
   alias Envoy.Api.V2.Listener
   alias Listener.{Filter, FilterChain, FilterChainMatch}
@@ -83,17 +85,10 @@ defmodule Relay.Resources.LDS do
     )
   end
 
-  @spec listener_config(atom) :: keyword
-  defp listener_config(listener), do: fetch_envoy_config!(:listeners) |> Keyword.fetch!(listener)
-
-  defp fetch_listener_config!(listener, key),
-    do: listener |> listener_config() |> Keyword.fetch!(key)
-
   @spec get_route_config_name(atom) :: String.t()
   def get_route_config_name(listener) do
     listener
-    |> listener_config()
-    |> Keyword.get(:route_config_name, Atom.to_string(listener))
+    |> get_listener_config(:route_config_name, Atom.to_string(listener))
     |> truncate_obj_name()
   end
 

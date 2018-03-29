@@ -4,6 +4,8 @@ defmodule Relay.Resources.RDS do
   """
   alias Relay.Resources.{AppEndpoint, LDS}
 
+  import Relay.Resources.Config, only: [fetch_marathon_acme_config!: 1]
+
   alias Envoy.Api.V2.RouteConfiguration
   alias Envoy.Api.V2.Route.{RedirectAction, Route, RouteAction, RouteMatch, VirtualHost}
 
@@ -93,9 +95,10 @@ defmodule Relay.Resources.RDS do
 
   @spec marathon_acme_route() :: Route.t()
   defp marathon_acme_route do
-    config = Application.fetch_env!(:relay, :marathon_acme)
+    app_id = fetch_marathon_acme_config!(:app_id)
+    port_index = fetch_marathon_acme_config!(:port_index)
     # TODO: Does the cluster name here need to be truncated?
-    cluster = "#{Keyword.fetch!(config, :app_id)}_#{Keyword.fetch!(config, :port_index)}"
+    cluster = "#{app_id}_#{port_index}"
 
     Route.new(
       action: {:route, RouteAction.new(cluster_specifier: {:cluster, cluster})},
