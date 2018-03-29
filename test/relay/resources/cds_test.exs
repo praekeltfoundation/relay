@@ -1,3 +1,5 @@
+Code.require_file(Path.join([__DIR__, "..", "gen_data.exs"]))
+
 defmodule Relay.Resources.CDSTest do
   use ExUnit.Case, async: true
   use ExUnitProperties
