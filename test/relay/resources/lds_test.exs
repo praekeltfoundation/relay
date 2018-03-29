@@ -65,7 +65,7 @@ defmodule Relay.Resources.LDSTest do
   end
 
   property "certs are added to HTTPS listener" do
-    gen_cert_infos = StreamData.list_of(GenData.cert_info(), max_length: 20)
+    gen_cert_infos = GenData.cert_info() |> StreamData.list_of(max_length: 20)
 
     check all cert_infos <- gen_cert_infos do
       assert [http, https] = LDS.listeners(cert_infos)
