@@ -26,9 +26,9 @@ defmodule Relay.Resources.Config do
   @spec fetch_listener!(atom, atom) :: any
   def fetch_listener!(listener, key), do: listener |> listener() |> Keyword.fetch!(key)
 
-  @spec get_listener(atom, atom, any) :: any
-  def get_listener(listener, key, default),
-    do: listener |> listener() |> Keyword.get(key, default)
+  @spec get_listener_route_config_name(atom) :: String.t()
+  def get_listener_route_config_name(listener),
+    do: listener |> listener() |> Keyword.get(:route_config_name, Atom.to_string(listener))
 
   @spec marathon_acme() :: keyword
   defp marathon_acme, do: Application.fetch_env!(:relay, :marathon_acme)

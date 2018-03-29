@@ -86,13 +86,6 @@ defmodule Relay.Resources.LDS do
     )
   end
 
-  @spec get_route_config_name(atom) :: String.t()
-  def get_route_config_name(listener) do
-    listener
-    |> Config.get_listener(:route_config_name, Atom.to_string(listener))
-    |> truncate_obj_name()
-  end
-
   defp listener_address(listener) do
     listen = Config.fetch_listener!(listener, :listen)
     socket_address(Keyword.fetch!(listen, :address), Keyword.fetch!(listen, :port))
@@ -112,7 +105,8 @@ defmodule Relay.Resources.LDS do
     stat_prefix = Keyword.get(config, :stat_prefix, Atom.to_string(listener))
     access_log = Keyword.get(config, :access_log) |> access_logs_from_config()
 
-    route_config_name = get_route_config_name(listener)
+    # TODO: Validate that the configured name is less than max_obj_name_length
+    route_config_name = Config.get_listener_route_config_name(listener)
 
     {options, router_opts} = Keyword.pop(options, :router_opts, [])
 
