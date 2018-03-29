@@ -64,7 +64,7 @@ defmodule Relay.Resources.Common do
   def duration(milliseconds) do
     Duration.new(
       seconds: div(milliseconds, 1000),
-      # :erlang.rem/2 considers the sign of the nominator, while Integer.mod/2
+      # :erlang.rem/2 considers the sign of the numerator, while Integer.mod/2
       # only considers the sign of the denominator
       nanos: :erlang.rem(milliseconds, 1000) * 1_000_000
     )
