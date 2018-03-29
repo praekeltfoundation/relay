@@ -24,7 +24,7 @@
         # Sometimes it makes sense to start a pipe chain with a function call
         {Credo.Check.Refactor.PipeChainStart,
          excluded_functions: ["Map.new", "Atom.to_string", "Keyword.get"],
-         excluded_argument_types: [:atom, :binary]}
+         excluded_argument_types: [:atom, :binary, :keyword]}
       ]
     }
   ]
