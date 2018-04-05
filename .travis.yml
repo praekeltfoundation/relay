@@ -15,10 +15,10 @@ after_success:
 jobs:
   include:
     - elixir: '1.6'
-      otp_release: '20.2'
+      otp_release: '20.3'
 
     - elixir: '1.6'
-      otp_release: '20.2'
+      otp_release: '20.3'
       env:
         - RUN_DIALYZER=1
       cache:
