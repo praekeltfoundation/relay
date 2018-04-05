@@ -58,7 +58,7 @@ defmodule Relay.MixProject do
       {
         :sse_test_server,
         git: "https://github.com/praekeltfoundation/sse_test_server.git",
-        ref: "d8917d260685a306834a476a7457469be590c4d4",
+        ref: "8f5373cdb4722b145e978fff4d4eb039072c655c",
         only: :test,
         app: false
       },
