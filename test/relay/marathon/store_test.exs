@@ -52,7 +52,7 @@ defmodule Relay.Marathon.StoreTest do
   defp get_state_version(store), do: store |> get_state() |> Map.fetch!(:version)
 
   defp assert_empty_state(store),
-    do: assert(%Store.State{apps: %{}, tasks: %{}, app_tasks: %{}} = get_state(store))
+    do: assert(%Store.State{apps: %{}, app_tasks: %{}} = get_state(store))
 
   defp assert_app_updates(version) do
     # Assert we receive RDS, CDS, & EDS messages but without any endpoints
@@ -199,13 +199,10 @@ defmodule Relay.Marathon.StoreTest do
     assert Store.update_app(store, @test_app) == :ok
 
     # App is stored in state
-    empty_set = MapSet.new()
-
     assert %Store.State{
              version: version1,
              apps: %{^app_id => @test_app},
-             app_tasks: %{^app_id => ^empty_set},
-             tasks: %{}
+             app_tasks: %{^app_id => %{}}
            } = get_state(store)
 
     # Version has increased
@@ -220,13 +217,10 @@ defmodule Relay.Marathon.StoreTest do
 
     assert Store.update_app(store, @test_app) == :ok
 
-    empty_set = MapSet.new()
-
     assert %Store.State{
              version: version,
              apps: %{^app_id => @test_app},
-             app_tasks: %{^app_id => ^empty_set},
-             tasks: %{}
+             app_tasks: %{^app_id => %{}}
            } = get_state(store)
 
     # We should receive one update...
@@ -237,8 +231,7 @@ defmodule Relay.Marathon.StoreTest do
     assert %Store.State{
              version: ^version,
              apps: %{^app_id => @test_app},
-             app_tasks: %{^app_id => ^empty_set},
-             tasks: %{}
+             app_tasks: %{^app_id => %{}}
            } = get_state(store)
 
     # ...and no updates
@@ -296,13 +289,10 @@ defmodule Relay.Marathon.StoreTest do
     %Task{id: task_id, app_id: app_id} = @test_task
     assert Store.update_task(store, @test_task) == :ok
 
-    app_tasks = MapSet.new([task_id])
-
     assert %Store.State{
              version: version2,
              apps: %{^app_id => @test_app},
-             tasks: %{^task_id => @test_task},
-             app_tasks: %{^app_id => ^app_tasks}
+             app_tasks: %{^app_id => %{^task_id => @test_task}}
            } = get_state(store)
 
     assert version2 > version1
@@ -327,7 +317,7 @@ defmodule Relay.Marathon.StoreTest do
     assert Store.update_app(store, @test_app) == :ok
     store |> get_state_version() |> assert_app_updates()
 
-    %Task{id: task_id} = @test_task
+    %Task{id: task_id, app_id: app_id} = @test_task
     assert Store.update_task(store, @test_task) == :ok
     version = get_state_version(store)
     # First task addition triggers update...
@@ -336,7 +326,9 @@ defmodule Relay.Marathon.StoreTest do
     assert Store.update_task(store, @test_task) == :ok
 
     # ...version and task haven't changed
-    assert %Store.State{version: ^version, tasks: %{^task_id => @test_task}} = get_state(store)
+    assert %Store.State{version: ^version, app_tasks: %{^app_id => %{^task_id => @test_task}}} =
+             get_state(store)
+
     # ...and no further updates
     refute_updates()
   end
@@ -345,7 +337,7 @@ defmodule Relay.Marathon.StoreTest do
     assert Store.update_app(store, @test_app) == :ok
     store |> get_state_version() |> assert_app_updates()
 
-    %Task{id: task_id, version: task_version} = @test_task
+    %Task{id: task_id, app_id: app_id, version: task_version} = @test_task
     assert Store.update_task(store, @test_task) == :ok
     version1 = get_state_version(store)
     assert_task_updates(version1)
@@ -356,7 +348,9 @@ defmodule Relay.Marathon.StoreTest do
 
     assert Store.update_task(store, task2)
 
-    assert %Store.State{version: version2, tasks: %{^task_id => ^task2}} = get_state(store)
+    assert %Store.State{version: version2, app_tasks: %{^app_id => %{^task_id => ^task2}}} =
+             get_state(store)
+
     assert version2 > version1
     assert_task_updates(version2)
   end
@@ -370,15 +364,12 @@ defmodule Relay.Marathon.StoreTest do
     version1 = get_state_version(store)
     assert_task_updates(version1)
 
-    assert Store.delete_task(store, task_id) == :ok
-
-    empty_set = MapSet.new()
+    assert Store.delete_task(store, task_id, app_id) == :ok
 
     assert %Store.State{
              version: version2,
              apps: %{^app_id => @test_app},
-             tasks: %{},
-             app_tasks: %{^app_id => ^empty_set}
+             app_tasks: %{^app_id => %{}}
            } = get_state(store)
 
     assert version2 > version1
@@ -387,7 +378,11 @@ defmodule Relay.Marathon.StoreTest do
   end
 
   test "delete task does not exist", %{store: store} do
-    assert Store.delete_task(store, "foo") == :ok
+    import ExUnit.CaptureLog
+
+    assert capture_log(fn ->
+             assert Store.delete_task(store, "foo", "bar") == :ok
+           end) =~ "Unable to find app 'bar' for task 'foo'. Task delete ignored."
 
     assert_empty_state(store)
     # No updates since nothing was ever stored

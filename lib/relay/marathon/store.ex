@@ -14,13 +14,12 @@ defmodule Relay.Marathon.Store do
   defmodule State do
     @moduledoc false
 
-    defstruct [:version, apps: %{}, tasks: %{}, app_tasks: %{}]
+    defstruct [:version, apps: %{}, app_tasks: %{}]
 
     @type t :: %__MODULE__{
             version: String.t(),
             apps: %{optional(String.t()) => App.t()},
-            tasks: %{optional(String.t()) => Task.t()},
-            app_tasks: %{optional(String.t()) => String.t()}
+            app_tasks: %{optional(String.t()) => %{optional(String.t()) => Task.t()}}
           }
 
     def new, do: %State{version: new_version()}
@@ -29,21 +28,21 @@ defmodule Relay.Marathon.Store do
     def get_apps(%__MODULE__{apps: apps}) do
       apps
       |> Map.values()
-      |> Enum.sort(fn %App{id: id1}, %App{id: id2} -> id1 < id2 end)
+      |> Enum.sort(&(&1.id < &2.id))
     end
 
     @spec get_apps_and_tasks(t) :: [{App.t(), [Task.t()]}]
     def get_apps_and_tasks(%__MODULE__{} = state) do
       state
       |> get_apps()
-      |> Enum.map(fn %App{id: app_id} = app ->
-        tasks =
-          state.app_tasks[app_id]
-          |> Enum.sort()
-          |> Enum.map(fn task_id -> state.tasks[task_id] end)
+      |> Enum.map(fn app -> {app, get_tasks(state, app)} end)
+    end
 
-        {app, tasks}
-      end)
+    @spec get_tasks(t, App.t()) :: [Task.t()]
+    defp get_tasks(%__MODULE__{app_tasks: app_tasks}, %App{id: app_id}) do
+      app_tasks[app_id]
+      |> Map.values()
+      |> Enum.sort(&(&1.id < &2.id))
     end
 
     @spec get_and_update_app(t, App.t()) :: {App.t() | nil, t}
@@ -64,26 +63,18 @@ defmodule Relay.Marathon.Store do
     end
 
     @spec put_app(t, App.t()) :: t
-    defp put_app(%__MODULE__{apps: apps, app_tasks: app_tasks} = state, %App{id: id} = app) do
-      new_state(
-        state,
-        apps: Map.put(apps, id, app),
-        app_tasks: Map.put(app_tasks, id, MapSet.new())
-      )
-    end
+    defp put_app(%__MODULE__{apps: apps, app_tasks: app_tasks} = state, %App{id: id} = app),
+      do: new_state(state, apps: Map.put(apps, id, app), app_tasks: Map.put(app_tasks, id, %{}))
 
     @spec replace_app!(t, App.t()) :: t
     defp replace_app!(%__MODULE__{apps: apps} = state, %App{id: id} = app),
       do: new_state(state, apps: Map.replace!(apps, id, app))
 
     @spec pop_app(t, String.t()) :: {App.t() | nil, t}
-    def pop_app(%__MODULE__{apps: apps, tasks: tasks, app_tasks: app_tasks} = state, id) do
+    def pop_app(%__MODULE__{apps: apps, app_tasks: app_tasks} = state, id) do
       case Map.pop(apps, id) do
         {%App{} = app, new_apps} ->
-          {tasks_for_app, new_app_tasks} = Map.pop(app_tasks, id)
-          new_tasks = Map.drop(tasks, tasks_for_app)
-
-          {app, new_state(state, apps: new_apps, tasks: new_tasks, app_tasks: new_app_tasks)}
+          {app, new_state(state, apps: new_apps, app_tasks: Map.delete(app_tasks, id))}
 
         {nil, _} ->
           {nil, state}
@@ -92,13 +83,15 @@ defmodule Relay.Marathon.Store do
 
     @spec get_and_update_task!(t, Task.t()) :: {Task.t() | nil, t}
     def get_and_update_task!(
-          %__MODULE__{tasks: tasks} = state,
-          %Task{id: id, version: version} = task
+          %__MODULE__{app_tasks: app_tasks} = state,
+          %Task{id: id, app_id: app_id, version: version} = task
         ) do
+      tasks = Map.fetch!(app_tasks, app_id)
+
       case Map.get(tasks, id) do
         # Task is newer than existing task, update the task
         %Task{version: existing_version} = existing_task when version > existing_version ->
-          {existing_task, replace_task!(state, task)}
+          {existing_task, put_task!(state, tasks, task)}
 
         # Task is the same or older than existing task, do nothing
         %Task{} ->
@@ -106,33 +99,27 @@ defmodule Relay.Marathon.Store do
 
         # No existing task with this ID, add this one
         nil ->
-          {nil, put_task!(state, task)}
+          {nil, put_task!(state, tasks, task)}
       end
     end
 
-    @spec put_task!(t, Task.t()) :: t
+    @spec put_task!(t, %{String.t() => %{optional(String.t()) => Task.t()}}, Task.t()) :: t
     defp put_task!(
-           %__MODULE__{tasks: tasks, app_tasks: app_tasks} = state,
+           %__MODULE__{app_tasks: app_tasks} = state,
+           tasks,
            %Task{id: id, app_id: app_id} = task
          ) do
-      new_state(
-        state,
-        tasks: Map.put(tasks, id, task),
-        app_tasks: Map.update!(app_tasks, app_id, fn tasks -> MapSet.put(tasks, id) end)
-      )
+      new_tasks = Map.put(tasks, id, task)
+      new_state(state, app_tasks: Map.replace!(app_tasks, app_id, new_tasks))
     end
 
-    @spec replace_task!(t, Task.t()) :: t
-    defp replace_task!(%__MODULE__{tasks: tasks} = state, %Task{id: id} = task),
-      do: new_state(state, tasks: Map.replace!(tasks, id, task))
+    @spec pop_task!(t, String.t(), String.t()) :: {Task.t() | nil, t}
+    def pop_task!(%__MODULE__{app_tasks: app_tasks} = state, id, app_id) do
+      tasks = Map.fetch!(app_tasks, app_id)
 
-    @spec pop_task(t, String.t()) :: {Task.t() | nil, t}
-    def pop_task(%__MODULE__{tasks: tasks, app_tasks: app_tasks} = state, id) do
       case Map.pop(tasks, id) do
-        {%Task{app_id: app_id} = task, new_tasks} ->
-          new_app_tasks = Map.update!(app_tasks, app_id, &MapSet.delete(&1, id))
-
-          {task, new_state(state, tasks: new_tasks, app_tasks: new_app_tasks)}
+        {%Task{} = task, new_tasks} ->
+          {task, new_state(state, app_tasks: Map.replace!(app_tasks, app_id, new_tasks))}
 
         {nil, _} ->
           {nil, state}
@@ -186,8 +173,9 @@ defmodule Relay.Marathon.Store do
   @doc """
   Delete a task from the Store.
   """
-  @spec delete_task(GenServer.server(), String.t()) :: :ok
-  def delete_task(store, task_id), do: GenServer.call(store, {:delete_task, task_id})
+  @spec delete_task(GenServer.server(), String.t(), String.t()) :: :ok
+  def delete_task(store, task_id, app_id),
+    do: GenServer.call(store, {:delete_task, task_id, app_id})
 
   @spec init(GenServer.server()) :: {:ok, {GenServer.server(), State.t()}}
   def init(resources) do
@@ -260,17 +248,26 @@ defmodule Relay.Marathon.Store do
     {:reply, :ok, {resources, new_state}}
   end
 
-  def handle_call({:delete_task, id}, _from, {resources, state}) do
-    {task, new_state} = State.pop_task(state, id)
+  def handle_call({:delete_task, id, app_id}, _from, {resources, state}) do
+    new_state =
+      try do
+        {task, new_state} = State.pop_task!(state, id, app_id)
 
-    case task do
-      %Task{version: version} ->
-        Log.info("Task '#{id}' with version #{version} deleted")
-        notify_updated_task(resources, new_state)
+        case task do
+          %Task{version: version} ->
+            Log.info("Task '#{id}' with version #{version} deleted")
+            notify_updated_task(resources, new_state)
 
-      nil ->
-        Log.debug("Task '#{id}' not present/already deleted")
-    end
+          nil ->
+            Log.debug("Task '#{id}' not present/already deleted")
+        end
+
+        new_state
+      rescue
+        KeyError ->
+          Log.warn("Unable to find app '#{app_id}' for task '#{id}'. Task delete ignored.")
+          state
+      end
 
     {:reply, :ok, {resources, new_state}}
   end
