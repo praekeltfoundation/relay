@@ -312,15 +312,15 @@ defmodule Relay.Marathon.StoreTest do
   end
 
   test "update task without app", %{store: store} do
-    %Task{id: task_id, app_id: app_id} = @test_task
+    %Task{app_id: app_id} = @test_task
 
     import ExUnit.CaptureLog
 
     assert capture_log(fn ->
-             assert Store.update_task(store, @test_task) == :ok
-           end) =~ "Unable to find app '#{app_id}' for task '#{task_id}'. Task update ignored."
+             assert {{{:badkey, ^app_id}, _}, _} =
+                      catch_exit(Store.update_task(store, @test_task))
+           end) =~ ~r"GenServer .+ terminating"
 
-    assert_empty_state(store)
     # No updates since nothing was ever stored
     refute_updates()
   end
@@ -390,11 +390,7 @@ defmodule Relay.Marathon.StoreTest do
   end
 
   test "delete task does not exist", %{store: store} do
-    import ExUnit.CaptureLog
-
-    assert capture_log(fn ->
-             assert Store.delete_task(store, "foo", "bar") == :ok
-           end) =~ "Unable to find app 'bar' for task 'foo'. Task delete ignored."
+    assert Store.delete_task(store, "foo", "bar") == :ok
 
     assert_empty_state(store)
     # No updates since nothing was ever stored

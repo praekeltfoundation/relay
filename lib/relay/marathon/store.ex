@@ -179,12 +179,16 @@ defmodule Relay.Marathon.Store do
   @doc """
   Update a task in the Store. The task is only added if its version is newer
   than any existing task.
+
+  An error will be raised if the task's app is not already stored.
   """
   @spec update_task(GenServer.server(), Task.t()) :: :ok
   def update_task(store, %Task{} = task), do: GenServer.call(store, {:update_task, task})
 
   @doc """
   Delete a task from the Store.
+
+  If the app ID is not in the store, this task deletion will be ignored.
   """
   @spec delete_task(GenServer.server(), String.t(), String.t()) :: :ok
   def delete_task(store, task_id, app_id),
@@ -233,33 +237,25 @@ defmodule Relay.Marathon.Store do
   end
 
   def handle_call(
-        {:update_task, %Task{id: id, app_id: app_id, version: version} = task},
+        {:update_task, %Task{id: id, version: version} = task},
         _from,
         {resources, state}
       ) do
-    new_state =
-      try do
-        {old_task, new_state} = State.get_and_update_task!(state, task)
+    # If the app for the task doesn't exist it's an error
+    {old_task, new_state} = State.get_and_update_task!(state, task)
 
-        case old_task do
-          %Task{version: existing_version} when version > existing_version ->
-            Log.debug("Task '#{id}' updated: #{existing_version} -> #{version}")
-            notify_updated_task(resources, new_state)
+    case old_task do
+      %Task{version: existing_version} when version > existing_version ->
+        Log.debug("Task '#{id}' updated: #{existing_version} -> #{version}")
+        notify_updated_task(resources, new_state)
 
-          %Task{version: existing_version} ->
-            Log.debug("Task '#{id}' unchanged: #{version} <= #{existing_version}")
+      %Task{version: existing_version} ->
+        Log.debug("Task '#{id}' unchanged: #{version} <= #{existing_version}")
 
-          nil ->
-            Log.info("Task '#{id}' with version #{version} added")
-            notify_updated_task(resources, new_state)
-        end
-
-        new_state
-      rescue
-        KeyError ->
-          Log.warn("Unable to find app '#{app_id}' for task '#{id}'. Task update ignored.")
-          state
-      end
+      nil ->
+        Log.info("Task '#{id}' with version #{version} added")
+        notify_updated_task(resources, new_state)
+    end
 
     {:reply, :ok, {resources, new_state}}
   end
@@ -281,7 +277,7 @@ defmodule Relay.Marathon.Store do
         new_state
       rescue
         KeyError ->
-          Log.warn("Unable to find app '#{app_id}' for task '#{id}'. Task delete ignored.")
+          Log.debug("Unable to find app '#{app_id}' for task '#{id}'. Task delete ignored.")
           state
       end
 
