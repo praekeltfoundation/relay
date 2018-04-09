@@ -35,12 +35,12 @@ defmodule Relay.Marathon.Store do
     end
 
     @spec get_tasks(t, App.t()) :: [Task.t()]
-    defp get_tasks(%__MODULE__{app_tasks: app_tasks}, %App{id: app_id}), do:
-      values_sorted_by_key(app_tasks[app_id])
+    defp get_tasks(%__MODULE__{app_tasks: app_tasks}, %App{id: app_id}),
+      do: values_sorted_by_key(app_tasks[app_id])
 
     @spec values_sorted_by_key(%{optional(Map.key()) => Map.value()}) :: [Map.value()]
-    defp values_sorted_by_key(map), do:
-      map |> Map.to_list() |> Enum.sort() |> Enum.map(&elem(&1, 1))
+    defp values_sorted_by_key(map),
+      do: map |> Map.to_list() |> Enum.sort() |> Enum.map(&elem(&1, 1))
 
     @spec get_app(t, String.t()) :: App.t() | nil
     def get_app(%__MODULE__{apps: apps}, app_id), do: Map.get(apps, app_id)
