@@ -45,6 +45,9 @@ defmodule Relay.Marathon.Store do
       |> Enum.sort(&(&1.id < &2.id))
     end
 
+    @spec get_app(t, String.t()) :: App.t() | nil
+    def get_app(%__MODULE__{apps: apps}, app_id), do: Map.get(apps, app_id)
+
     @spec get_and_update_app(t, App.t()) :: {App.t() | nil, t}
     def get_and_update_app(%__MODULE__{apps: apps} = state, %App{id: id, version: version} = app) do
       case Map.get(apps, id) do
@@ -151,6 +154,16 @@ defmodule Relay.Marathon.Store do
   end
 
   @doc """
+  Get an app from the store using its ID.
+
+  We need to check for the presence of an App in the Store to determine whether
+  a Task is relevant to us. Also, Task structs require the corresponding App
+  struct in order to be created.
+  """
+  @spec get_app(GenServer.server(), String.t()) :: {:ok, App.t() | nil}
+  def get_app(store, app_id), do: GenServer.call(store, {:get_app, app_id})
+
+  @doc """
   Update an app in the Store. The app is only added if its version is newer than
   any existing app.
   """
@@ -181,6 +194,9 @@ defmodule Relay.Marathon.Store do
   def init(resources) do
     {:ok, {resources, State.new()}}
   end
+
+  def handle_call({:get_app, app_id}, _from, {resources, state}),
+    do: {:reply, {:ok, State.get_app(state, app_id)}, {resources, state}}
 
   def handle_call({:update_app, %App{id: id, version: version} = app}, _from, {resources, state}) do
     {old_app, new_state} = State.get_and_update_app(state, app)

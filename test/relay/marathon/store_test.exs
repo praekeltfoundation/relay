@@ -256,6 +256,18 @@ defmodule Relay.Marathon.StoreTest do
     assert_app_updates(version2)
   end
 
+  test "get app not existing", %{store: store} do
+    assert Store.get_app(store, "/mc2") == {:ok, nil}
+  end
+
+  test "get app", %{store: store} do
+    %App{id: app_id} = @test_app
+
+    assert Store.update_app(store, @test_app) == :ok
+
+    assert Store.get_app(store, app_id) == {:ok, @test_app}
+  end
+
   test "delete app", %{store: store} do
     %App{id: app_id} = @test_app
     assert Store.update_app(store, @test_app) == :ok
