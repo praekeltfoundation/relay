@@ -390,6 +390,16 @@ defmodule Relay.Marathon.StoreTest do
   end
 
   test "delete task does not exist", %{store: store} do
+    %App{id: app_id} = @test_app
+    assert Store.update_app(store, @test_app) == :ok
+    store |> get_state_version() |> assert_app_updates()
+
+    assert Store.delete_task(store, "foo", app_id) == :ok
+    # No updates since nothing was deleted
+    refute_updates()
+  end
+
+  test "delete task without app", %{store: store} do
     assert Store.delete_task(store, "foo", "bar") == :ok
 
     assert_empty_state(store)
