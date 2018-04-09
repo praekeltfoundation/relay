@@ -4,8 +4,10 @@
       name: "default",
       color: true,
       files: %{
-        included: ["config/", "lib/", "test/", "*.exs"],
-        excluded: ["lib/envoy/", "lib/google/"]
+        # The default glob pattern matching doesn't match files starting with a '.'
+        included:
+          ["config/", "lib/", "test/", "*.exs"] ++ Path.wildcard(".*.exs", match_dot: true),
+        excluded: []
       },
       checks: [
         # Don't fail on TODOs and FIXMEs for now

@@ -3,8 +3,8 @@ defmodule Relay.Resources.RDSTest do
 
   alias Relay.Resources.{AppEndpoint, RDS}
 
-  alias Envoy.Api.V2.RouteConfiguration
-  alias Envoy.Api.V2.Route.{RedirectAction, Route, RouteAction, RouteMatch, VirtualHost}
+  alias Envoy.Api.V2.{Route, RouteConfiguration}
+  alias Route.{VirtualHost, RedirectAction, RouteAction, RouteMatch}
 
   @simple_app_endpoint %AppEndpoint{
     name: "/mc2_0",
@@ -22,6 +22,83 @@ defmodule Relay.Resources.RDSTest do
     assert %RouteConfiguration{
              name: "https",
              virtual_hosts: [%VirtualHost{name: "https_/mc2_0"}]
+           } = https_config
+
+    assert Protobuf.Validator.valid?(http_config)
+    assert Protobuf.Validator.valid?(https_config)
+  end
+
+  test "routes with vhost options" do
+    alias Envoy.Api.V2.Core.{HeaderValue, HeaderValueOption}
+    alias Google.Protobuf.BoolValue
+
+    response_headers_to_add =
+      HeaderValueOption.new(
+        header: HeaderValue.new(key: "Strict-Transport-Security", value: "max-age=31536000"),
+        append: BoolValue.new(value: false)
+      )
+
+    app_endpoint = %AppEndpoint{
+      @simple_app_endpoint
+      | vhost_opts: [response_headers_to_add: response_headers_to_add]
+    }
+
+    assert [http_config, https_config] = RDS.route_configurations([app_endpoint])
+
+    assert %RouteConfiguration{
+             virtual_hosts: [%VirtualHost{response_headers_to_add: ^response_headers_to_add}]
+           } = http_config
+
+    assert %RouteConfiguration{
+             virtual_hosts: [%VirtualHost{response_headers_to_add: ^response_headers_to_add}]
+           } = https_config
+
+    assert Protobuf.Validator.valid?(http_config)
+    assert Protobuf.Validator.valid?(https_config)
+  end
+
+  test "route with route options" do
+    alias Google.Protobuf.BoolValue
+
+    route_decorator = Route.Decorator.new(operation: "ingress")
+    route_action_use_websocket = BoolValue.new(value: true)
+    route_match_headers = [Route.HeaderMatcher.new(name: "method", value: "POST")]
+
+    app_endpoint = %AppEndpoint{
+      @simple_app_endpoint
+      | route_opts: [decorator: route_decorator],
+        route_action_opts: [use_websocket: route_action_use_websocket],
+        route_match_opts: [headers: route_match_headers]
+    }
+
+    assert [http_config, https_config] = RDS.route_configurations([app_endpoint])
+
+    assert %RouteConfiguration{
+             virtual_hosts: [
+               %VirtualHost{
+                 routes: [
+                   %Route.Route{
+                     decorator: ^route_decorator,
+                     action: {:route, %RouteAction{use_websocket: ^route_action_use_websocket}},
+                     match: %RouteMatch{headers: ^route_match_headers}
+                   }
+                 ]
+               }
+             ]
+           } = http_config
+
+    assert %RouteConfiguration{
+             virtual_hosts: [
+               %VirtualHost{
+                 routes: [
+                   %Route.Route{
+                     decorator: ^route_decorator,
+                     action: {:route, %RouteAction{use_websocket: ^route_action_use_websocket}},
+                     match: %RouteMatch{headers: ^route_match_headers}
+                   }
+                 ]
+               }
+             ]
            } = https_config
 
     assert Protobuf.Validator.valid?(http_config)
@@ -64,7 +141,7 @@ defmodule Relay.Resources.RDSTest do
              name: "http_/mc2_0",
              domains: ["mc2.example.org"],
              routes: [
-               %Route{
+               %Route.Route{
                  action: {:route, %RouteAction{cluster_specifier: {:cluster, "/mc2_0"}}},
                  match: %RouteMatch{path_specifier: {:prefix, "/"}}
                }
@@ -75,7 +152,7 @@ defmodule Relay.Resources.RDSTest do
              name: "https_/mc2_0",
              domains: ["mc2.example.org"],
              routes: [
-               %Route{
+               %Route.Route{
                  action: {:route, %RouteAction{cluster_specifier: {:cluster, "/mc2_0"}}},
                  match: %RouteMatch{path_specifier: {:prefix, "/"}}
                }
@@ -98,7 +175,7 @@ defmodule Relay.Resources.RDSTest do
              name: "http_/mc2_0",
              domains: ["mc2.example.org"],
              routes: [
-               %Route{
+               %Route.Route{
                  action: {:redirect, %RedirectAction{https_redirect: true}},
                  match: %RouteMatch{path_specifier: {:prefix, "/"}}
                }
@@ -123,11 +200,11 @@ defmodule Relay.Resources.RDSTest do
              name: "http_/mc2_0",
              domains: ["mc2.example.org"],
              routes: [
-               %Route{
+               %Route.Route{
                  action: {:route, %RouteAction{cluster_specifier: {:cluster, "/ma_1"}}},
                  match: %RouteMatch{path_specifier: {:prefix, "/.well-known/acme-challenge/"}}
                },
-               %Route{
+               %Route.Route{
                  action: {:route, %RouteAction{cluster_specifier: {:cluster, "/mc2_0"}}},
                  match: %RouteMatch{path_specifier: {:prefix, "/"}}
                }

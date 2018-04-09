@@ -2,13 +2,12 @@ defmodule Relay.Resources.EDS do
   @moduledoc """
   Builds Envoy ClusterLoadAssignment values from cluster resources.
   """
-  alias Relay.Resources.{AppEndpoint, Common}
+  alias Relay.Resources.{AppEndpoint, Config}
+  import Relay.Resources.Common, only: [socket_address: 2]
 
   alias Envoy.Api.V2.ClusterLoadAssignment
   alias Envoy.Api.V2.Core.Locality
   alias Envoy.Api.V2.Endpoint.{Endpoint, LbEndpoint, LocalityLbEndpoints}
-
-  @default_locality Locality.new(region: "default")
 
   @doc """
   Create ClusterLoadAssignments for the given app_endpoints.
@@ -24,13 +23,14 @@ defmodule Relay.Resources.EDS do
       app_endpoint.addresses
       |> Enum.map(&lb_endpoint(&1, app_endpoint.lb_endpoint_opts))
 
+    locality = Keyword.get(app_endpoint.llb_endpoint_opts, :locality, default_locality())
+
     ClusterLoadAssignment.new(
       [
         cluster_name: app_endpoint.name,
         endpoints: [
           LocalityLbEndpoints.new(
-            [locality: @default_locality, lb_endpoints: lb_endpoints] ++
-              app_endpoint.llb_endpoint_opts
+            [locality: locality, lb_endpoints: lb_endpoints] ++ app_endpoint.llb_endpoint_opts
           )
         ]
       ] ++ app_endpoint.cla_opts
@@ -39,10 +39,14 @@ defmodule Relay.Resources.EDS do
 
   @spec lb_endpoint({String.t(), :inet.port_number()}, keyword) :: LbEndpoint.t()
   defp lb_endpoint({address, port}, options) do
-    LbEndpoint.new(
-      [
-        endpoint: Endpoint.new(address: Common.socket_address(address, port))
-      ] ++ options
-    )
+    LbEndpoint.new([endpoint: Endpoint.new(address: socket_address(address, port))] ++ options)
+  end
+
+  @spec default_locality() :: Locality.t()
+  def default_locality do
+    :locality
+    |> Config.fetch_endpoints!()
+    |> Keyword.take([:region, :zone, :sub_zone])
+    |> Locality.new()
   end
 end

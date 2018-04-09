@@ -4,7 +4,7 @@ defmodule Relay.Resources.EDSTest do
   alias Relay.Resources.{AppEndpoint, EDS}
 
   alias Envoy.Api.V2.ClusterLoadAssignment
-  alias Envoy.Api.V2.Core.{Address, Locality, SocketAddress}
+  alias Envoy.Api.V2.Core.{Address, SocketAddress}
   alias Envoy.Api.V2.Endpoint.{Endpoint, LbEndpoint, LocalityLbEndpoints}
 
   @simple_app_endpoint %AppEndpoint{
@@ -15,11 +15,13 @@ defmodule Relay.Resources.EDSTest do
   test "simple cluster load assignment" do
     assert [cla] = EDS.cluster_load_assignments([@simple_app_endpoint])
 
+    locality = EDS.default_locality()
+
     assert %ClusterLoadAssignment{
              cluster_name: "/mc2_0",
              endpoints: [
                %LocalityLbEndpoints{
-                 locality: %Locality{region: "default"},
+                 locality: ^locality,
                  lb_endpoints: [
                    %LbEndpoint{
                      endpoint: %Endpoint{
@@ -45,11 +47,13 @@ defmodule Relay.Resources.EDSTest do
     app_endpoint = %AppEndpoint{@simple_app_endpoint | addresses: []}
     assert [cla] = EDS.cluster_load_assignments([app_endpoint])
 
+    locality = EDS.default_locality()
+
     assert %ClusterLoadAssignment{
              cluster_name: "/mc2_0",
              endpoints: [
                %LocalityLbEndpoints{
-                 locality: %Locality{region: "default"},
+                 locality: ^locality,
                  lb_endpoints: []
                }
              ]
@@ -66,11 +70,13 @@ defmodule Relay.Resources.EDSTest do
 
     assert [cla] = EDS.cluster_load_assignments([app_endpoint])
 
+    locality = EDS.default_locality()
+
     assert %ClusterLoadAssignment{
              cluster_name: "/mc2_0",
              endpoints: [
                %LocalityLbEndpoints{
-                 locality: %Locality{region: "default"},
+                 locality: ^locality,
                  lb_endpoints: [
                    %LbEndpoint{
                      endpoint: %Endpoint{
@@ -100,6 +106,19 @@ defmodule Relay.Resources.EDSTest do
                }
              ]
            } = cla
+
+    assert Protobuf.Validator.valid?(cla)
+  end
+
+  test "override default locality" do
+    alias Envoy.Api.V2.Core.Locality
+    locality = Locality.new(region: "eu-west-1", zone: "eu-west-1b")
+
+    app_endpoint = %AppEndpoint{@simple_app_endpoint | llb_endpoint_opts: [locality: locality]}
+
+    assert [cla] = EDS.cluster_load_assignments([app_endpoint])
+
+    assert %ClusterLoadAssignment{endpoints: [%LocalityLbEndpoints{locality: ^locality}]} = cla
 
     assert Protobuf.Validator.valid?(cla)
   end

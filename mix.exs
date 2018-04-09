@@ -45,12 +45,10 @@ defmodule Relay.MixProject do
       # actually pulls in 1.0.0-pre.4b which causes errors with GRPC streams
       # that return an error code.
       {:gun, "1.0.0-pre.5"},
-      # 2017-12-13: The latest hackney release (1.10.1) has a bug in async
-      # request cleanup: https://github.com/benoitc/hackney/issues/447 The
-      # partial fix in master leaves us with a silent deadlock, so for now
-      # we'll use an earlier version.
-      {:hackney, "~> 1.9.0"},
       {:httpoison, "~> 1.0"},
+      # Hackney is a dependency of HTTPoison but had a bug in versions 1.10.0 to
+      # 1.12.0 that caused deadlocks with async requests.
+      {:hackney, ">= 1.12.1"},
       {:poison, "~> 3.1"},
       {:conform, "~> 2.2"},
 
@@ -58,7 +56,7 @@ defmodule Relay.MixProject do
       {
         :sse_test_server,
         git: "https://github.com/praekeltfoundation/sse_test_server.git",
-        ref: "d8917d260685a306834a476a7457469be590c4d4",
+        ref: "8f5373cdb4722b145e978fff4d4eb039072c655c",
         only: :test,
         app: false
       },

@@ -27,10 +27,17 @@ defmodule Relay.Resources do
       addresses: [],
       marathon_acme_domains: [],
       redirect_to_https: false,
+      # CDS
       cluster_opts: [],
+      # EDS
       cla_opts: [],
       llb_endpoint_opts: [],
-      lb_endpoint_opts: []
+      lb_endpoint_opts: [],
+      # RDS
+      vhost_opts: [],
+      route_opts: [],
+      route_match_opts: [],
+      route_action_opts: []
     ]
 
     @type t :: %__MODULE__{
@@ -42,7 +49,11 @@ defmodule Relay.Resources do
             cluster_opts: keyword,
             cla_opts: keyword,
             llb_endpoint_opts: keyword,
-            lb_endpoint_opts: keyword
+            lb_endpoint_opts: keyword,
+            vhost_opts: keyword,
+            route_opts: keyword,
+            route_match_opts: keyword,
+            route_action_opts: keyword
           }
   end
 
