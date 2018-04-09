@@ -111,7 +111,7 @@ defmodule Relay.Resources.CDSTest do
     service_name = app_endpoint.name
     name = Common.truncate_obj_name(service_name)
     cluster_opts = app_endpoint.cluster_opts
-    connect_timeout = Keyword.get(cluster_opts, :connect_timeout, Duration.new(seconds: 5))
+    connect_timeout = Keyword.get(cluster_opts, :connect_timeout, CDS.default_connect_timeout())
     lb_policy = Keyword.get(cluster_opts, :lb_policy, 0)
 
     assert %Cluster{
