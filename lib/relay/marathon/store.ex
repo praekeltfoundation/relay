@@ -46,8 +46,8 @@ defmodule Relay.Marathon.Store do
     def get_app(%__MODULE__{apps: apps}, app_id), do: Map.get(apps, app_id)
 
     @spec get_and_update_app(t, App.t()) :: {App.t() | nil, t}
-    def get_and_update_app(%__MODULE__{apps: apps} = state, %App{id: id, version: version} = app) do
-      case Map.get(apps, id) do
+    def get_and_update_app(state, %App{id: id, version: version} = app) do
+      case State.get_app(state, id) do
         # App is newer than existing app, update the app
         %App{version: existing_version} = existing_app when version > existing_version ->
           {existing_app, replace_app!(state, app)}
