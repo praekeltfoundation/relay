@@ -74,8 +74,17 @@ defmodule Relay.Marathon do
         Log.debug("api_post_event for app '#{app.id}': updating app...")
         Store.update_app(store, app)
 
-      app ->
-        Log.debug("api_post_event for app '#{app.id}': ignored")
+      %App{id: app_id} ->
+        # If the app is not relevant, check if we have it stored already. If we
+        # do, we can now delete it from the store.
+        case Store.get_app(store, app_id) do
+          {:ok, %App{}} ->
+            Log.debug("api_post_event for app '#{app_id}': deleting... (no longer relevant)")
+            Store.delete_app(store, app_id)
+
+          {:ok, nil} ->
+            Log.debug("api_post_event for app '#{app_id}': ignored")
+        end
     end
   end
 

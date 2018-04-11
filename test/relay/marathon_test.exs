@@ -260,6 +260,24 @@ defmodule Relay.MarathonTest do
     assert_receive_endpoints()
   end
 
+  defp assert_empty_updates do
+    alias Envoy.Api.V2.RouteConfiguration
+
+    assert_receive {:cds, _version, []}, 100
+
+    assert_receive {
+                     :rds,
+                     _version,
+                     [
+                       %RouteConfiguration{name: "http", virtual_hosts: []},
+                       %RouteConfiguration{name: "https", virtual_hosts: []}
+                     ]
+                   },
+                   100
+
+    assert_receive {:eds, _version, []}, 100
+  end
+
   defp refute_updates do
     refute_receive {:rds, _, _}, 100
     refute_receive {:cds, _, _}, 100
@@ -288,6 +306,26 @@ defmodule Relay.MarathonTest do
       FakeMarathon.event(fm, "api_post_event", event_data)
 
       refute_updates()
+    end
+
+    test "app becomes irrelevant", %{fake_marathon: fm} do
+      FakeMarathon.event(fm, "api_post_event", Poison.encode!(@test_api_post_event))
+      assert_app_updates()
+
+      # Clear the labels so the app is irrelevant
+      app_definition =
+        @test_api_post_event
+        |> Map.get("appDefinition")
+        |> Map.put("labels", %{})
+
+      event_data =
+        @test_api_post_event
+        |> Map.put("appDefinition", app_definition)
+        |> Poison.encode!()
+
+      FakeMarathon.event(fm, "api_post_event", event_data)
+
+      assert_empty_updates()
     end
   end
 
@@ -336,6 +374,7 @@ defmodule Relay.MarathonTest do
       "eventType" => "event_stream_attached",
       "timestamp" => "2018-04-11T11:45:47.417Z"
     }
+
     FakeMarathon.event(fm, "event_stream_attached", Poison.encode!(event))
 
     refute_updates()
