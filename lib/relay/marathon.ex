@@ -55,6 +55,16 @@ defmodule Relay.Marathon do
     {:noreply, store}
   end
 
+  # app_terminated_event is *almost* undocumented but seems to be fired when an
+  # app is destroyed. It has been in Marathon for a while:
+  # https://github.com/mesosphere/marathon/commit/4d86315a77d994aaf7a52a67ba204cf2e955914a
+  def handle_info({:sse, %Event{event: "app_terminated_event", data: event_data}}, store) do
+    {:ok, event} = Poison.decode(event_data)
+    handle_app_terminated_event(event, store)
+
+    {:noreply, store}
+  end
+
   def handle_info({:sse, %Event{event: "status_update_event", data: event_data}}, store) do
     {:ok, event} = Poison.decode(event_data)
     handle_status_update_event(event, store)
@@ -86,6 +96,12 @@ defmodule Relay.Marathon do
             Log.debug("api_post_event for app '#{app_id}': ignored")
         end
     end
+  end
+
+  @spec handle_app_terminated_event(map, GenServer.server()) :: :ok
+  defp handle_app_terminated_event(%{"appId" => app_id}, store) do
+    Log.debug("app_terminated_event for app '#{app_id}': deleting...")
+    Store.delete_app(store, app_id)
   end
 
   @spec handle_status_update_event(map, GenServer.server()) :: :ok

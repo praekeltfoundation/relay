@@ -94,6 +94,12 @@ defmodule Relay.MarathonTest do
     "timestamp" => "2018-04-11T10:40:15.908Z"
   }
 
+  @test_app_terminated_event %{
+    "appId" => "/jamie-event-test",
+    "eventType" => "app_terminated_event",
+    "timestamp" => "2018-04-11T12:11:33.521Z"
+  }
+
   @test_status_update_event %{
     "slaveId" => "7e76e0e4-f16c-4d63-a629-dd05d137a223-S3",
     "taskId" => "jamie-event-test.b9e93830-3d74-11e8-a2a6-1653cd73b500",
@@ -324,6 +330,19 @@ defmodule Relay.MarathonTest do
         |> Poison.encode!()
 
       FakeMarathon.event(fm, "api_post_event", event_data)
+
+      assert_empty_updates()
+    end
+  end
+
+  describe "app_terminated_event"  do
+    test "app removed", %{fake_marathon: fm} do
+      # TODO: Should we be storing the tasks app some other way?
+      FakeMarathon.event(fm, "api_post_event", Poison.encode!(@test_api_post_event))
+      # Clear the mailbox messages
+      assert_app_updates()
+
+      FakeMarathon.event(fm, "app_terminated_event", Poison.encode!(@test_app_terminated_event))
 
       assert_empty_updates()
     end
