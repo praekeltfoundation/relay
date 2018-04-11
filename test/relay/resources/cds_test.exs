@@ -99,7 +99,7 @@ defmodule Relay.Resources.CDSTest do
   end
 
   property "clusters are generated with all app endpoints" do
-    gen_app_endpoints = GenData.app_endpoint() |> StreamData.list_of(length: 1)
+    gen_app_endpoints = GenData.app_endpoint() |> StreamData.list_of()
 
     check all app_endpoints <- gen_app_endpoints do
       assert clusters = CDS.clusters(app_endpoints)

@@ -23,11 +23,10 @@ defmodule Relay.GenData do
     segment = StreamData.string(:alphanumeric, min_length: 1, max_length: 50)
     segments = nonempty_list_of(segment, max_length: 3)
 
-    StreamData.bind({prefix, segments, suffix}, fn {prefix, segments, suffix} ->
-      [prefix, segments, [suffix]]
-      |> Enum.concat()
+    StreamData.map({prefix, segments, suffix}, fn {prefix, segments, suffix} ->
+      [prefix, segments, suffix]
+      |> List.flatten()
       |> Enum.join(".")
-      |> StreamData.constant()
     end)
   end
 
