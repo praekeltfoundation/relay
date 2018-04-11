@@ -335,7 +335,7 @@ defmodule Relay.MarathonTest do
     end
   end
 
-  describe "app_terminated_event"  do
+  describe "app_terminated_event" do
     test "app removed", %{fake_marathon: fm} do
       # TODO: Should we be storing the tasks app some other way?
       FakeMarathon.event(fm, "api_post_event", Poison.encode!(@test_api_post_event))
