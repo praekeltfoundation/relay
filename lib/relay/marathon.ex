@@ -81,7 +81,7 @@ defmodule Relay.Marathon do
   defp handle_api_post_event(event, store) do
     case App.from_event(event, marathon_lb_group()) do
       %App{port_indices: port_indices} = app when length(port_indices) > 0 ->
-        Log.debug("api_post_event for app '#{app.id}': updating app...")
+        log_api_post_event(event, "updating app")
         Store.update_app(store, app)
 
       %App{id: app_id} ->
@@ -89,18 +89,22 @@ defmodule Relay.Marathon do
         # do, we can now delete it from the store.
         case Store.get_app(store, app_id) do
           {:ok, %App{}} ->
-            Log.debug("api_post_event for app '#{app_id}': deleting... (no longer relevant)")
+            log_api_post_event(event, "deleting app (no longer relevant)")
             Store.delete_app(store, app_id)
 
           {:ok, nil} ->
-            Log.debug("api_post_event for app '#{app_id}': ignored")
+            log_api_post_event(event, "ignoring (not relevant)")
         end
     end
   end
 
+  @spec log_api_post_event(map, String.t()) :: :ok
+  defp log_api_post_event(%{"appDefinition" => %{"id" => id}}, action),
+    do: Log.debug("api_post_event for app '#{id}': #{action}")
+
   @spec handle_app_terminated_event(map, GenServer.server()) :: :ok
   defp handle_app_terminated_event(%{"appId" => app_id}, store) do
-    Log.debug("app_terminated_event for app '#{app_id}': deleting...")
+    Log.debug("app_terminated_event for app '#{app_id}': deleting app")
     Store.delete_app(store, app_id)
   end
 
@@ -108,21 +112,23 @@ defmodule Relay.Marathon do
   defp handle_status_update_event(%{"taskStatus" => task_status} = event, store)
        when task_status in @terminal_states do
     %{"appId" => app_id, "taskId" => task_id} = event
-    Log.debug("status_update_event (#{task_status}) for task '#{task_id}': deleting...")
+    log_status_update_event(event, "deleting task (terminal state)")
     Store.delete_task(store, task_id, app_id)
   end
 
-  defp handle_status_update_event(event, store) do
-    %{"taskStatus" => task_status, "appId" => app_id, "taskId" => task_id} = event
-
+  defp handle_status_update_event(%{"appId" => app_id} = event, store) do
     # Update the task if we have the app for it already stored
     case Store.get_app(store, app_id) do
       {:ok, %App{} = app} ->
-        Log.debug("status_update_event (#{task_status}) for task '#{task_id}': updating...")
+        log_status_update_event(event, "updating task")
         Store.update_task(store, Task.from_event(app, event))
 
       {:ok, nil} ->
-        Log.debug("status_update_event (#{task_status}) for task '#{task_id}': ignored (no app)")
+        log_status_update_event(event, "ignoring (app not relevant)")
     end
   end
+
+  @spec log_status_update_event(map, String.t()) :: :ok
+  defp log_status_update_event(%{"taskStatus" => status, "taskId" => id}, action),
+    do: Log.debug("status_update_event (#{status}) for task '#{id}': #{action}")
 end
