@@ -329,4 +329,15 @@ defmodule Relay.MarathonTest do
       assert_app_updates()
     end
   end
+
+  test "irrelevant event", %{fake_marathon: fm} do
+    event = %{
+      "remoteAddress" => "10.0.91.9",
+      "eventType" => "event_stream_attached",
+      "timestamp" => "2018-04-11T11:45:47.417Z"
+    }
+    FakeMarathon.event(fm, "event_stream_attached", Poison.encode!(event))
+
+    refute_updates()
+  end
 end
