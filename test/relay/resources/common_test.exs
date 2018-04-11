@@ -1,5 +1,5 @@
 defmodule Relay.Resources.CommonTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias Relay.Resources.Common
 
