@@ -50,37 +50,15 @@ defmodule Relay.Marathon do
     do: Application.fetch_env!(:relay, :marathon_lb) |> Keyword.fetch!(:group)
 
   @impl GenServer
-  def handle_info({:sse, %Event{event: "api_post_event", data: event_data}}, store) do
-    {:ok, event} = Poison.decode(event_data)
-    handle_api_post_event(event, store)
+  def handle_info({:sse, %Event{event: type, data: data}}, store) do
+    {:ok, event} = Poison.decode(data)
+    handle_event(type, event, store)
 
     {:noreply, store}
   end
 
-  # app_terminated_event is *almost* undocumented but seems to be fired when an
-  # app is destroyed. It has been in Marathon for a while:
-  # https://github.com/mesosphere/marathon/commit/4d86315a77d994aaf7a52a67ba204cf2e955914a
-  def handle_info({:sse, %Event{event: "app_terminated_event", data: event_data}}, store) do
-    {:ok, event} = Poison.decode(event_data)
-    handle_app_terminated_event(event, store)
-
-    {:noreply, store}
-  end
-
-  def handle_info({:sse, %Event{event: "status_update_event", data: event_data}}, store) do
-    {:ok, event} = Poison.decode(event_data)
-    handle_status_update_event(event, store)
-
-    {:noreply, store}
-  end
-
-  def handle_info({:sse, %Event{event: event_type}}, state) do
-    Log.debug("Ignoring event of type '#{event_type}'")
-    {:noreply, state}
-  end
-
-  @spec handle_api_post_event(map, GenServer.server()) :: :ok
-  defp handle_api_post_event(event, store) do
+  @spec handle_event(String.t(), map, GenServer.server()) :: :ok
+  defp handle_event("api_post_event", event, store) do
     case App.from_event(event, marathon_lb_group()) do
       %App{port_indices: port_indices} = app when length(port_indices) > 0 ->
         log_api_post_event(event, "updating app")
@@ -100,25 +78,22 @@ defmodule Relay.Marathon do
     end
   end
 
-  @spec log_api_post_event(map, String.t()) :: :ok
-  defp log_api_post_event(%{"appDefinition" => %{"id" => id}}, action),
-    do: Log.debug("api_post_event for app '#{id}': #{action}")
-
-  @spec handle_app_terminated_event(map, GenServer.server()) :: :ok
-  defp handle_app_terminated_event(%{"appId" => app_id}, store) do
+  # app_terminated_event is *almost* undocumented but seems to be fired when an
+  # app is destroyed. It has been in Marathon for a while:
+  # https://github.com/mesosphere/marathon/commit/4d86315a77d994aaf7a52a67ba204cf2e955914a
+  defp handle_event("app_terminated_event", %{"appId" => app_id}, store) do
     Log.debug("app_terminated_event for app '#{app_id}': deleting app")
     Store.delete_app(store, app_id)
   end
 
-  @spec handle_status_update_event(map, GenServer.server()) :: :ok
-  defp handle_status_update_event(%{"taskStatus" => task_status} = event, store)
+  defp handle_event("status_update_event", %{"taskStatus" => task_status} = event, store)
        when task_status in @terminal_states do
     %{"appId" => app_id, "taskId" => task_id} = event
     log_status_update_event(event, "deleting task (terminal state)")
     Store.delete_task(store, task_id, app_id)
   end
 
-  defp handle_status_update_event(%{"appId" => app_id} = event, store) do
+  defp handle_event("status_update_event", %{"appId" => app_id} = event, store) do
     # Update the task if we have the app for it already stored
     case Store.get_app(store, app_id) do
       {:ok, %App{} = app} ->
@@ -129,6 +104,12 @@ defmodule Relay.Marathon do
         log_status_update_event(event, "ignoring (app not relevant)")
     end
   end
+
+  defp handle_event(type, _event, _store), do: Log.debug("Ignoring event of type '#{type}'")
+
+  @spec log_api_post_event(map, String.t()) :: :ok
+  defp log_api_post_event(%{"appDefinition" => %{"id" => id}}, action),
+    do: Log.debug("api_post_event for app '#{id}': #{action}")
 
   @spec log_status_update_event(map, String.t()) :: :ok
   defp log_status_update_event(%{"taskStatus" => status, "taskId" => id}, action),
