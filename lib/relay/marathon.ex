@@ -25,6 +25,7 @@ defmodule Relay.Marathon do
     GenServer.start_link(__MODULE__, store, opts)
   end
 
+  @impl GenServer
   @spec init(GenServer.server()) :: {:ok, GenServer.server()}
   def init(store) do
     {:ok, _pid} = stream_events()
@@ -48,6 +49,7 @@ defmodule Relay.Marathon do
   defp marathon_lb_group,
     do: Application.fetch_env!(:relay, :marathon_lb) |> Keyword.fetch!(:group)
 
+  @impl GenServer
   def handle_info({:sse, %Event{event: "api_post_event", data: event_data}}, store) do
     {:ok, event} = Poison.decode(event_data)
     handle_api_post_event(event, store)
