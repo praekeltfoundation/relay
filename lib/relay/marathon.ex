@@ -39,7 +39,7 @@ defmodule Relay.Marathon do
 
     MarathonClient.stream_events(
       # TODO: Support multiple URLs
-      marathon_config |> Keyword.fetch!(:urls) |> Enum.at(0),
+      hd(Keyword.fetch!(marathon_config, :urls)),
       [self()],
       Keyword.fetch!(marathon_config, :events_timeout)
     )
