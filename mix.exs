@@ -45,6 +45,7 @@ defmodule Relay.MixProject do
       # actually pulls in 1.0.0-pre.4b which causes errors with GRPC streams
       # that return an error code.
       {:gun, "1.0.0-pre.5"},
+      {:google_protos, "~> 0.1"},
       {:httpoison, "~> 1.0"},
       # Hackney is a dependency of HTTPoison but had a bug in versions 1.10.0 to
       # 1.12.0 that caused deadlocks with async requests.
