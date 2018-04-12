@@ -71,25 +71,6 @@ echo "The following Google protos are used:"
 grep -REho '\bGoogle.[A-Z]\w+.[A-Z]\w*' gen/envoy | sort -u
 echo
 
-# These are the protos under 'Google.Protobuf'
-protobuf_protos=(
-	any
-	duration
-	struct
-	timestamp
-	wrappers
-)
-
-echo "Generating protobuf protos..."
-protobuf_src="$output_base/external/com_google_protobuf/src"
-# These have no dependencies
-for proto in "${protobuf_protos[@]}"; do
-	$protoc -I="$protobuf_src" --plugin=elixir --elixir_out="${elixirarg}":"${root}/gen/" \
-		"$protobuf_src"/google/protobuf/"$proto".proto
-done
-echo
-
-
 # These are the protos *not* under 'Google.Protobuf'
 googleapis_protos=(
 	rpc/status
