@@ -67,8 +67,12 @@ for module in "${data_plane_modules[@]}"; do
 done
 echo
 
-echo "The following Google protos are used:"
-grep -REho '\bGoogle.[A-Z]\w+.[A-Z]\w*' gen/envoy | sort -u
+google_protos="$(grep -REho '\bGoogle\.[A-Z]\w+\.[A-Z]\w*' gen/envoy | sort -u)"
+echo "The following Google.Protobuf protos are used:"
+echo "$google_protos" | grep -E '^Google\.Protobuf\.'
+echo
+echo "The following Google.* protos are used:"
+echo "$google_protos" | grep -vE '^Google\.Protobuf\.'
 echo
 
 # These are the protos *not* under 'Google.Protobuf'
