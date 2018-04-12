@@ -67,28 +67,13 @@ for module in "${data_plane_modules[@]}"; do
 done
 echo
 
-echo "The following Google protos are used:"
-grep -REho '\bGoogle.[A-Z]\w+.[A-Z]\w*' gen/envoy | sort -u
+google_protos="$(grep -REho '\bGoogle\.[A-Z]\w+\.[A-Z]\w*' gen/envoy | sort -u)"
+echo "The following Google.Protobuf protos are used:"
+echo "$google_protos" | grep -E '^Google\.Protobuf\.'
 echo
-
-# These are the protos under 'Google.Protobuf'
-protobuf_protos=(
-	any
-	duration
-	struct
-	timestamp
-	wrappers
-)
-
-echo "Generating protobuf protos..."
-protobuf_src="$output_base/external/com_google_protobuf/src"
-# These have no dependencies
-for proto in "${protobuf_protos[@]}"; do
-	$protoc -I="$protobuf_src" --plugin=elixir --elixir_out="${elixirarg}":"${root}/gen/" \
-		"$protobuf_src"/google/protobuf/"$proto".proto
-done
+echo "The following Google.* protos are used:"
+echo "$google_protos" | grep -vE '^Google\.Protobuf\.'
 echo
-
 
 # These are the protos *not* under 'Google.Protobuf'
 googleapis_protos=(

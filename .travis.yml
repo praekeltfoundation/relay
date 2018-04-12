@@ -41,9 +41,9 @@ jobs:
     - group: trusty_latest
       jdk: openjdk8
       env:
-        - BAZEL_VERSION=0.11.1
+        - BAZEL_VERSION=0.12.0
         - PROTOC_VERSION=3.5.1
-        - PROTOBUF_ELIXIR_VERSION=0.5.3
+        - PROTOBUF_ELIXIR_VERSION=0.5.4
 
       install:
         # Install Bazel
