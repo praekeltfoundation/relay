@@ -51,14 +51,14 @@ defmodule Relay.Marathon do
 
   @impl GenServer
   def handle_info({:sse, %Event{event: type, data: data}}, store) do
-    {:ok, event} = Poison.decode(data)
-    handle_event(type, event, store)
-
+    handle_event(type, data, store)
     {:noreply, store}
   end
 
-  @spec handle_event(String.t(), map, GenServer.server()) :: :ok
-  defp handle_event("api_post_event", event, store) do
+  @spec handle_event(String.t(), String.t(), GenServer.server()) :: :ok
+  defp handle_event("api_post_event", data, store) do
+    {:ok, event} = Poison.decode(data)
+
     case App.from_event(event, marathon_lb_group()) do
       %App{port_indices: port_indices} = app when length(port_indices) > 0 ->
         log_api_post_event(event, "updating app")
@@ -81,31 +81,34 @@ defmodule Relay.Marathon do
   # app_terminated_event is *almost* undocumented but seems to be fired when an
   # app is destroyed. It has been in Marathon for a while:
   # https://github.com/mesosphere/marathon/commit/4d86315a77d994aaf7a52a67ba204cf2e955914a
-  defp handle_event("app_terminated_event", %{"appId" => app_id}, store) do
+  defp handle_event("app_terminated_event", data, store) do
+    {:ok, %{"appId" => app_id}} = Poison.decode(data)
     Log.debug("app_terminated_event for app '#{app_id}': deleting app")
     Store.delete_app(store, app_id)
   end
 
-  defp handle_event("status_update_event", %{"taskStatus" => task_status} = event, store)
-       when task_status in @terminal_states do
-    %{"appId" => app_id, "taskId" => task_id} = event
-    log_status_update_event(event, "deleting task (terminal state)")
-    Store.delete_task(store, task_id, app_id)
-  end
+  defp handle_event("status_update_event", data, store) do
+    {:ok, %{"appId" => app_id, "taskId" => task_id} = event} = Poison.decode(data)
 
-  defp handle_event("status_update_event", %{"appId" => app_id} = event, store) do
-    # Update the task if we have the app for it already stored
-    case Store.get_app(store, app_id) do
-      {:ok, %App{} = app} ->
-        log_status_update_event(event, "updating task")
-        Store.update_task(store, Task.from_event(app, event))
+    case event do
+      %{"taskStatus" => task_status} when task_status in @terminal_states ->
+        log_status_update_event(event, "deleting task (terminal state)")
+        Store.delete_task(store, task_id, app_id)
 
-      {:ok, nil} ->
-        log_status_update_event(event, "ignoring (app not relevant)")
+      _ ->
+        # Update the task if we have the app for it already stored
+        case Store.get_app(store, app_id) do
+          {:ok, %App{} = app} ->
+            log_status_update_event(event, "updating task")
+            Store.update_task(store, Task.from_event(app, event))
+
+          {:ok, nil} ->
+            log_status_update_event(event, "ignoring (app not relevant)")
+        end
     end
   end
 
-  defp handle_event(type, _event, _store), do: Log.debug("Ignoring event of type '#{type}'")
+  defp handle_event(type, _data, _store), do: Log.debug("Ignoring event of type '#{type}'")
 
   @spec log_api_post_event(map, String.t()) :: :ok
   defp log_api_post_event(%{"appDefinition" => %{"id" => id}}, action),
