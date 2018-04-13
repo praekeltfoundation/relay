@@ -192,6 +192,29 @@ defmodule Relay.Marathon.StoreTest do
     refute_receive {:eds, _, _}, 100
   end
 
+  test "sync", %{store: store} do
+    %App{id: app_id} = @test_app
+    %Task{id: task_id} = @test_task
+
+    assert_empty_state(store)
+    version0 = get_state_version(store)
+
+    assert Store.sync(store, [{@test_app, [@test_task]}]) == :ok
+
+    # App and task stored in state
+    assert %Store.State{
+             version: version1,
+             apps: %{^app_id => @test_app},
+             app_tasks: %{^app_id => %{^task_id => @test_task}}
+           } = get_state(store)
+
+    # Version has increased
+    assert version1 > version0
+
+    # An update was sent
+    assert_task_updates(version1)
+  end
+
   test "update app not existing", %{store: store} do
     %App{id: app_id} = @test_app
     version0 = get_state_version(store)

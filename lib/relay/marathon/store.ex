@@ -24,6 +24,25 @@ defmodule Relay.Marathon.Store do
 
     def new, do: %State{version: new_version()}
 
+    @spec set_apps_and_tasks(t, [{App.t(), [Task.t()]}]) :: t
+    def set_apps_and_tasks(state, apps_and_tasks) do
+      apps =
+        apps_and_tasks
+        |> Enum.into(%{}, fn {%App{id: app_id} = app, _} -> {app_id, app} end)
+
+      app_tasks =
+        apps_and_tasks
+        |> Enum.into(%{}, fn {%App{id: app_id}, tasks_list} ->
+          tasks =
+            tasks_list
+            |> Enum.into(%{}, fn %Task{id: task_id} = task -> {task_id, task} end)
+
+          {app_id, tasks}
+        end)
+
+      new_state(state, apps: apps, app_tasks: app_tasks)
+    end
+
     @spec get_apps(t) :: [App.t()]
     def get_apps(%__MODULE__{apps: apps}), do: values_sorted_by_key(apps)
 
@@ -151,6 +170,13 @@ defmodule Relay.Marathon.Store do
   end
 
   @doc """
+  Sync all apps and tasks. Simply replaces the existing apps and tasks in the
+  store with those provided.
+  """
+  @spec sync(GenServer.server(), [{App.t(), [Task.t()]}]) :: :ok
+  def sync(store, apps_and_tasks), do: GenServer.call(store, {:sync, apps_and_tasks})
+
+  @doc """
   Get an app from the store using its ID.
 
   We need to check for the presence of an App in the Store to determine whether
@@ -194,6 +220,14 @@ defmodule Relay.Marathon.Store do
   @spec init(GenServer.server()) :: {:ok, {GenServer.server(), State.t()}}
   def init(resources) do
     {:ok, {resources, State.new()}}
+  end
+
+  def handle_call({:sync, apps_and_tasks}, _from, {resources, state}) do
+    Log.info("Syncing all apps and tasks...")
+    new_state = State.set_apps_and_tasks(state, apps_and_tasks)
+    notify_sync(resources, new_state)
+
+    {:reply, :ok, {resources, new_state}}
   end
 
   def handle_call({:get_app, app_id}, _from, {resources, state}),
@@ -284,6 +318,14 @@ defmodule Relay.Marathon.Store do
   # For testing only
   def handle_call(:_get_state, _from, {resources, state}),
     do: {:reply, {:ok, state}, {resources, state}}
+
+  @spec notify_sync(GenServer.server(), State.t()) :: :ok
+  defp notify_sync(resources, state) do
+    Log.debug("Apps and tasks were synced, updating app endpoints")
+    # TODO: Split CDS/RDS from EDS updates in Resources so that this does
+    # what both notify_updated_task/1 notify_updated_app/1 would do
+    update_app_endpoints(resources, state)
+  end
 
   @spec notify_updated_app(GenServer.server(), State.t()) :: :ok
   defp notify_updated_app(resources, state) do
