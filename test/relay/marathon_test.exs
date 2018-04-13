@@ -3,7 +3,8 @@ Code.require_file(Path.join([__DIR__, "..", "marathon_client", "marathon_client_
 defmodule Relay.MarathonTest do
   use ExUnit.Case, async: false
 
-  alias Relay.{Publisher, Marathon, Resources}
+  alias Relay.Marathon
+  alias Relay.Resources.AppEndpoint
   alias Marathon.Store
 
   @test_app %{
@@ -214,6 +215,37 @@ defmodule Relay.MarathonTest do
     "timestamp" => "2018-04-11T10:40:19.428Z"
   }
 
+  @test_app_endpoint %AppEndpoint{
+    name: "/mc2_0",
+    domains: ["mc2.example.org"],
+    addresses: [{"10.70.4.100", 15979}]
+  }
+  @test_event_endpoint %AppEndpoint{
+    name: "/jamie-event-test_0",
+    domains: ["jamie-event-test.example.org"],
+    addresses: [{"10.0.91.102", 10013}]
+  }
+  @test_event_endpoint_no_address %AppEndpoint{
+    name: "/jamie-event-test_0",
+    domains: ["jamie-event-test.example.org"],
+    addresses: []
+  }
+
+  defmodule StubGenServer do
+    use GenServer
+
+    def start_link(pid), do: GenServer.start_link(__MODULE__, pid, name: StubGenServer)
+
+    @impl GenServer
+    def init(pid), do: {:ok, pid}
+
+    @impl GenServer
+    def handle_call(msg, _from, pid) do
+      send(pid, msg)
+      {:reply, :ok, pid}
+    end
+  end
+
   setup do
     TestHelpers.override_log_level(:warn)
     TestHelpers.setup_apps([:cowboy, :hackney])
@@ -233,311 +265,40 @@ defmodule Relay.MarathonTest do
 
     TestHelpers.put_env(:relay, :marathon, marathon_config)
 
-    {:ok, pub} = start_supervised(Publisher)
-    # Subscribe to the Publisher so that we can check when it gets updated
-    for xds <- [:rds, :cds, :eds] do
-      Publisher.subscribe(pub, xds, self())
-      # Ignore the empty state message
-      receive do
-        {^xds, _, _} -> :ok
-      end
-    end
-
-    {:ok, res} = start_supervised({Resources, publisher: pub})
+    {:ok, res} = start_supervised({StubGenServer, self()})
     {:ok, store} = start_supervised({Store, resources: res})
     {:ok, _marathon} = start_supervised({Marathon, store: store})
 
     %{fake_marathon: fm}
   end
 
-  defp assert_receive_clusters do
-    alias Envoy.Api.V2.Cluster
+  defp assert_receive_synced_update,
+    do: assert_receive({:update_app_endpoints, _version, [@test_app_endpoint]}, 100)
 
-    assert_receive {:cds, _version,
-                    [
-                      %Cluster{name: "/jamie-event-test_0"},
-                      %Cluster{name: "/mc2_0"}
-                    ]},
+  defp assert_receive_event_update do
+    assert_receive {:update_app_endpoints, _version, [@test_event_endpoint, @test_app_endpoint]},
                    100
   end
 
-  defp assert_receive_routes do
-    alias Envoy.Api.V2.RouteConfiguration
-    alias Envoy.Api.V2.Route.{Route, RouteAction, RouteMatch, VirtualHost}
-
-    assert_receive {
-                     :rds,
-                     _version,
-                     [
-                       %RouteConfiguration{
-                         name: "http",
-                         virtual_hosts: [
-                           %VirtualHost{
-                             domains: ["jamie-event-test.example.org"],
-                             routes: [
-                               %Route{
-                                 action:
-                                   {:route,
-                                    %RouteAction{
-                                      cluster_specifier: {:cluster, "/jamie-event-test_0"}
-                                    }},
-                                 match: %RouteMatch{path_specifier: {:prefix, "/"}}
-                               }
-                             ]
-                           },
-                           %VirtualHost{
-                             domains: ["mc2.example.org"],
-                             routes: [
-                               %Route{
-                                 action:
-                                   {:route,
-                                    %RouteAction{
-                                      cluster_specifier: {:cluster, "/mc2_0"}
-                                    }},
-                                 match: %RouteMatch{path_specifier: {:prefix, "/"}}
-                               }
-                             ]
-                           }
-                         ]
-                       },
-                       %RouteConfiguration{
-                         name: "https",
-                         virtual_hosts: [
-                           %VirtualHost{
-                             domains: ["jamie-event-test.example.org"],
-                             routes: [
-                               %Route{
-                                 action:
-                                   {:route,
-                                    %RouteAction{
-                                      cluster_specifier: {:cluster, "/jamie-event-test_0"}
-                                    }},
-                                 match: %RouteMatch{path_specifier: {:prefix, "/"}}
-                               }
-                             ]
-                           },
-                           %VirtualHost{
-                             domains: ["mc2.example.org"],
-                             routes: [
-                               %Route{
-                                 action:
-                                   {:route,
-                                    %RouteAction{
-                                      cluster_specifier: {:cluster, "/mc2_0"}
-                                    }},
-                                 match: %RouteMatch{path_specifier: {:prefix, "/"}}
-                               }
-                             ]
-                           }
-                         ]
-                       }
-                     ]
-                   },
+  defp assert_receive_event_update_no_address do
+    assert_receive {:update_app_endpoints, _version,
+                    [@test_event_endpoint_no_address, @test_app_endpoint]},
                    100
   end
 
-  defp assert_receive_endpoints_empty do
-    alias Envoy.Api.V2.ClusterLoadAssignment
-    alias Envoy.Api.V2.Endpoint.{Endpoint, LbEndpoint, LocalityLbEndpoints}
-    alias Envoy.Api.V2.Core.{Address, SocketAddress}
-
-    assert_receive {:eds, _version,
-                    [
-                      %ClusterLoadAssignment{
-                        cluster_name: "/jamie-event-test_0",
-                        endpoints: [%LocalityLbEndpoints{lb_endpoints: []}]
-                      },
-                      %ClusterLoadAssignment{
-                        cluster_name: "/mc2_0",
-                        endpoints: [
-                          %LocalityLbEndpoints{
-                            lb_endpoints: [
-                              %LbEndpoint{
-                                endpoint: %Endpoint{
-                                  address: %Address{
-                                    address:
-                                      {:socket_address,
-                                       %SocketAddress{
-                                         address: "10.70.4.100",
-                                         port_specifier: {:port_value, 15979}
-                                       }}
-                                  }
-                                }
-                              }
-                            ]
-                          }
-                        ]
-                      }
-                    ]},
-                   100
-  end
-
-  defp assert_receive_endpoints do
-    alias Envoy.Api.V2.ClusterLoadAssignment
-    alias Envoy.Api.V2.Endpoint.{Endpoint, LbEndpoint, LocalityLbEndpoints}
-    alias Envoy.Api.V2.Core.{Address, SocketAddress}
-
-    assert_receive {:eds, _version,
-                    [
-                      %ClusterLoadAssignment{
-                        cluster_name: "/jamie-event-test_0",
-                        endpoints: [
-                          %LocalityLbEndpoints{
-                            lb_endpoints: [
-                              %LbEndpoint{
-                                endpoint: %Endpoint{
-                                  address: %Address{
-                                    address:
-                                      {:socket_address,
-                                       %SocketAddress{
-                                         address: "10.0.91.102",
-                                         port_specifier: {:port_value, 10013}
-                                       }}
-                                  }
-                                }
-                              }
-                            ]
-                          }
-                        ]
-                      },
-                      %ClusterLoadAssignment{
-                        cluster_name: "/mc2_0",
-                        endpoints: [
-                          %LocalityLbEndpoints{
-                            lb_endpoints: [
-                              %LbEndpoint{
-                                endpoint: %Endpoint{
-                                  address: %Address{
-                                    address:
-                                      {:socket_address,
-                                       %SocketAddress{
-                                         address: "10.70.4.100",
-                                         port_specifier: {:port_value, 15979}
-                                       }}
-                                  }
-                                }
-                              }
-                            ]
-                          }
-                        ]
-                      }
-                    ]},
-                   100
-  end
-
-  defp assert_receive_synced_updates do
-    alias Envoy.Api.V2.Cluster
-    assert_receive {:cds, _version, [%Cluster{name: "/mc2_0"}]}, 100
-
-    alias Envoy.Api.V2.RouteConfiguration
-    alias Envoy.Api.V2.Route.{Route, RouteAction, RouteMatch, VirtualHost}
-
-    assert_receive {
-                     :rds,
-                     _version,
-                     [
-                       %RouteConfiguration{
-                         name: "http",
-                         virtual_hosts: [
-                           %VirtualHost{
-                             domains: ["mc2.example.org"],
-                             routes: [
-                               %Route{
-                                 action:
-                                   {:route,
-                                    %RouteAction{
-                                      cluster_specifier: {:cluster, "/mc2_0"}
-                                    }},
-                                 match: %RouteMatch{path_specifier: {:prefix, "/"}}
-                               }
-                             ]
-                           }
-                         ]
-                       },
-                       %RouteConfiguration{
-                         name: "https",
-                         virtual_hosts: [
-                           %VirtualHost{
-                             domains: ["mc2.example.org"],
-                             routes: [
-                               %Route{
-                                 action:
-                                   {:route,
-                                    %RouteAction{
-                                      cluster_specifier: {:cluster, "/mc2_0"}
-                                    }},
-                                 match: %RouteMatch{path_specifier: {:prefix, "/"}}
-                               }
-                             ]
-                           }
-                         ]
-                       }
-                     ]
-                   },
-                   100
-
-    alias Envoy.Api.V2.ClusterLoadAssignment
-    alias Envoy.Api.V2.Endpoint.{Endpoint, LbEndpoint, LocalityLbEndpoints}
-    alias Envoy.Api.V2.Core.{Address, SocketAddress}
-
-    assert_receive {:eds, _version,
-                    [
-                      %ClusterLoadAssignment{
-                        cluster_name: "/mc2_0",
-                        endpoints: [
-                          %LocalityLbEndpoints{
-                            lb_endpoints: [
-                              %LbEndpoint{
-                                endpoint: %Endpoint{
-                                  address: %Address{
-                                    address:
-                                      {:socket_address,
-                                       %SocketAddress{
-                                         address: "10.70.4.100",
-                                         port_specifier: {:port_value, 15979}
-                                       }}
-                                  }
-                                }
-                              }
-                            ]
-                          }
-                        ]
-                      }
-                    ]},
-                   100
-  end
-
-  defp assert_app_updates do
-    # Assert we receive RDS, CDS, & EDS messages but without any endpoints
-    assert_receive_routes()
-    assert_receive_clusters()
-    assert_receive_endpoints_empty()
-  end
-
-  defp assert_task_updates do
-    # Assert we receive RDS, CDS, & EDS messages but with endpoints this time
-    assert_receive_routes()
-    assert_receive_clusters()
-    assert_receive_endpoints()
-  end
-
-  defp refute_updates do
-    refute_receive {:rds, _, _}, 100
-    refute_receive {:cds, _, _}, 100
-    refute_receive {:eds, _, _}, 100
-  end
+  defp refute_update, do: refute_receive({:update_app_endpoints, _, _}, 100)
 
   describe "api_post_event" do
     test "relevant app", %{fake_marathon: fm} do
-      assert_receive_synced_updates()
+      assert_receive_synced_update()
 
       FakeMarathon.event(fm, "api_post_event", Poison.encode!(@test_api_post_event))
 
-      assert_app_updates()
+      assert_receive_event_update_no_address()
     end
 
     test "irrelevant app", %{fake_marathon: fm} do
-      assert_receive_synced_updates()
+      assert_receive_synced_update()
 
       # Clear the labels so the app is irrelevant
       app_definition =
@@ -552,14 +313,14 @@ defmodule Relay.MarathonTest do
 
       FakeMarathon.event(fm, "api_post_event", event_data)
 
-      refute_updates()
+      refute_update()
     end
 
     test "app becomes irrelevant", %{fake_marathon: fm} do
-      assert_receive_synced_updates()
+      assert_receive_synced_update()
 
       FakeMarathon.event(fm, "api_post_event", Poison.encode!(@test_api_post_event))
-      assert_app_updates()
+      assert_receive_event_update_no_address()
 
       # Clear the labels so the app is irrelevant
       app_definition =
@@ -574,57 +335,57 @@ defmodule Relay.MarathonTest do
 
       FakeMarathon.event(fm, "api_post_event", event_data)
 
-      assert_receive_synced_updates()
+      assert_receive_synced_update()
     end
   end
 
   describe "app_terminated_event" do
     test "app removed", %{fake_marathon: fm} do
-      assert_receive_synced_updates()
+      assert_receive_synced_update()
 
       # TODO: Should we be storing the tasks app some other way?
       FakeMarathon.event(fm, "api_post_event", Poison.encode!(@test_api_post_event))
       # Clear the mailbox messages
-      assert_app_updates()
+      assert_receive_event_update_no_address()
 
       FakeMarathon.event(fm, "app_terminated_event", Poison.encode!(@test_app_terminated_event))
 
-      assert_receive_synced_updates()
+      assert_receive_synced_update()
     end
   end
 
   describe "status_update_event" do
     test "non-terminal state, relevant task", %{fake_marathon: fm} do
-      assert_receive_synced_updates()
+      assert_receive_synced_update()
 
       # TODO: Should we be storing the tasks app some other way?
       FakeMarathon.event(fm, "api_post_event", Poison.encode!(@test_api_post_event))
       # Clear the mailbox messages
-      assert_app_updates()
+      assert_receive_event_update_no_address()
 
       FakeMarathon.event(fm, "status_update_event", Poison.encode!(@test_status_update_event))
 
-      assert_task_updates()
+      assert_receive_event_update()
     end
 
     test "non-terminal state, irrelevant task", %{fake_marathon: fm} do
-      assert_receive_synced_updates()
+      assert_receive_synced_update()
 
       # Don't store the app
       FakeMarathon.event(fm, "status_update_event", Poison.encode!(@test_status_update_event))
 
-      refute_updates()
+      refute_update()
     end
 
     test "terminal state", %{fake_marathon: fm} do
-      assert_receive_synced_updates()
+      assert_receive_synced_update()
 
       # TODO: Should we be storing the tasks app some other way?
       FakeMarathon.event(fm, "api_post_event", Poison.encode!(@test_api_post_event))
-      assert_app_updates()
+      assert_receive_event_update_no_address()
 
       FakeMarathon.event(fm, "status_update_event", Poison.encode!(@test_status_update_event))
-      assert_task_updates()
+      assert_receive_event_update()
 
       event_data =
         @test_status_update_event
@@ -634,12 +395,12 @@ defmodule Relay.MarathonTest do
       FakeMarathon.event(fm, "status_update_event", event_data)
 
       # Endpoint removed, same as if we just had app data
-      assert_app_updates()
+      assert_receive_event_update_no_address()
     end
   end
 
   test "irrelevant event", %{fake_marathon: fm} do
-    assert_receive_synced_updates()
+    assert_receive_synced_update()
 
     event = %{
       "remoteAddress" => "10.0.91.9",
@@ -649,6 +410,6 @@ defmodule Relay.MarathonTest do
 
     FakeMarathon.event(fm, "event_stream_attached", Poison.encode!(event))
 
-    refute_updates()
+    refute_update()
   end
 end
