@@ -28,6 +28,8 @@ defmodule Relay.Marathon do
   @impl GenServer
   @spec init(GenServer.server()) :: {:ok, GenServer.server()}
   def init(store) do
+    send(self(), :sync)
+
     {:ok, _pid} = stream_events()
 
     {:ok, store}
@@ -35,19 +37,56 @@ defmodule Relay.Marathon do
 
   @spec stream_events() :: GenServer.on_start()
   defp stream_events do
-    marathon_config = Application.fetch_env!(:relay, :marathon)
-
     MarathonClient.stream_events(
-      # TODO: Support multiple URLs
-      hd(Keyword.fetch!(marathon_config, :urls)),
+      marathon_url(),
       [self()],
-      Keyword.fetch!(marathon_config, :events_timeout)
+      Application.fetch_env!(:relay, :marathon) |> Keyword.fetch!(:events_timeout)
     )
   end
+
+  # TODO: Support multiple URLs
+  @spec marathon_url() :: String.t()
+  defp marathon_url,
+    do: Application.fetch_env!(:relay, :marathon) |> Keyword.fetch!(:urls) |> hd()
 
   @spec marathon_lb_group() :: String.t()
   defp marathon_lb_group,
     do: Application.fetch_env!(:relay, :marathon_lb) |> Keyword.fetch!(:group)
+
+  @impl GenServer
+  def handle_info(:sync, store) do
+    url = marathon_url()
+    group = marathon_lb_group()
+
+    # TODO: Get all apps and tasks at once to avoid the race condition that a
+    # task is changed/deleted between us fetching it and fetching its tasks
+
+    # Get the apps, convert to App structs, filter irrelevant ones
+    {:ok, %{"apps" => apps_json}} = MarathonClient.get_apps(url)
+
+    apps =
+      apps_json
+      |> Stream.map(&App.from_definition(&1, group))
+      |> Enum.reject(&Enum.empty?(&1.port_indices))
+
+    # Get the tasks for each app, convert to Task structs, store them
+    apps_and_tasks =
+      apps
+      |> Enum.map(fn app ->
+        {:ok, %{"tasks" => tasks_json}} = MarathonClient.get_app_tasks(url, app.id)
+
+        tasks =
+          tasks_json
+          |> Stream.reject(&(&1["taskStatus"] in @terminal_states))
+          |> Enum.map(&Task.from_definition(app, &1))
+
+        {app, tasks}
+      end)
+
+    Store.sync(store, apps_and_tasks)
+
+    {:noreply, store}
+  end
 
   @impl GenServer
   def handle_info({:sse, %Event{event: type, data: data}}, store) do
