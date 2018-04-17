@@ -58,25 +58,16 @@ defmodule Relay.Marathon do
     url = marathon_url()
     group = marathon_lb_group()
 
-    # TODO: Get all apps and tasks at once to avoid the race condition that a
-    # task is changed/deleted between us fetching it and fetching its tasks
-
     # Get the apps, convert to App structs, filter irrelevant ones
-    {:ok, %{"apps" => apps_json}} = MarathonClient.get_apps(url)
-
-    apps =
-      apps_json
-      |> Stream.map(&App.from_definition(&1, group))
-      |> Enum.reject(&Enum.empty?(&1.port_indices))
+    {:ok, %{"apps" => apps_json}} = MarathonClient.get_apps(url, embed: ["apps.tasks"])
 
     # Get the tasks for each app, convert to Task structs, store them
     apps_and_tasks =
-      apps
-      |> Enum.map(fn app ->
-        {:ok, %{"tasks" => tasks_json}} = MarathonClient.get_app_tasks(url, app.id)
-
+      apps_json
+      |> Enum.map(fn app_json ->
+        app = App.from_definition(app_json, group)
         tasks =
-          tasks_json
+          app_json["tasks"]
           |> Stream.reject(&(&1["taskStatus"] in @terminal_states))
           |> Enum.map(&Task.from_definition(app, &1))
 
