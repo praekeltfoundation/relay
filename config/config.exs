@@ -102,5 +102,6 @@ config :relay,
     port_index: 0
   ],
   certs: [
-    paths: []
+    paths: [],
+    sync_period: 600_000
   ]

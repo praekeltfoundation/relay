@@ -11,13 +11,12 @@ defmodule Relay.Certs.Filesystem do
 
   defmodule State do
     @moduledoc false
-    # TODO: Make delay configurable.
     # TODO: Better version management.
-    defstruct resources: Resources, delay: 1_000, cert_paths: [], version: 1
+    defstruct resources: Resources, sync_period: 1_000, cert_paths: [], version: 1
 
     @type t :: %__MODULE__{
             resources: GenServer.server(),
-            delay: integer,
+            sync_period: integer,
             cert_paths: [Path.t()],
             version: integer
           }
@@ -29,12 +28,18 @@ defmodule Relay.Certs.Filesystem do
     GenServer.start_link(__MODULE__, resources, opts)
   end
 
+  defp certs_cfg(key), do: Application.fetch_env!(:relay, :certs) |> Keyword.fetch!(key)
+
   @impl GenServer
   @spec init(GenServer.server()) :: {:ok, State.t()}
   def init(resources) do
-    cert_paths = Application.fetch_env!(:relay, :certs) |> Keyword.fetch!(:paths)
-    state = scheduled_update(%State{resources: resources, cert_paths: cert_paths})
-    {:ok, state}
+    state = %State{
+      resources: resources,
+      sync_period: certs_cfg(:sync_period),
+      cert_paths: certs_cfg(:paths)
+    }
+
+    {:ok, scheduled_update(state)}
   end
 
   @impl GenServer
@@ -48,7 +53,7 @@ defmodule Relay.Certs.Filesystem do
   end
 
   defp scheduled_update(state) do
-    Process.send_after(self(), :scheduled_update, state.delay)
+    Process.send_after(self(), :scheduled_update, state.sync_period)
     update_state(state)
   end
 

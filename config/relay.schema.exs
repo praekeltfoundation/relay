@@ -191,7 +191,7 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
     "relay.marathon.events_timeout": [
       commented: false,
       datatype: :integer,
-      default: 60000,
+      default: 60_000,
       doc: "Timeout value for Marathon's event stream (ms)",
       hidden: false,
       to: "relay.marathon.events_timeout"
@@ -227,6 +227,14 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       doc: "Paths to read certificates from",
       hidden: false,
       to: "relay.certs.paths"
+    ],
+    "relay.certs.sync_period": [
+      commented: false,
+      datatype: :integer,
+      default: 600_000,
+      doc: "Time between scheduled full syncs (ms)",
+      hidden: false,
+      to: "relay.certs.sync_period"
     ]
   ],
   transforms: [],
