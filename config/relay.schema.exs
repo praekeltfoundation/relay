@@ -219,6 +219,14 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       doc: "The port index for marathon-acme",
       hidden: false,
       to: "relay.marathon_acme.port_index"
+    ],
+    "relay.certs.paths": [
+      commented: false,
+      datatype: [list: :binary],
+      default: [],
+      doc: "Paths to read certificates from",
+      hidden: false,
+      to: "relay.certs.paths"
     ]
   ],
   transforms: [],

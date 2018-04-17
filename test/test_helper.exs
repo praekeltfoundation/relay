@@ -47,6 +47,30 @@ defmodule TestHelpers do
 
     :ok
   end
+
+  @doc """
+  Create a temporary directory that will be removed after the test.
+  """
+  def tmpdir() do
+    {:ok, dir} = Temp.mkdir("relay-tests")
+    on_exit(fn -> File.rm_rf(dir) end)
+    dir
+  end
+
+  @doc """
+  Create a temporary directory with some subdirs.
+  """
+  def tmpdir_subdirs(subdirs) do
+    base_dir = tmpdir()
+    paths = Enum.map(subdirs, &Path.join(base_dir, &1))
+    Enum.each(paths, &File.mkdir_p!/1)
+    {base_dir, paths}
+  end
+
+  @doc """
+  Return a path relative to the test support dir.
+  """
+  def support_path(path), do: Path.join("support/", path) |> Path.expand(__DIR__)
 end
 
 ExUnit.start()

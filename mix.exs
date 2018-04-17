@@ -61,6 +61,7 @@ defmodule Relay.MixProject do
         only: :test,
         app: false
       },
+      {:temp, "~> 0.4", only: :test},
       {:excoveralls, "~> 0.8", only: :test},
 
       # Dev/test tools.
