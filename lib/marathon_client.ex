@@ -39,7 +39,7 @@ defmodule MarathonClient do
 
   Options:
     * `:embed` - A list of nested resources to embed in the response. e.g.
-      `["apps.tasks"]`.
+      `embed: ["apps.tasks"]`.
   """
   @spec get_apps(String.t(), keyword) :: response
   def get_apps(base_url, options \\ []) do
