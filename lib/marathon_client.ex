@@ -12,9 +12,17 @@ defmodule MarathonClient do
   @typep client_error :: {:error, {integer, map}}
   @type response :: poison_decode_result | client_error
 
-  @spec stream_events(String.t(), [pid], non_neg_integer) :: GenServer.on_start()
-  def stream_events(base_url, listeners, timeout \\ 60_000) do
-    url = base_url <> "/v2/events"
+  @spec stream_events(String.t(), [pid], keyword) :: GenServer.on_start()
+  def stream_events(base_url, listeners, options \\ []) do
+    timeout = Keyword.get(options, :timeout, 60_000)
+
+    query =
+      case Keyword.get(options, :event_type, []) do
+        [] -> ""
+        types -> "?" <> (types |> Enum.map(&{:event_type, &1}) |> URI.encode_query())
+      end
+
+    url = base_url <> "/v2/events" <> query
     __MODULE__.SSEClient.start_link({url, listeners, timeout})
   end
 

@@ -12,6 +12,12 @@ defmodule Relay.Marathon do
 
   use LogWrapper, as: Log
 
+  @event_types [
+    "api_post_event",
+    "app_terminated_event",
+    "status_update_event"
+  ]
+
   @terminal_states [
     "TASK_FINISHED",
     "TASK_FAILED",
@@ -41,7 +47,8 @@ defmodule Relay.Marathon do
       # TODO: Support multiple URLs
       hd(Keyword.fetch!(marathon_config, :urls)),
       [self()],
-      Keyword.fetch!(marathon_config, :events_timeout)
+      timeout: Keyword.fetch!(marathon_config, :events_timeout),
+      event_type: @event_types
     )
   end
 
