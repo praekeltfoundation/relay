@@ -66,6 +66,7 @@ defmodule Relay.Marathon do
       apps_json
       |> Enum.map(fn app_json ->
         app = App.from_definition(app_json, group)
+
         tasks =
           app_json["tasks"]
           |> Stream.reject(&(&1["taskStatus"] in @terminal_states))
