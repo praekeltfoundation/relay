@@ -25,16 +25,16 @@ defmodule Relay.Certs.FilesystemTest do
 
     ctx = Map.put_new(ctx, :cert_dirs, ["certs"])
     {tmpdir, cert_paths} = TestHelpers.tmpdir_subdirs(ctx.cert_dirs)
-
-    certs_config =
-      Application.fetch_env!(:relay, :certs)
-      |> Keyword.put(:paths, cert_paths)
-
-    TestHelpers.put_env(:relay, :certs, certs_config)
+    put_certs_config(paths: cert_paths)
 
     {:ok, res} = start_supervised({StubGenServer, self()})
 
     %{tmpdir: tmpdir, cert_paths: cert_paths, res: res}
+  end
+
+  defp put_certs_config(opts) do
+    certs_config = Application.fetch_env!(:relay, :certs) |> Keyword.merge(opts)
+    TestHelpers.put_env(:relay, :certs, certs_config)
   end
 
   defp copy_cert(cert_file, cert_path) do
@@ -104,7 +104,24 @@ defmodule Relay.Certs.FilesystemTest do
     assert_post("http://localhost:9090/wordpress/wp-login.php", 404)
   end
 
+  test "configure mlb port", %{cert_paths: [cert_path], res: res} do
+    copy_cert("localhost.pem", cert_path)
+    put_certs_config(mlb_port: 9091)
+    {:ok, _} = start_supervised({Filesystem, resources: res})
+    assert_receive_update(["localhost.pem"])
+
+    assert_no_post("http://localhost:9090/_mlb_signal/hup", :econnrefused)
+    refute_receive {:update_sni_certs, _, _}, 100
+
+    assert_post("http://localhost:9091/_mlb_signal/hup", 204)
+    assert_receive_update(["localhost.pem"])
+  end
+
   defp assert_post(uri, code) do
     assert {:ok, %HTTPoison.Response{status_code: ^code, body: ""}} = HTTPoison.post(uri, "")
+  end
+
+  defp assert_no_post(uri, reason) do
+    assert {:error, %HTTPoison.Error{reason: ^reason}} = HTTPoison.post(uri, "")
   end
 end

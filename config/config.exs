@@ -103,5 +103,6 @@ config :relay,
   ],
   certs: [
     paths: [],
-    sync_period: 600_000
+    sync_period: 600_000,
+    mlb_port: 9090
   ]

@@ -65,8 +65,7 @@ defmodule Relay.Certs.Filesystem do
   @spec init(GenServer.server()) :: {:ok, State.t()}
   def init(resources) do
     Process.flag(:trap_exit, true)
-    # TODO: Make this port number configurable.
-    {:ok, _} = Cowboy2.http(MarathonLbPlug, [cfs: self()], port: 9090)
+    {:ok, _} = Cowboy2.http(MarathonLbPlug, [cfs: self()], port: certs_cfg(:mlb_port))
 
     state = %State{
       resources: resources,

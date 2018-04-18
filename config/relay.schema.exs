@@ -235,6 +235,14 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       doc: "Time between scheduled full syncs (ms)",
       hidden: false,
       to: "relay.certs.sync_period"
+    ],
+    "relay.certs.mlb_port": [
+      commented: false,
+      datatype: :integer,
+      default: 9090,
+      doc: "Port to listen on for marathon-lb HTTP signals",
+      hidden: false,
+      to: "relay.certs.mlb_port"
     ]
   ],
   transforms: [],
