@@ -66,7 +66,7 @@ defmodule Relay.Certs.Filesystem do
   def init(resources) do
     Process.flag(:trap_exit, true)
     # TODO: Make this port number configurable.
-    Cowboy2.http(MarathonLbPlug, [cfs: self()], port: 9090)
+    {:ok, _} = Cowboy2.http(MarathonLbPlug, [cfs: self()], port: 9090)
 
     state = %State{
       resources: resources,
@@ -79,7 +79,7 @@ defmodule Relay.Certs.Filesystem do
 
   @impl GenServer
   def terminate(reason, _state) do
-    Cowboy2.shutdown(MarathonLbPlug.HTTP)
+    _ = Cowboy2.shutdown(MarathonLbPlug.HTTP)
     reason
   end
 
