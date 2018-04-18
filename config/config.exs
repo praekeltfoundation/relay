@@ -100,4 +100,7 @@ config :relay,
   marathon_acme: [
     app_id: "/marathon-acme",
     port_index: 0
+  ],
+  resolver: [
+    ttl: 30_000
   ]

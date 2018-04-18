@@ -191,7 +191,7 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
     "relay.marathon.events_timeout": [
       commented: false,
       datatype: :integer,
-      default: 60000,
+      default: 60_000,
       doc: "Timeout value for Marathon's event stream (ms)",
       hidden: false,
       to: "relay.marathon.events_timeout"
@@ -219,6 +219,14 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       doc: "The port index for marathon-acme",
       hidden: false,
       to: "relay.marathon_acme.port_index"
+    ],
+    "relay.resolver.ttl": [
+      commented: false,
+      datatype: :integer,
+      default: 60_000,
+      doc: "Time-to-live for cached DNS responses",
+      hidden: false,
+      to: "relay.resolver.ttl"
     ]
   ],
   transforms: [],
