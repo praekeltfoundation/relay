@@ -4,6 +4,36 @@ defmodule Relay.Certs.Filesystem do
   marathon-lb update request is received.
   """
 
+  defmodule MarathonLbPlug do
+    @moduledoc """
+    This plug pretends to be marathon-lb and translates the HTTP signal
+    requests into cert update messages.
+    """
+    use Plug.Router
+
+    plug :match
+    plug :dispatch
+
+    # We need to override this to get the GenServer ref into the conn so our
+    # routes can see it.
+    def call(conn, opts) do
+      {cfs, opts} = Keyword.pop(opts, :cfs)
+
+      conn
+      |> put_private(:cfs, cfs)
+      |> super(opts)
+    end
+
+    post "/_mlb_signal/:sig" when sig in ["hup", "usr1"] do
+      GenServer.call(conn.private.cfs, :update_state)
+      send_resp(conn, 204, "")
+    end
+
+    match _ do
+      send_resp(conn, 404, "")
+    end
+  end
+
   alias Relay.{Certs, Resources}
   alias Relay.Resources.CertInfo
 
@@ -12,7 +42,7 @@ defmodule Relay.Certs.Filesystem do
   defmodule State do
     @moduledoc false
     # TODO: Better version management.
-    defstruct resources: Resources, sync_period: 1_000, cert_paths: [], version: 1
+    defstruct [:resources, :sync_period, :cert_paths, version: 1]
 
     @type t :: %__MODULE__{
             resources: GenServer.server(),
@@ -33,6 +63,10 @@ defmodule Relay.Certs.Filesystem do
   @impl GenServer
   @spec init(GenServer.server()) :: {:ok, State.t()}
   def init(resources) do
+    Process.flag(:trap_exit, true)
+    # TODO: Make this port number configurable.
+    Plug.Adapters.Cowboy2.http(MarathonLbPlug, [cfs: self()], port: 9090)
+
     state = %State{
       resources: resources,
       sync_period: certs_cfg(:sync_period),
@@ -40,6 +74,12 @@ defmodule Relay.Certs.Filesystem do
     }
 
     {:ok, scheduled_update(state)}
+  end
+
+  @impl GenServer
+  def terminate(reason, _state) do
+    Plug.Adapters.Cowboy2.shutdown(MarathonLbPlug.HTTP)
+    reason
   end
 
   @impl GenServer

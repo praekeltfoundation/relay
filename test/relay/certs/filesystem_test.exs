@@ -21,6 +21,7 @@ defmodule Relay.Certs.FilesystemTest do
 
   setup ctx do
     TestHelpers.override_log_level(:warn)
+    TestHelpers.setup_apps([:cowboy, :httpoison])
 
     ctx = Map.put_new(ctx, :cert_dirs, ["certs"])
     {tmpdir, cert_paths} = TestHelpers.tmpdir_subdirs(ctx.cert_dirs)
@@ -86,5 +87,24 @@ defmodule Relay.Certs.FilesystemTest do
   @tag cert_dirs: ["certs", "different"]
   test "configure cert paths", %{cert_paths: cert_paths} do
     assert Application.fetch_env!(:relay, :certs) |> Keyword.fetch!(:paths) == cert_paths
+  end
+
+  test "mlb signal update", %{cert_paths: [cert_path], res: res} do
+    copy_cert("localhost.pem", cert_path)
+    {:ok, _} = start_supervised({Filesystem, resources: res})
+    assert_receive_update(["localhost.pem"])
+    copy_cert("demo.pem", cert_path)
+    assert_post("http://localhost:9090/_mlb_signal/hup", 204)
+    assert_receive_update(["localhost.pem", "demo.pem"])
+  end
+
+  test "mlb bad http", %{res: res} do
+    {:ok, _} = start_supervised({Filesystem, resources: res})
+    assert_post("http://localhost:9090/_mlb_signal/term", 404)
+    assert_post("http://localhost:9090/wordpress/wp-login.php", 404)
+  end
+
+  defp assert_post(uri, code) do
+    assert {:ok, %HTTPoison.Response{status_code: ^code, body: ""}} = HTTPoison.post(uri, "")
   end
 end
