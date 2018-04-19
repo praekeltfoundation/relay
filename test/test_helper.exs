@@ -1,6 +1,25 @@
 defmodule TestHelpers do
   import ExUnit.Callbacks
 
+  defmodule StubGenServer do
+    @moduledoc """
+    Stub GenServer that forwards all `call`s to the pid it's configured with
+    and replies with `:ok`.
+    """
+    use GenServer
+
+    def start_link(pid), do: GenServer.start_link(__MODULE__, pid, name: StubGenServer)
+
+    @impl GenServer
+    def init(pid), do: {:ok, pid}
+
+    @impl GenServer
+    def handle_call(msg, _from, pid) do
+      send(pid, msg)
+      {:reply, :ok, pid}
+    end
+  end
+
   @doc """
   Override the global log level for the duration of a test.
 

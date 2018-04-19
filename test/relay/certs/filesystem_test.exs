@@ -4,21 +4,6 @@ defmodule Relay.Certs.FilesystemTest do
   alias Relay.Certs.Filesystem
   alias Relay.{Certs, Resources}
 
-  defmodule StubGenServer do
-    use GenServer
-
-    def start_link(pid), do: GenServer.start_link(__MODULE__, pid, name: StubGenServer)
-
-    @impl GenServer
-    def init(pid), do: {:ok, pid}
-
-    @impl GenServer
-    def handle_call(msg, _from, pid) do
-      send(pid, msg)
-      {:reply, :ok, pid}
-    end
-  end
-
   setup ctx do
     TestHelpers.override_log_level(:warn)
     TestHelpers.setup_apps([:cowboy, :httpoison])
@@ -27,7 +12,7 @@ defmodule Relay.Certs.FilesystemTest do
     {tmpdir, cert_paths} = TestHelpers.tmpdir_subdirs(ctx.cert_dirs)
     put_certs_config(paths: cert_paths)
 
-    {:ok, res} = start_supervised({StubGenServer, self()})
+    {:ok, res} = start_supervised({TestHelpers.StubGenServer, self()})
 
     %{tmpdir: tmpdir, cert_paths: cert_paths, res: res}
   end
