@@ -64,11 +64,11 @@ defmodule Relay.Marathon do
     # Get the tasks for each app, convert to Task structs, store them
     apps_and_tasks =
       apps_json
-      |> Enum.map(fn app_json ->
-        app = App.from_definition(app_json, group)
-
+      |> Stream.map(fn app_json -> {App.from_definition(app_json, group), app_json["tasks"]} end)
+      |> Stream.reject(fn {app, _task_json} -> Enum.empty?(app.port_indices) end)
+      |> Enum.map(fn {app, tasks_json} ->
         tasks =
-          app_json["tasks"]
+          tasks_json
           |> Stream.reject(&(&1["taskStatus"] in @terminal_states))
           |> Enum.map(&Task.from_definition(app, &1))
 

@@ -267,15 +267,37 @@ defmodule Relay.MarathonTest do
 
     {:ok, res} = start_supervised({StubGenServer, self()})
     {:ok, store} = start_supervised({Store, resources: res})
-    {:ok, _marathon} = start_supervised({Marathon, store: store})
+    {:ok, marathon} = start_supervised({Marathon, store: store})
 
-    %{fake_marathon: fm}
+    %{fake_marathon: fm, relay_marathon: marathon}
   end
 
   defp assert_receive_update(endpoints),
     do: assert_receive({:update_app_endpoints, _version, ^endpoints}, 100)
 
   defp refute_update, do: refute_receive({:update_app_endpoints, _, _}, 100)
+
+  describe "sync" do
+    test "on startup" do
+      assert_receive_update([@test_app_endpoint])
+    end
+
+    test "apps without ports in group are ignored", %{fake_marathon: fm, relay_marathon: marathon} do
+      # Startup sync
+      assert_receive_update([@test_app_endpoint])
+
+      irrelevant_app =
+        @test_app
+        |> Map.put("id", "/mc3")
+        |> Map.put("labels", Map.put(@test_app["labels"], "HAPROXY_GROUP", "internal"))
+
+      FakeMarathon.set_apps(fm, [@test_app, irrelevant_app])
+
+      send(marathon, :sync)
+      # Receive a sync with just the test_app endpoint, not the irrelevant_app
+      assert_receive_update([@test_app_endpoint])
+    end
+  end
 
   describe "api_post_event" do
     test "relevant app", %{fake_marathon: fm} do
