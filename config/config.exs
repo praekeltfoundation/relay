@@ -110,5 +110,5 @@ config :relay,
     mlb_port: 9090
   ],
   resolver: [
-    ttl: 30_000
+    ttl: 60_000
   ]
