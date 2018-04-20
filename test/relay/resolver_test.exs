@@ -23,6 +23,10 @@ defmodule Relay.ResolverTest do
     assert Resolver.getaddr(resolver, "localhost") == "127.0.0.1"
   end
 
+  test "hostname lookup not in /etc/hosts", %{resolver: resolver} do
+    assert Resolver.getaddr(resolver, "10.0.0.1.xip.io") == "10.0.0.1"
+  end
+
   test "addresses not cached", %{resolver: resolver} do
     assert Resolver.getaddr(resolver, "172.17.0.1") == "172.17.0.1"
 
