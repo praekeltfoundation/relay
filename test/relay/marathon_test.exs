@@ -231,21 +231,6 @@ defmodule Relay.MarathonTest do
     addresses: []
   }
 
-  defmodule StubGenServer do
-    use GenServer
-
-    def start_link(pid), do: GenServer.start_link(__MODULE__, pid, name: StubGenServer)
-
-    @impl GenServer
-    def init(pid), do: {:ok, pid}
-
-    @impl GenServer
-    def handle_call(msg, _from, pid) do
-      send(pid, msg)
-      {:reply, :ok, pid}
-    end
-  end
-
   setup do
     TestHelpers.override_log_level(:warn)
     TestHelpers.setup_apps([:cowboy, :hackney])
@@ -265,7 +250,7 @@ defmodule Relay.MarathonTest do
 
     TestHelpers.put_env(:relay, :marathon, marathon_config)
 
-    {:ok, res} = start_supervised({StubGenServer, self()})
+    {:ok, res} = start_supervised({TestHelpers.StubGenServer, self()})
     {:ok, store} = start_supervised({Store, resources: res})
     {:ok, marathon} = start_supervised({Marathon, store: store})
 
