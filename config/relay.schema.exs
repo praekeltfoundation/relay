@@ -68,13 +68,21 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       hidden: false,
       to: "relay.listen.port"
     ],
-    "relay.envoy.cluster_name": [
+    "relay.envoy.grpc.target_uri": [
+      commented: false,
+      datatype: :binary,
+      default: "127.0.0.1:5000",
+      doc: "The host:port address for Envoy to connect to this discovery service on",
+      hidden: false,
+      to: "relay.envoy.grpc.target_uri"
+    ],
+    "relay.envoy.grpc.stat_prefix": [
       commented: false,
       datatype: :binary,
       default: "xds_cluster",
-      doc: "The cluster name for this discovery service in Envoy's bootstrap.yaml",
+      doc: "The prefix to use for Envoy's gRPC stats",
       hidden: false,
-      to: "relay.envoy.cluster_name"
+      to: "relay.envoy.grpc.stat_prefix"
     ],
     "relay.envoy.max_obj_name_length": [
       commented: false,
