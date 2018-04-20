@@ -100,4 +100,9 @@ config :relay,
   marathon_acme: [
     app_id: "/marathon-acme",
     port_index: 0
+  ],
+  certs: [
+    paths: [],
+    sync_period: 600_000,
+    mlb_port: 9090
   ]

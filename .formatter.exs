@@ -6,5 +6,5 @@ inputs = ["*.exs", "{config,lib,test}/**/*.{ex,exs}"] ++ Path.wildcard(".*.exs",
 [
   import_deps: [:grpc, :protobuf],
   inputs: inputs,
-  locals_without_parens: [xds_tests: 2]
+  locals_without_parens: [xds_tests: 2, plug: 1]
 ]
