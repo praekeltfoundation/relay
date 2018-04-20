@@ -52,6 +52,8 @@ defmodule Relay.MixProject do
       {:hackney, ">= 1.12.1"},
       {:poison, "~> 3.1"},
       {:conform, "~> 2.2"},
+      {:plug, "~> 1.4"},
+      {:cowboy, "~> 2.3"},
 
       # Test deps.
       {
@@ -61,6 +63,7 @@ defmodule Relay.MixProject do
         only: :test,
         app: false
       },
+      {:temp, "~> 0.4", only: :test},
       {:excoveralls, "~> 0.8", only: :test},
 
       # Dev/test tools.
