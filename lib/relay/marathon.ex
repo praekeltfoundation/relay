@@ -64,6 +64,7 @@ defmodule Relay.Marathon do
     # Get the tasks for each app, convert to Task structs, store them
     apps_and_tasks =
       apps_json
+      |> Stream.filter(&(&1["instances"] > 0))
       |> Stream.map(fn app_json -> {App.from_definition(app_json, group), app_json["tasks"]} end)
       |> Stream.reject(fn {app, _task_json} -> Enum.empty?(app.port_indices) end)
       |> Enum.map(fn {app, tasks_json} ->
@@ -92,8 +93,15 @@ defmodule Relay.Marathon do
 
     case App.from_event(event, marathon_lb_group()) do
       %App{port_indices: port_indices} = app when length(port_indices) > 0 ->
-        log_api_post_event(event, "updating app")
-        Store.update_app(store, app)
+        case event["appDefinition"] do
+          %{"instances" => instances} when instances > 0 ->
+            log_api_post_event(event, "updating app")
+            Store.update_app(store, app)
+
+          _ ->
+            log_api_post_event(event, "deleting app (no longer relevant)")
+            Store.delete_app(store, app.id)
+        end
 
       %App{id: app_id} ->
         # If the app is not relevant, check if we have it stored already. If we

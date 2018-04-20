@@ -297,6 +297,22 @@ defmodule Relay.MarathonTest do
       # Receive a sync with just the test_app endpoint, not the irrelevant_app
       assert_receive_update([@test_app_endpoint])
     end
+
+    test "suspended apps are ignored", %{fake_marathon: fm, relay_marathon: marathon} do
+      # Startup sync
+      assert_receive_update([@test_app_endpoint])
+
+      suspended_app =
+        @test_app
+        |> Map.put("id", "/mc3")
+        |> Map.put("instances", 0)
+
+      FakeMarathon.set_apps(fm, [@test_app, suspended_app])
+
+      send(marathon, :sync)
+      # Receive a sync with just the test_app endpoint, not the suspended_app
+      assert_receive_update([@test_app_endpoint])
+    end
   end
 
   describe "api_post_event" do
@@ -308,7 +324,7 @@ defmodule Relay.MarathonTest do
       assert_receive_update([@test_event_endpoint_no_address, @test_app_endpoint])
     end
 
-    test "irrelevant app", %{fake_marathon: fm} do
+    test "app without ports in group", %{fake_marathon: fm} do
       assert_receive_update([@test_app_endpoint])
 
       # Clear the labels so the app is irrelevant
@@ -327,7 +343,7 @@ defmodule Relay.MarathonTest do
       refute_update()
     end
 
-    test "app becomes irrelevant", %{fake_marathon: fm} do
+    test "app becomes irrelevant (no ports in group)", %{fake_marathon: fm} do
       assert_receive_update([@test_app_endpoint])
 
       FakeMarathon.event(fm, "api_post_event", Poison.encode!(@test_api_post_event))
@@ -338,6 +354,28 @@ defmodule Relay.MarathonTest do
         @test_api_post_event
         |> Map.get("appDefinition")
         |> Map.put("labels", %{})
+
+      event_data =
+        @test_api_post_event
+        |> Map.put("appDefinition", app_definition)
+        |> Poison.encode!()
+
+      FakeMarathon.event(fm, "api_post_event", event_data)
+
+      assert_receive_update([@test_app_endpoint])
+    end
+
+    test "app becomes irrelevant (suspended)", %{fake_marathon: fm} do
+      assert_receive_update([@test_app_endpoint])
+
+      FakeMarathon.event(fm, "api_post_event", Poison.encode!(@test_api_post_event))
+      assert_receive_update([@test_event_endpoint_no_address, @test_app_endpoint])
+
+      # Scale to 0 instances so the app is suspended
+      app_definition =
+        @test_api_post_event
+        |> Map.get("appDefinition")
+        |> Map.put("instances", 0)
 
       event_data =
         @test_api_post_event
