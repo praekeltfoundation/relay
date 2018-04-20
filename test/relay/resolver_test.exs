@@ -4,6 +4,8 @@ defmodule Relay.ResolverTest do
   alias Relay.Resolver
 
   setup do
+    TestHelpers.override_log_level(:info)
+
     {:ok, resolver} = start_supervised(Resolver)
 
     %{resolver: resolver}
