@@ -29,6 +29,15 @@ defmodule Relay.ResolverTest do
     assert Resolver.getaddr("10.0.0.1.xip.io") == "10.0.0.1"
   end
 
+  test "unknown hostname" do
+    import ExUnit.CaptureLog
+
+    assert capture_log(fn ->
+             assert {{{:badmatch, {:error, :nxdomain}}, _}, _} =
+                      catch_exit(Resolver.getaddr("notexist.localdomain"))
+           end) =~ ~r"Error looking up hostname 'notexist\.localdomain'"
+  end
+
   test "addresses not cached" do
     assert Resolver.getaddr("172.17.0.1") == "172.17.0.1"
 
