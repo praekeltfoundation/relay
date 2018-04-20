@@ -16,6 +16,7 @@ defmodule Relay.Certs.Filesystem do
 
     # We need to override this to get the GenServer ref into the conn so our
     # routes can see it.
+    @impl Plug
     def call(conn, opts) do
       {cfs, opts} = Keyword.pop(opts, :cfs)
 
