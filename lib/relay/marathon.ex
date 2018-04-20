@@ -99,21 +99,14 @@ defmodule Relay.Marathon do
             Store.update_app(store, app)
 
           _ ->
-            log_api_post_event(event, "deleting app (no longer relevant)")
+            log_api_post_event(event, "deleting app (suspended)")
             Store.delete_app(store, app.id)
         end
 
       %App{id: app_id} ->
-        # If the app is not relevant, check if we have it stored already. If we
-        # do, we can now delete it from the store.
-        case Store.get_app(store, app_id) do
-          {:ok, %App{}} ->
-            log_api_post_event(event, "deleting app (no longer relevant)")
-            Store.delete_app(store, app_id)
-
-          {:ok, nil} ->
-            log_api_post_event(event, "ignoring (not relevant)")
-        end
+        # If the app is not relevant, delete it in case it's in the store.
+        log_api_post_event(event, "deleting app (no relevant ports)")
+        Store.delete_app(store, app_id)
     end
   end
 
