@@ -2,6 +2,7 @@ defmodule Relay.Resources.EDS do
   @moduledoc """
   Builds Envoy ClusterLoadAssignment values from cluster resources.
   """
+  alias Relay.Resolver
   alias Relay.Resources.{AppEndpoint, Config}
   import Relay.Resources.Common, only: [socket_address: 2]
 
@@ -39,6 +40,7 @@ defmodule Relay.Resources.EDS do
 
   @spec lb_endpoint({String.t(), :inet.port_number()}, keyword) :: LbEndpoint.t()
   defp lb_endpoint({address, port}, options) do
+    address = Resolver.getaddr(address)
     LbEndpoint.new([endpoint: Endpoint.new(address: socket_address(address, port))] ++ options)
   end
 

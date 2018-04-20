@@ -17,18 +17,18 @@ defmodule Relay.Resolver do
   # hostname => {address, expiry}
   @typep cache :: %{optional(String.t()) => {String.t(), integer}}
 
-  @spec start_link(keyword) :: Agent.on_start()
-  def start_link(options \\ []), do: Agent.start_link(fn -> %{} end, options)
+  @spec start_link(term) :: Agent.on_start()
+  def start_link(_), do: Agent.start_link(fn -> %{} end, name: __MODULE__)
 
-  @spec getaddr(Agent.agent(), String.t()) :: String.t()
-  def getaddr(agent, hostname) do
+  @spec getaddr(String.t()) :: String.t()
+  def getaddr(hostname) do
     if is_address?(hostname) do
       hostname
     else
-      Agent.get_and_update(agent, fn cache ->
+      Agent.get_and_update(__MODULE__, fn cache ->
         case cache_get(cache, hostname) do
           nil ->
-            {:ok, address} = getaddr(hostname)
+            {:ok, address} = getaddr_impl(hostname)
             {address, cache_put(cache, hostname, address)}
 
           address ->
@@ -46,8 +46,8 @@ defmodule Relay.Resolver do
     end
   end
 
-  @spec getaddr(String.t()) :: {:ok, String.t()} | {:error, :inet.posix()}
-  defp getaddr(hostname) do
+  @spec getaddr_impl(String.t()) :: {:ok, String.t()} | {:error, :inet.posix()}
+  defp getaddr_impl(hostname) do
     # FIXME: Support IPv6 DNS
     case hostname |> to_charlist() |> :inet.getaddr(:inet) do
       {:ok, addr} ->
