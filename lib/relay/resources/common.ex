@@ -4,22 +4,25 @@ defmodule Relay.Resources.Common do
   """
   alias Relay.Resources.Config
 
-  alias Envoy.Api.V2.Core.{Address, ApiConfigSource, ConfigSource, SocketAddress}
+  alias Envoy.Api.V2.Core.{Address, ApiConfigSource, ConfigSource, SocketAddress, GrpcService}
   alias Google.Protobuf.Duration
 
   @truncated_name_prefix "[...]"
 
   @spec api_config_source(keyword) :: ConfigSource.t()
   def api_config_source(options \\ []) do
-    cluster_name = Config.fetch_envoy!(:cluster_name)
-
     ConfigSource.new(
       config_source_specifier:
         {:api_config_source,
          ApiConfigSource.new(
            [
              api_type: ApiConfigSource.ApiType.value(:GRPC),
-             cluster_names: [cluster_name]
+             grpc_services: [
+               GrpcService.new(
+                 target_specifier:
+                   {:google_grpc, GrpcService.GoogleGrpc.new(Config.fetch_envoy!(:grpc))}
+               )
+             ]
            ] ++ options
          )}
     )
