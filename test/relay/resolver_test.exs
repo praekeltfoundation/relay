@@ -11,7 +11,7 @@ defmodule Relay.ResolverTest do
     %{resolver: resolver}
   end
 
-  defp get_cache(resolver), do: Agent.get(resolver, &(&1))
+  defp get_cache(resolver), do: Agent.get(resolver, & &1)
 
   test "ipv4 address", %{resolver: resolver} do
     assert Resolver.getaddr(resolver, "127.0.0.1") == "127.0.0.1"
