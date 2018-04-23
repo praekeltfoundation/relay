@@ -40,7 +40,7 @@ defmodule Relay.Resources.EDS do
 
   @spec lb_endpoint({String.t(), :inet.port_number()}, keyword) :: LbEndpoint.t()
   defp lb_endpoint({address, port}, options) do
-    address = Resolver.getaddr(address)
+    {:ok, address} = Resolver.getaddr(address)
     LbEndpoint.new([endpoint: Endpoint.new(address: socket_address(address, port))] ++ options)
   end
 
