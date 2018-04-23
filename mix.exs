@@ -41,7 +41,7 @@ defmodule Relay.MixProject do
   defp deps do
     [
       # 2018-04-23: grpc-elixir 0.3.0-alpha.2 has an issue that prevents us
-      # sending messages to our servers:
+      # from sending messages to our servers:
       # https://github.com/tony612/grpc-elixir/issues/59
       {
         :grpc,
