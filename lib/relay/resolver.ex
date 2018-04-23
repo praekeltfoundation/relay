@@ -12,8 +12,6 @@ defmodule Relay.Resolver do
 
   use Agent
 
-  use LogWrapper, as: Log
-
   # hostname => {address, expiry}
   @typep cache :: %{optional(String.t()) => {String.t(), integer}}
   @typep getaddr_result :: {:ok, String.t()} | {:error, :inet.posix()}
@@ -69,16 +67,9 @@ defmodule Relay.Resolver do
   defp cache_get(cache, hostname) do
     case Map.get(cache, hostname) do
       {address, expiry} ->
-        if System.monotonic_time(:milliseconds) < expiry do
-          Log.debug("DNS cache hit: #{hostname} -> #{address}")
-          address
-        else
-          Log.debug("DNS cache expired: #{hostname} -> #{address}")
-          nil
-        end
+        if System.monotonic_time(:milliseconds) < expiry, do: address, else: nil
 
       nil ->
-        Log.debug("DNS cache miss: #{hostname}")
         nil
     end
   end

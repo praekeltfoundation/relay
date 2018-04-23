@@ -14,7 +14,6 @@ defmodule Relay.Resources.EDSTest do
   }
 
   setup do
-    TestHelpers.override_log_level(:info)
     {:ok, _resolver} = start_supervised(Resolver)
     :ok
   end
