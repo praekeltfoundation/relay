@@ -40,7 +40,14 @@ defmodule Relay.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:grpc, "~> 0.3.0-alpha.2"},
+      # 2018-04-23: grpc-elixir 0.3.0-alpha.2 has an issue that prevents us
+      # sending messages to our servers:
+      # https://github.com/tony612/grpc-elixir/issues/59
+      {
+        :grpc,
+        git: "https://github.com/tony612/grpc-elixir.git",
+        ref: "7353aa04cbf4cd982183aacd54d645fe6b4571dd"
+      },
       {:google_protos, "~> 0.1"},
       {:httpoison, "~> 1.0"},
       # Hackney is a dependency of HTTPoison but had a bug in versions 1.10.0 to
