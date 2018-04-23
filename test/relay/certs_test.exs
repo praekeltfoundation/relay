@@ -3,11 +3,7 @@ defmodule Relay.CertsTest do
 
   alias Relay.Certs
 
-  defp read_cert!(certfile) do
-    Path.join("../support/", certfile)
-    |> Path.expand(__DIR__)
-    |> File.read!()
-  end
+  defp read_cert!(certfile), do: certfile |> TestHelpers.support_path() |> File.read!()
 
   test "pem encode" do
     [key, cert, cacert] = :public_key.pem_decode(read_cert!("localhost.pem"))

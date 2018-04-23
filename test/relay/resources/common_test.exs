@@ -1,9 +1,43 @@
 defmodule Relay.Resources.CommonTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias Relay.Resources.Common
 
+  alias Envoy.Api.V2.Core.{ApiConfigSource, ConfigSource, GrpcService}
   alias Google.Protobuf.Duration
+
+  describe "api_config_source/1" do
+    defp assert_config_source(config_source, target_uri, stat_prefix) do
+      assert %ConfigSource{
+               config_source_specifier:
+                 {:api_config_source,
+                  %ApiConfigSource{
+                    cluster_names: [],
+                    grpc_services: [
+                      %GrpcService{
+                        target_specifier:
+                          {:google_grpc,
+                           %GrpcService.GoogleGrpc{
+                             target_uri: ^target_uri,
+                             stat_prefix: ^stat_prefix
+                           }}
+                      }
+                    ]
+                  }}
+             } = config_source
+    end
+
+    test "default config" do
+      assert_config_source(Common.api_config_source(), "127.0.0.1:5000", "xds_cluster")
+    end
+
+    test "override config" do
+      grpc_config = [target_uri: "10.1.1.1:1337", stat_prefix: "numbers"]
+      TestHelpers.put_env(:relay, :envoy, grpc: grpc_config)
+
+      assert_config_source(Common.api_config_source(), "10.1.1.1:1337", "numbers")
+    end
+  end
 
   describe "truncate_obj_name/1" do
     test "long names truncated from beginning" do

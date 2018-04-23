@@ -68,13 +68,21 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       hidden: false,
       to: "relay.listen.port"
     ],
-    "relay.envoy.cluster_name": [
+    "relay.envoy.grpc.target_uri": [
+      commented: false,
+      datatype: :binary,
+      default: "127.0.0.1:5000",
+      doc: "The host:port address for Envoy to connect to this discovery service on",
+      hidden: false,
+      to: "relay.envoy.grpc.target_uri"
+    ],
+    "relay.envoy.grpc.stat_prefix": [
       commented: false,
       datatype: :binary,
       default: "xds_cluster",
-      doc: "The cluster name for this discovery service in Envoy's bootstrap.yaml",
+      doc: "The prefix to use for Envoy's gRPC stats",
       hidden: false,
-      to: "relay.envoy.cluster_name"
+      to: "relay.envoy.grpc.stat_prefix"
     ],
     "relay.envoy.max_obj_name_length": [
       commented: false,
@@ -191,7 +199,7 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
     "relay.marathon.events_timeout": [
       commented: false,
       datatype: :integer,
-      default: 60000,
+      default: 60_000,
       doc: "Timeout value for Marathon's event stream (ms)",
       hidden: false,
       to: "relay.marathon.events_timeout"
@@ -219,6 +227,30 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       doc: "The port index for marathon-acme",
       hidden: false,
       to: "relay.marathon_acme.port_index"
+    ],
+    "relay.certs.paths": [
+      commented: false,
+      datatype: [list: :binary],
+      default: [],
+      doc: "Paths to read certificates from",
+      hidden: false,
+      to: "relay.certs.paths"
+    ],
+    "relay.certs.sync_period": [
+      commented: false,
+      datatype: :integer,
+      default: 600_000,
+      doc: "Time between scheduled full syncs (ms)",
+      hidden: false,
+      to: "relay.certs.sync_period"
+    ],
+    "relay.certs.mlb_port": [
+      commented: false,
+      datatype: :integer,
+      default: 9090,
+      doc: "Port to listen on for marathon-lb HTTP signals",
+      hidden: false,
+      to: "relay.certs.mlb_port"
     ]
   ],
   transforms: [],
