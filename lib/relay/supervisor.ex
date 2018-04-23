@@ -56,6 +56,7 @@ defmodule Relay.Supervisor do
   def init({addr, port}) do
     children = [
       {Relay.Publisher, [name: Relay.Publisher]},
+      {Relay.Resolver, []},
       {Relay.Resources, [name: Relay.Resources]},
       {FrontendSupervisor, {addr, port}}
     ]

@@ -251,6 +251,14 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       doc: "Port to listen on for marathon-lb HTTP signals",
       hidden: false,
       to: "relay.certs.mlb_port"
+    ],
+    "relay.resolver.ttl": [
+      commented: false,
+      datatype: :integer,
+      default: 60_000,
+      doc: "Time-to-live for cached DNS responses",
+      hidden: false,
+      to: "relay.resolver.ttl"
     ]
   ],
   transforms: [],

@@ -108,4 +108,7 @@ config :relay,
     paths: [],
     sync_period: 600_000,
     mlb_port: 9090
+  ],
+  resolver: [
+    ttl: 60_000
   ]
