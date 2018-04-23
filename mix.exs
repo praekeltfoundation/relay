@@ -40,11 +40,7 @@ defmodule Relay.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:grpc, "~> 0.3.0-alpha.1"},
-      # 2018-03-26: grpc has the dependency `{:gun, "~> 1.0.0-pre.5"}` which
-      # actually pulls in 1.0.0-pre.4b which causes errors with GRPC streams
-      # that return an error code.
-      {:gun, "1.0.0-pre.5"},
+      {:grpc, "~> 0.3.0-alpha.2"},
       {:google_protos, "~> 0.1"},
       {:httpoison, "~> 1.0"},
       # Hackney is a dependency of HTTPoison but had a bug in versions 1.10.0 to
