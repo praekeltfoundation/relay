@@ -281,6 +281,19 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       hidden: true
     ]
   ],
-  transforms: [],
+  transforms: [
+    # In order to support multi-value environment variables for these fields,
+    # we accept and split comma-separated strings. We have no way of knowing
+    # whether the value we have came from a conf file, the environment, or the
+    # default, so rather than trying to guess we just split all list items.
+    "relay.marathon.urls": fn conf ->
+      [{_, value}] = Conform.Conf.get(conf, "relay.marathon.urls")
+      Enum.flat_map(value, &String.split(&1, ~r{,\s*}))
+    end,
+    "relay.certs.paths": fn conf ->
+      [{_, value}] = Conform.Conf.get(conf, "relay.certs.paths")
+      Enum.flat_map(value, &String.split(&1, ~r{,\s*}))
+    end
+  ],
   validators: []
 ]
