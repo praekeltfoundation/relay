@@ -250,7 +250,7 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       datatype: [list: :binary],
       default: [],
       doc: "Paths to read certificates from",
-      env_var: "RELAY_CERTS_PATH"
+      env_var: "RELAY_CERTS_PATHS"
     ],
     "relay.certs.sync_period": [
       commented: true,
@@ -272,6 +272,13 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       default: 60_000,
       doc: "Time-to-live for cached DNS responses",
       env_var: "RELAY_RESOLVER_TTL"
+    ],
+    # We need this configured for the GRPC server to work, but we don't really
+    # want to make it user-configurable.
+    "grpc.start_server": [
+      datatype: :boolean,
+      default: true,
+      hidden: true
     ]
   ],
   transforms: [],
