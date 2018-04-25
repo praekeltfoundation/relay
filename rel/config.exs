@@ -8,13 +8,15 @@ use Mix.Releases.Config,
 environment :dev do
   set dev_mode: true
   set include_erts: false
-  set cookie: :"0*9Y&;PFP*aaA6&*m{tc;iU$kETxcc5lekB`iXp=a%O79M:3%dsFV0Y4>)?[VNr]"
+  set cookie: :dev_test_cookie
 end
 
 environment :prod do
   set include_erts: true
   set include_src: false
-  set cookie: :"%I$29GGsz:z(FPCl(Al?O5Q_a}/p]k($GcJn8f%cORI6_I:_t.PkAUUQ[Jq7(@oV"
+  # The pre_start hook sets $ERLANG_COOKIE to a random value if is unset.
+  set pre_configure_hook: "rel/hooks/pre_configure"
+  set cookie: "${ERLANG_COOKIE}"
 end
 
 release :relay do
