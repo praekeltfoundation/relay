@@ -38,8 +38,9 @@ defmodule Relay.Supervisor do
       opts = [adapter: Relay.GRPCAdapter, ip: parse_ip_address(addr)]
 
       children = [
-        {Relay.Demo.Marathon, []},
-        {Relay.Demo.Certs, []},
+        {Relay.Marathon.Store, [name: Relay.Marathon.Store]},
+        {Relay.Marathon, [name: Relay.Marathon]},
+        {Relay.Certs.Filesystem, [name: Relay.Certs.Filesystem]},
         supervisor(GRPC.Server.Supervisor, [{services, port, opts}])
       ]
 
