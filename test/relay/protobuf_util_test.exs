@@ -105,7 +105,9 @@ defmodule Relay.ProtobufUtilTest do
       end
 
       proto =
-        StructType.new(foo: Struct.new(fields: %{"bar" => Value.new(kind: {:string_value, "abc"})}))
+        StructType.new(
+          foo: Struct.new(fields: %{"bar" => Value.new(kind: {:string_value, "abc"})})
+        )
 
       struct = ProtobufUtil.mkstruct(proto)
 
