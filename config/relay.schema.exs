@@ -136,6 +136,15 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       env_var: "RELAY_ENVOY_LISTENERS_HTTP_UPSTREAM_LOG_FORMAT",
       to: "relay.envoy.listeners.http.http_connection_manager.upstream_log.format"
     ],
+    "relay.envoy.listeners.http.use_remote_address": [
+      commented: true,
+      datatype: :boolean,
+      default: true,
+      doc:
+        "Whether to use the real remote address of the client connection when determining origin",
+      env_var: "RELAY_ENVOY_LISTENERS_HTTP_USE_REMOTE_ADDRESS",
+      to: "relay.envoy.listeners.http.http_connection_manager.use_remote_address"
+    ],
     "relay.envoy.listeners.https.address": [
       commented: true,
       # These addresses aren't transformed because Envoy takes binary addresses
@@ -184,6 +193,15 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       doc: "Format for the upstream log for incoming connections",
       env_var: "RELAY_ENVOY_LISTENERS_HTTPS_UPSTREAM_LOG_FORMAT",
       to: "relay.envoy.listeners.https.http_connection_manager.upstream_log.format"
+    ],
+    "relay.envoy.listeners.https.use_remote_address": [
+      commented: true,
+      datatype: :boolean,
+      default: true,
+      doc:
+        "Whether to use the real remote address of the client connection when determining origin",
+      env_var: "RELAY_ENVOY_LISTENERS_HTTPS_USE_REMOTE_ADDRESS",
+      to: "relay.envoy.listeners.https.http_connection_manager.use_remote_address"
     ],
     "relay.envoy.clusters.connect_timeout": [
       commented: true,

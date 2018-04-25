@@ -4,7 +4,7 @@ defmodule Relay.ProtobufUtil do
   Google.Protobuf types.
   """
 
-  alias Google.Protobuf.{Any, Struct, ListValue, Value}
+  alias Google.Protobuf.{Any, BoolValue, Struct, ListValue, Value}
 
   defp oneof_actual_vals(message_props, struct) do
     # Copy/pasta-ed from:
@@ -73,4 +73,18 @@ defmodule Relay.ProtobufUtil do
   """
   @spec mkany(String.t(), struct) :: Any.t()
   def mkany(type_url, %mod{} = value), do: Any.new(type_url: type_url, value: mod.encode(value))
+
+  @doc """
+  Utility function for working with Google.Protobuf.<type>Values wrapper types.
+
+  Types such as `BoolValue` exist to make values "nullable" or unset. In a
+  protobuf, primitives have default values and so can't be "unset". By wrapping
+  primitive types in these wrapper types (which is what this function does),
+  these values can be unset.
+  """
+  @spec mkvalue(nil) :: nil
+  def mkvalue(nil), do: nil
+
+  @spec mkvalue(boolean) :: BoolValue.t()
+  def mkvalue(value) when is_boolean(value), do: BoolValue.new(value: value)
 end

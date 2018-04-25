@@ -105,6 +105,8 @@ defmodule Relay.Resources.LDS do
     stat_prefix = Keyword.get(config, :stat_prefix, Atom.to_string(listener))
     access_log = Keyword.get(config, :access_log) |> access_logs_from_config()
 
+    use_remote_address = ProtobufUtil.mkvalue(Keyword.get(config, :use_remote_address))
+
     # TODO: Validate that the configured name is less than max_obj_name_length
     route_config_name = Config.get_listener_route_config_name(listener)
 
@@ -118,6 +120,7 @@ defmodule Relay.Resources.LDS do
            Rds.new(config_source: api_config_source(), route_config_name: route_config_name)},
         stat_prefix: stat_prefix,
         access_log: access_log,
+        use_remote_address: use_remote_address,
         http_filters: [router_http_filter(listener, router_opts)]
       ] ++ options
     )
