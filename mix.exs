@@ -15,7 +15,8 @@ defmodule Relay.MixProject do
         coveralls: :test,
         "coveralls.json": :test,
         "coveralls.detail": :test,
-        credo: :test
+        credo: :test,
+        release: :prod
       ],
       dialyzer: dialyzer(),
       elixirc_paths: ["lib", "gen"]
@@ -66,9 +67,10 @@ defmodule Relay.MixProject do
       {:temp, "~> 0.4", only: :test},
       {:excoveralls, "~> 0.8", only: :test},
 
-      # Dev/test tools.
+      # Dev/test/build tools.
       {:dialyxir, "~> 0.5", only: :dev, runtime: false},
-      {:credo, "~> 0.9", only: [:dev, :test], runtime: false}
+      {:credo, "~> 0.9", only: [:dev, :test], runtime: false},
+      {:distillery, "~> 1.5", runtime: false}
     ]
   end
 

@@ -12,7 +12,6 @@ defmodule RelayTest do
 
   setup do
     TestHelpers.override_log_level(:warn)
-    TestHelpers.put_env(:grpc, :start_server, true)
 
     listen = Application.get_env(:relay, :listen) |> Keyword.put(:port, @port)
     TestHelpers.put_env(:relay, :listen, listen, persistent: true)

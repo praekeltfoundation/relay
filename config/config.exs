@@ -112,3 +112,5 @@ config :relay,
   resolver: [
     ttl: 60_000
   ]
+
+config :grpc, start_server: true
