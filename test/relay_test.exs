@@ -279,7 +279,7 @@ defmodule RelayTest do
     t1 = Time.utc_now()
     assert Time.diff(t1, t0, :milliseconds) < 1_000
 
-    # No scheduled marathon updates yet
+    # FIXME: Uncomment this when we have scheduled marathon updates.
     # cds_v_4 = assert_cds_request_response(streams, res_enums, expected_clusters())
     # assert cds_v_4 > cds_v_3
 
