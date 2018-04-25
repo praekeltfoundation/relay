@@ -51,7 +51,8 @@ config :relay,
             path: "http_access.log",
             format: ""
             # TODO: Figure out how to configure filters
-          ]
+          ],
+          use_remote_address: true
         ],
         router: [
           upstream_log: [
@@ -71,7 +72,8 @@ config :relay,
             path: "https_access.log",
             format: ""
             # TODO: Figure out how to configure filters
-          ]
+          ],
+          use_remote_address: true
         ],
         router: [
           upstream_log: [
