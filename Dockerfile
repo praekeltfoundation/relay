@@ -50,6 +50,9 @@ USER relay
 # Currently we only support using $ERLANG_COOKIE to set the cookie.
 ENV REPLACE_OS_VARS=true
 
+# Expose port 5000 (discovery service) and 9090 (marathon-lb reload endpoints)
+EXPOSE 5000 9090
+
 # Signals are swallowed by the pile of generated scripts that run the app, so
 # we need tini to manage them.
 ENTRYPOINT ["tini", "--"]
