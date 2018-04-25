@@ -66,7 +66,14 @@ defmodule Relay.Certs.Filesystem do
   @spec init(GenServer.server()) :: {:ok, State.t()}
   def init(resources) do
     Process.flag(:trap_exit, true)
-    {:ok, _} = Cowboy2.http(MarathonLbPlug, [cfs: self()], port: certs_cfg(:mlb_port))
+
+    # We may not have properly cleaned up after being killed, so handle an
+    # existing listener if there is one.
+    {:ok, _} =
+      case start_mlb_listener() do
+        {:error, {:already_started, _pid}} -> restart_mlb_listener()
+        x -> x
+      end
 
     state = %State{
       resources: resources,
@@ -75,6 +82,15 @@ defmodule Relay.Certs.Filesystem do
     }
 
     {:ok, scheduled_update(state)}
+  end
+
+  defp start_mlb_listener,
+    do: Cowboy2.http(MarathonLbPlug, [cfs: self()], port: certs_cfg(:mlb_port))
+
+  defp restart_mlb_listener do
+    # TODO: Log a warning here?
+    :ok = Cowboy2.shutdown(MarathonLbPlug.HTTP)
+    start_mlb_listener()
   end
 
   @impl GenServer

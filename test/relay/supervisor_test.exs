@@ -1,7 +1,9 @@
-defmodule Relay.SupervisorTest do
-  use ExUnit.Case
+Code.require_file(Path.join([__DIR__, "..", "marathon_client", "marathon_client_helper.exs"]))
 
-  alias Relay.{Supervisor, Demo, Publisher, Resources}
+defmodule Relay.SupervisorTest do
+  use ExUnit.Case, async: false
+
+  alias Relay.{Supervisor, Publisher, Resources, Certs, Marathon}
   alias Relay.Supervisor.FrontendSupervisor
 
   alias Envoy.Api.V2.{DiscoveryRequest, DiscoveryResponse}
@@ -14,18 +16,164 @@ defmodule Relay.SupervisorTest do
   @addr "127.0.0.1"
   @port 12345
 
+  @test_app %{
+    "id" => "/mc2",
+    "backoffFactor" => 1.15,
+    "backoffSeconds" => 1,
+    "container" => %{
+      "type" => "DOCKER",
+      "docker" => %{
+        "forcePullImage" => true,
+        "image" => "praekeltfoundation/mc2:release-3.11.2",
+        "parameters" => [
+          %{
+            "key" => "add-host",
+            "value" => "servicehost:172.17.0.1"
+          }
+        ],
+        "privileged" => false
+      },
+      "volumes" => [],
+      "portMappings" => [
+        %{
+          "containerPort" => 80,
+          "hostPort" => 0,
+          "labels" => %{},
+          "protocol" => "tcp",
+          "servicePort" => 10003
+        }
+      ]
+    },
+    "cpus" => 0.1,
+    "disk" => 0,
+    "env" => %{
+      "MESOS_MARATHON_HOST" => "http://master.mesos:8080",
+      "DEBUG" => "False",
+      "PROJECT_ROOT" => "/deploy/"
+    },
+    "executor" => "",
+    "instances" => 1,
+    "labels" => %{
+      #      "MARATHON_ACME_0_DOMAIN" => "mc2.example.org",
+      #      "HAPROXY_0_REDIRECT_TO_HTTPS" => "true",
+      "HAPROXY_0_VHOST" => "mc2.example.org",
+      "HAPROXY_GROUP" => "external"
+    },
+    "maxLaunchDelaySeconds" => 3600,
+    "mem" => 256,
+    "gpus" => 0,
+    "networks" => [
+      %{
+        "mode" => "container/bridge"
+      }
+    ],
+    "requirePorts" => false,
+    "upgradeStrategy" => %{
+      "maximumOverCapacity" => 1,
+      "minimumHealthCapacity" => 1
+    },
+    "version" => "2017-11-09T08:43:59.89Z",
+    "versionInfo" => %{
+      "lastScalingAt" => "2017-11-09T08:43:59.89Z",
+      "lastConfigChangeAt" => "2017-11-08T15:06:31.066Z"
+    },
+    "killSelection" => "YOUNGEST_FIRST",
+    "unreachableStrategy" => %{
+      "inactiveAfterSeconds" => 300,
+      "expungeAfterSeconds" => 600
+    },
+    "tasksStaged" => 0,
+    "tasksRunning" => 1,
+    "tasksHealthy" => 0,
+    "tasksUnhealthy" => 0,
+    "deployments" => []
+  }
+
+  @test_task %{
+    "ipAddresses" => [
+      %{
+        "ipAddress" => "172.17.0.9",
+        "protocol" => "IPv4"
+      }
+    ],
+    "stagedAt" => "2018-02-16T14:29:06.487Z",
+    "state" => "TASK_RUNNING",
+    "ports" => [
+      15979
+    ],
+    "startedAt" => "2018-02-16T14:29:09.605Z",
+    "version" => "2017-11-09T08:43:59.890Z",
+    "id" => "mc2.be753491-1325-11e8-b5d6-4686525b33db",
+    "appId" => "/mc2",
+    "slaveId" => "d25be2a7-61ce-475f-8b07-d56400c8d744-S1",
+    "host" => "10.70.4.100"
+  }
+
+  @test_app_endpoints [
+    %Relay.Resources.AppEndpoint{
+      addresses: [{"10.70.4.100", 15979}],
+      domains: ["mc2.example.org"],
+      name: "/mc2_0"
+    }
+  ]
+
   setup do
-    TestHelpers.setup_apps([:grpc])
+    TestHelpers.setup_apps([:grpc, :httpoison])
     TestHelpers.override_log_level(:warn)
     TestHelpers.put_env(:grpc, :start_server, true)
+
+    {_tmpdir, [cert_path]} = TestHelpers.tmpdir_subdirs(["certs"])
+    put_certs_config(paths: [cert_path])
+    copy_cert("localhost.pem", cert_path)
+
+    # Set up FakeMarathon
+    {:ok, fm} = start_supervised(FakeMarathon)
+
+    # Store the test app and task
+    FakeMarathon.set_apps(fm, [@test_app])
+    FakeMarathon.set_app_tasks(fm, @test_app["id"], [@test_task])
+
+    # Configure the Marathon URL for the FakeMarathon
+    marathon_config =
+      :relay
+      |> Application.fetch_env!(:marathon)
+      |> Keyword.put(:urls, [FakeMarathon.base_url(fm)])
+
+    TestHelpers.put_env(:relay, :marathon, marathon_config)
 
     {:ok, sup} = start_supervised({Supervisor, {@addr, @port}})
     %{supervisor: sup}
   end
 
+  defp put_certs_config(opts) do
+    certs_config = Application.fetch_env!(:relay, :certs) |> Keyword.merge(opts)
+    TestHelpers.put_env(:relay, :certs, certs_config)
+  end
+
+  defp copy_cert(cert_file, cert_path) do
+    src = TestHelpers.support_path(cert_file)
+    dst = Path.join(cert_path, cert_file)
+    File.cp!(src, dst)
+  end
+
+  defp cert_info_from_file(cert_file) do
+    cert_bundle = cert_file |> TestHelpers.support_path() |> File.read!()
+
+    %Resources.CertInfo{
+      domains: cert_bundle |> Certs.get_end_entity_hostnames(),
+      key: cert_bundle |> Certs.get_key() |> get_ok() |> Certs.pem_encode(),
+      cert_chain: cert_bundle |> Certs.get_certs() |> Certs.pem_encode()
+    }
+  end
+
+  defp get_ok(thing) do
+    assert {:ok, got} = thing
+    got
+  end
+
   defp assert_example_response do
-    assert_cds_response(Demo.Marathon.app_endpoints() |> Resources.CDS.clusters())
-    assert_lds_response(Demo.Certs.sni_certs() |> Resources.LDS.listeners())
+    assert_cds_response(Resources.CDS.clusters(@test_app_endpoints))
+    assert_lds_response(Resources.LDS.listeners([cert_info_from_file("localhost.pem")]))
   end
 
   defp assert_cds_response(clusters) do
@@ -137,8 +285,9 @@ defmodule Relay.SupervisorTest do
     # Monitor resources, server, and demo
     resources_ref = monitor_by_name(Resources)
     server_ref = monitor_by_name(GRPC.Server.Supervisor)
-    demo_certs_ref = monitor_by_name(Demo.Certs)
-    demo_marathon_ref = monitor_by_name(Demo.Marathon)
+    marathon_store_ref = monitor_by_name(Marathon.Store)
+    marathon_ref = monitor_by_name(Marathon)
+    certs_fs_ref = monitor_by_name(Certs.Filesystem)
 
     # Wait for all the initial interation to finish
     Process.sleep(50)
@@ -149,8 +298,9 @@ defmodule Relay.SupervisorTest do
     # Resources, server, and demo quit
     assert_receive {:DOWN, ^resources_ref, :process, _, :shutdown}, 1_000
     assert_receive {:DOWN, ^server_ref, :process, _, :shutdown}, 1_000
-    assert_receive {:DOWN, ^demo_certs_ref, :process, _, :shutdown}, 1_000
-    assert_receive {:DOWN, ^demo_marathon_ref, :process, _, :shutdown}, 1_000
+    assert_receive {:DOWN, ^certs_fs_ref, :process, _, :shutdown}, 1_000
+    assert_receive {:DOWN, ^marathon_store_ref, :process, _, :shutdown}, 1_000
+    assert_receive {:DOWN, ^marathon_ref, :process, _, :shutdown}, 1_000
 
     wait_until_live()
 
@@ -165,8 +315,9 @@ defmodule Relay.SupervisorTest do
 
     # Monitor the server and demo
     server_ref = monitor_by_name(GRPC.Server.Supervisor)
-    demo_certs_ref = monitor_by_name(Demo.Certs)
-    demo_marathon_ref = monitor_by_name(Demo.Marathon)
+    marathon_store_ref = monitor_by_name(Marathon.Store)
+    marathon_ref = monitor_by_name(Marathon)
+    certs_fs_ref = monitor_by_name(Certs.Filesystem)
 
     # Wait for all the initial interation to finish
     Process.sleep(50)
@@ -176,8 +327,9 @@ defmodule Relay.SupervisorTest do
 
     # The server and demo quit
     assert_receive {:DOWN, ^server_ref, :process, _, :shutdown}, 1_000
-    assert_receive {:DOWN, ^demo_certs_ref, :process, _, :shutdown}, 1_000
-    assert_receive {:DOWN, ^demo_marathon_ref, :process, _, :shutdown}, 1_000
+    assert_receive {:DOWN, ^certs_fs_ref, :process, _, :shutdown}, 1_000
+    assert_receive {:DOWN, ^marathon_store_ref, :process, _, :shutdown}, 1_000
+    assert_receive {:DOWN, ^marathon_ref, :process, _, :shutdown}, 1_000
 
     # Publisher still happily running
     assert Process.alive?(publisher_pid)
@@ -193,8 +345,9 @@ defmodule Relay.SupervisorTest do
 
     publisher_pid = Process.whereis(Publisher)
     resources_pid = Process.whereis(Resources)
-    demo_certs_pid = Process.whereis(Demo.Certs)
-    demo_marathon_pid = Process.whereis(Demo.Marathon)
+    marathon_store_pid = Process.whereis(Marathon.Store)
+    marathon_pid = Process.whereis(Marathon)
+    certs_fs_pid = Process.whereis(Certs.Filesystem)
 
     grpc_pid = Process.whereis(GRPC.Server.Supervisor)
     grpc_ref = Process.monitor(grpc_pid)
@@ -213,8 +366,9 @@ defmodule Relay.SupervisorTest do
              # Other things still happily running
              assert Process.alive?(publisher_pid)
              assert Process.alive?(resources_pid)
-             assert Process.alive?(demo_certs_pid)
-             assert Process.alive?(demo_marathon_pid)
+             assert Process.alive?(marathon_store_pid)
+             assert Process.alive?(marathon_pid)
+             assert Process.alive?(certs_fs_pid)
 
              wait_until_live()
            end) =~ ~r/\[error\] GenServer #PID<\S*> terminating\n\*\* \(stop\) killed/
@@ -223,34 +377,36 @@ defmodule Relay.SupervisorTest do
     assert_example_response()
   end
 
-  # We don't bother testing for Demo.Certs, because it's the same behaviour as
-  # Demo.Marathon.
+  # We don't bother testing the Marathon stuff, because it's the same behaviour
+  # as this.
 
-  test "when Demo.Marathon exits it is restarted" do
+  test "when Certs.Filesystem exits it is restarted" do
     Process.flag(:trap_exit, true)
 
     publisher_pid = Process.whereis(Publisher)
     resources_pid = Process.whereis(Resources)
     grpc_pid = Process.whereis(GRPC.Server.Supervisor)
-    demo_certs_pid = Process.whereis(Demo.Certs)
+    marathon_store_pid = Process.whereis(Marathon.Store)
+    marathon_pid = Process.whereis(Marathon)
 
-    demo_marathon_pid = Process.whereis(Demo.Marathon)
-    demo_marathon_ref = Process.monitor(demo_marathon_pid)
+    certs_fs_pid = Process.whereis(Certs.Filesystem)
+    certs_fs_ref = Process.monitor(certs_fs_pid)
 
     # Wait for all the initial interation to finish
     Process.sleep(50)
 
-    # Exit the demo process
-    demo_marathon_pid |> Process.exit(:kill)
+    # Exit the certs_fs process
+    certs_fs_pid |> Process.exit(:kill)
 
-    # Check the demo quit
-    assert_receive {:DOWN, ^demo_marathon_ref, :process, _, :killed}, 1_000
+    # Check certs_fs quit
+    assert_receive {:DOWN, ^certs_fs_ref, :process, _, :killed}, 1_000
 
     # Other things still happily running
     assert Process.alive?(publisher_pid)
     assert Process.alive?(resources_pid)
     assert Process.alive?(grpc_pid)
-    assert Process.alive?(demo_certs_pid)
+    assert Process.alive?(marathon_store_pid)
+    assert Process.alive?(marathon_pid)
 
     wait_until_live()
 
