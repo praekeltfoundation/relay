@@ -42,6 +42,8 @@ defmodule Relay.Certs.Filesystem do
   alias Relay.{Certs, Resources}
   alias Relay.Resources.CertInfo
 
+  use LogWrapper, as: Log
+
   use GenServer
 
   defmodule State do
@@ -120,7 +122,9 @@ defmodule Relay.Certs.Filesystem do
   @spec update_state(State.t()) :: State.t()
   defp update_state(state) do
     v = "#{state.version}"
-    Resources.update_sni_certs(state.resources, v, read_sni_certs(state))
+    certs = read_sni_certs(state)
+    Log.debug("Read #{length(certs)} certificates from the filesystem for version #{v}")
+    Resources.update_sni_certs(state.resources, v, certs)
     %{state | version: state.version + 1}
   end
 
