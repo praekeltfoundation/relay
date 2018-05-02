@@ -37,7 +37,7 @@ defmodule Relay.Server.Macros do
 
         @spec unquote(stream_func)(Enumerable.t(), Stream.t()) :: Stream.t()
         def unquote(stream_func)(req_enum, stream0) do
-          Log.debug(fn -> inspect({unquote(stream_func), self()}) end)
+          log_debug("Stream started")
           :ok = Publisher.subscribe(Publisher, @xds, self())
           handle_requests(req_enum, stream0)
         end
@@ -55,7 +55,19 @@ defmodule Relay.Server.Macros do
         end
 
         @spec handle_request(DiscoveryRequest.t(), Stream.t()) :: Stream.t()
-        defp handle_request(_request, stream) do
+        defp handle_request(request, stream) do
+          log_debug(fn ->
+            case request.resource_names do
+              [] ->
+                "Received discovery request from node #{request.node.id}"
+
+              names ->
+                "Received discovery request from node #{request.node.id}: #{
+                  Enum.join(names, ", ")
+                }"
+            end
+          end)
+
           # TODO: How to handle errors?
           # FIXME: What if we get multiple updates between requests?
           receive do
@@ -65,8 +77,10 @@ defmodule Relay.Server.Macros do
         end
 
         @spec send_reply(Stream.t(), String.t(), [unquote(resource_type).t]) :: Stream.t()
-        defp send_reply(stream, version_info, resources),
-          do: GRPC.Server.send_reply(stream, mkresponse(version_info, resources))
+        defp send_reply(stream, version_info, resources) do
+          log_debug("Sending discovery response")
+          GRPC.Server.send_reply(stream, mkresponse(version_info, resources))
+        end
 
         @spec mkresponse(String.t(), [unquote(resource_type).t]) :: DiscoveryResponse.t()
         defp mkresponse(version_info, resources) do
@@ -78,6 +92,12 @@ defmodule Relay.Server.Macros do
             resources: typed_resources
           )
         end
+
+        defp log_debug(fun) when is_function(fun, 0),
+          do: Log.debug(fn -> "#{unquote(stream_func)} #{inspect(self())}: #{fun.()}" end)
+
+        defp log_debug(str) when is_binary(str),
+          do: Log.debug(fn -> "#{unquote(stream_func)} #{inspect(self())}: #{str}" end)
       end
     end
   end
