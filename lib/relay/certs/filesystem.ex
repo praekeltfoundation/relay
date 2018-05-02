@@ -115,6 +115,7 @@ defmodule Relay.Certs.Filesystem do
   end
 
   defp scheduled_update(state) do
+    Log.debug("Performing scheduled update of certificates from the filesystem")
     Process.send_after(self(), :scheduled_update, state.sync_period)
     update_state(state)
   end
