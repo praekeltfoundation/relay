@@ -31,6 +31,9 @@ defmodule Relay.RetryStart do
   defp retry?({:error, {:shutdown, {:failed_to_start_child, _, reason}}}),
     do: retry?({:error, reason})
 
+  # The GRPC server returns this error.
   defp retry?({:error, {:listen_error, _, :eaddrinuse}}), do: true
+  # Plug returns this error.
+  defp retry?({:error, :eaddrinuse}), do: true
   defp retry?(_), do: false
 end
