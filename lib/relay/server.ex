@@ -53,7 +53,7 @@ defmodule Relay.Server.Macros do
 
         @spec unquote(stream_func)(Enumerable.t(), Stream.t()) :: Stream.t()
         def unquote(stream_func)(req_enum, stream0) do
-          log_debug("Stream started")
+          Log.debug("Stream started: #{inspect(self())} #{Log.mfa()}")
           :ok = Publisher.subscribe(Publisher, @xds, self())
           handle_requests(req_enum, stream0)
         end
@@ -95,9 +95,6 @@ defmodule Relay.Server.Macros do
             resources: typed_resources
           )
         end
-
-        defp log_debug(str) when is_binary(str),
-          do: Log.debug(fn -> "#{unquote(stream_func)} #{inspect(self())}: #{str}" end)
       end
     end
   end
