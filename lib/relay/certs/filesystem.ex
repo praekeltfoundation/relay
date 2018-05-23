@@ -4,6 +4,9 @@ defmodule Relay.Certs.Filesystem do
   marathon-lb update request is received.
   """
 
+  # Retry timeout in milliseconds
+  @retry_timeout 1_000
+
   defmodule MarathonLbPlug do
     @moduledoc """
     This plug pretends to be marathon-lb and translates the HTTP signal
@@ -36,7 +39,7 @@ defmodule Relay.Certs.Filesystem do
   end
 
   alias Plug.Adapters.Cowboy2
-  alias Relay.{Certs, Resources}
+  alias Relay.{Certs, Resources, RetryStart}
   alias Relay.Resources.CertInfo
 
   use GenServer
@@ -84,8 +87,13 @@ defmodule Relay.Certs.Filesystem do
     {:ok, scheduled_update(state)}
   end
 
-  defp start_mlb_listener,
-    do: Cowboy2.http(MarathonLbPlug, [cfs: self()], port: certs_cfg(:mlb_port))
+  defp start_mlb_listener do
+    start_fun = fn ->
+      Cowboy2.http(MarathonLbPlug, [cfs: self()], port: certs_cfg(:mlb_port))
+    end
+
+    RetryStart.retry_start(start_fun, @retry_timeout)
+  end
 
   defp restart_mlb_listener do
     # TODO: Log a warning here?
