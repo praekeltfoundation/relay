@@ -247,6 +247,9 @@ defmodule RelayTest do
       assert Process.alive?(Process.whereis(id))
     end)
 
+    # Wait a bit for things to settle.
+    Process.sleep(10)
+
     streams = stream_xds()
     res_enums = recv_xds(streams)
 
@@ -256,6 +259,9 @@ defmodule RelayTest do
 
   test "demo app sends multiple updates" do
     :ok = TestHelpers.setup_apps([:relay])
+
+    # Wait a bit for things to settle.
+    Process.sleep(10)
 
     t0 = Time.utc_now()
 
