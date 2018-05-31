@@ -8,18 +8,21 @@ defmodule FakeVault do
     defstruct auth_token: nil, listener: nil, kv_data: %{}
   end
 
-  def response(req, fv, status_code, json) do
+  def reply(req, fv, status_code, json) do
     headers = %{"content-type" => "application/json"}
     {:ok, body} = Poison.encode(json)
     {:ok, :cowboy_req.reply(status_code, headers, body, req), fv}
   end
+
+  def reply_error(req, fv, status_code, errors),
+    do: reply(req, fv, status_code, %{"errors" => errors})
 
   def handle_authed(req, fv, handler) do
     valid_token = auth_token(fv)
 
     case req.headers["x-vault-token"] do
       ^valid_token -> handler.(req, fv)
-      _ -> response(req, fv, 403, %{"errors" => ["permission denied"]})
+      _ -> reply_error(req, fv, 403, ["permission denied"])
     end
   end
 
@@ -32,8 +35,8 @@ defmodule FakeVault do
       path = "/" <> Enum.join(:cowboy_req.path_info(req), "/")
 
       case FakeVault.get_kv_data(fv, path) do
-        nil -> FakeVault.response(req, fv, 404, %{"errors" => []})
-        data -> FakeVault.response(req, fv, 200, build_response(data))
+        nil -> FakeVault.reply_error(req, fv, 404, [])
+        data -> FakeVault.reply(req, fv, 200, build_response(data))
       end
     end
 
