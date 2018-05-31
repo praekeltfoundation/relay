@@ -64,6 +64,7 @@ defmodule Relay.MixProject do
         only: :test,
         app: false
       },
+      {:uuid, "~> 1.1", only: :test},
       {:temp, "~> 0.4", only: :test},
       {:excoveralls, "~> 0.8", only: :test},
 
