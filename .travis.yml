@@ -40,15 +40,14 @@ jobs:
     - elixir: '1.6'
       otp_release: '20.3'
       group: trusty_latest
-      jdk: openjdk8
       env:
-        - BAZEL_VERSION=0.13.0
+        - BAZEL_VERSION=0.14.0
         - PROTOC_VERSION=3.5.1
         - PROTOBUF_ELIXIR_VERSION=0.5.4
 
       install:
         # Install Bazel
-        - curl -fL "https://github.com/bazelbuild/bazel/releases/download/$BAZEL_VERSION/bazel-$BAZEL_VERSION-without-jdk-installer-linux-x86_64.sh" > bazel-installer.sh
+        - curl -fL "https://github.com/bazelbuild/bazel/releases/download/$BAZEL_VERSION/bazel-$BAZEL_VERSION-installer-linux-x86_64.sh" > bazel-installer.sh
         - bash bazel-installer.sh --user
         # Install protoc
         - curl -fL https://github.com/google/protobuf/releases/download/v$PROTOC_VERSION/protoc-$PROTOC_VERSION-linux-x86_64.zip > protoc.zip
