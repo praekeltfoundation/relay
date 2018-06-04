@@ -5,6 +5,17 @@ defmodule VaultClient do
   """
   alias HTTPoison.Response
 
+  defmodule ClientConfig do
+    defstruct [:base_url, :token, engine_path: "/secret", kv_path_prefix: ""]
+
+    @type t :: %__MODULE__{
+            base_url: String.t(),
+            token: String.t(),
+            engine_path: String.t(),
+            kv_path_prefix: String.t()
+          }
+  end
+
   # The next version of Poison will have an error type, so this will need to change.
   @typep poison_decode_error :: {:error, :invalid} | {:error, {:invalid, String.t()}}
   @typep poison_decode_result :: {:ok, Poison.Parser.t()} | poison_decode_error
@@ -19,14 +30,14 @@ defmodule VaultClient do
     {:error, {status_code, message}}
   end
 
-  defp get(base_url, path, token, options \\ []) do
+  defp get(%ClientConfig{base_url: base_url, token: token}, path, options \\ []) do
     headers = ["X-Vault-Token": token]
     {:ok, response} = HTTPoison.get(base_url <> "/v1" <> path, headers, options)
     vault_response(response)
   end
 
-  def read_kv(base_url, base_path, kv_path, token) do
-    path = base_path <> "/data" <> kv_path
-    get(base_url, path, token)
+  def read_kv(cfg, kv_path) do
+    path = cfg.engine_path <> "/data" <> cfg.kv_path_prefix <> kv_path
+    get(cfg, path)
   end
 end

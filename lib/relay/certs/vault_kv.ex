@@ -39,7 +39,7 @@ defmodule Relay.Certs.VaultKV do
   end
 
   alias Plug.Adapters.Cowboy2
-  alias Relay.{Certs, Resources, RetryStart}
+  alias Relay.{Resources, RetryStart}
   alias Relay.Resources.CertInfo
 
   use GenServer
@@ -47,14 +47,12 @@ defmodule Relay.Certs.VaultKV do
   defmodule State do
     @moduledoc false
     # TODO: Better version management.
-    defstruct [:resources, :sync_period, :vault_address, :vault_token, :vault_base_path, version: 1]
+    defstruct [:resources, :sync_period, :vault_cfg, version: 1]
 
     @type t :: %__MODULE__{
             resources: GenServer.server(),
             sync_period: integer,
-            vault_address: String.t(),
-            vault_token: String.t(),
-            vault_base_path: String.t(),
+            vault_cfg: VaultClient.ClientConfig.t(),
             version: integer
           }
   end
@@ -80,12 +78,16 @@ defmodule Relay.Certs.VaultKV do
         x -> x
       end
 
+    vault_cfg = %VaultClient.ClientConfig{
+      base_url: certs_cfg(:vault_address),
+      token: certs_cfg(:vault_token),
+      kv_path_prefix: certs_cfg(:vault_base_path)
+    }
+
     state = %State{
       resources: resources,
       sync_period: certs_cfg(:sync_period),
-      vault_address: certs_cfg(:vault_address),
-      vault_token: certs_cfg(:vault_token),
-      vault_base_path: certs_cfg(:vault_base_path)
+      vault_cfg: vault_cfg
     }
 
     {:ok, scheduled_update(state)}
@@ -134,17 +136,17 @@ defmodule Relay.Certs.VaultKV do
   end
 
   @spec read_sni_certs(State.t()) :: [CertInfo.t()]
-  defp read_sni_certs(s=%State{vault_address: addr, vault_token: token, vault_base_path: vbp}) do
-    {:ok, resp} = VaultClient.read_kv(addr, "/secret", vbp <> "/live", token)
+  defp read_sni_certs(%State{vault_cfg: vault_cfg}) do
+    {:ok, resp} = VaultClient.read_kv(vault_cfg, "/live")
     %{"data" => %{"data" => live}} = resp
     live
     |> Map.keys()
-    |> Enum.map(&read_sni_cert(&1, s))
+    |> Enum.map(&read_sni_cert(&1, vault_cfg))
   end
 
-  @spec read_sni_cert(String.t(), State.t()) :: CertInfo.t()
-  defp read_sni_cert(cert_path, s) do
-    {:ok, resp} = VaultClient.read_kv(s.vault_address, "/secret", s.vault_base_path <> "/certificates/" <> cert_path, s.vault_token)
+  @spec read_sni_cert(String.t(), VaultClient.ClientConfig.t()) :: CertInfo.t()
+  defp read_sni_cert(cert_path, vault_cfg) do
+    {:ok, resp} = VaultClient.read_kv(vault_cfg, "/certificates/" <> cert_path)
     %{"data" => %{"data" => fields}} = resp
     json_to_cert_info(fields)
   end

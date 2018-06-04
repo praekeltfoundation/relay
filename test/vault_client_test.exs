@@ -11,31 +11,37 @@ defmodule VaultClientTest do
   describe "vault kv" do
     test "read data" do
       {:ok, fv} = start_supervised(FakeVault)
-      base_url = FakeVault.base_url(fv)
-      token = FakeVault.auth_token(fv)
+      cfg = %VaultClient.ClientConfig{
+        base_url: FakeVault.base_url(fv),
+        token: FakeVault.auth_token(fv)
+      }
 
       FakeVault.set_kv_data(fv, "/blah", %{"a" => 1, "b" => "two"})
 
-      resp = VaultClient.read_kv(base_url, "/secret", "/blah", token)
+      resp = VaultClient.read_kv(cfg, "/blah")
       assert {:ok, %{"data" => %{"data" => data, "metadata" => _}}} = resp
       assert data == %{"a" => 1, "b" => "two"}
     end
 
     test "read missing data" do
       {:ok, fv} = start_supervised(FakeVault)
-      base_url = FakeVault.base_url(fv)
-      token = FakeVault.auth_token(fv)
+      cfg = %VaultClient.ClientConfig{
+        base_url: FakeVault.base_url(fv),
+        token: FakeVault.auth_token(fv)
+      }
 
-      resp = VaultClient.read_kv(base_url, "/secret", "/missing", token)
+      resp = VaultClient.read_kv(cfg, "/missing")
       assert resp == {:error, {404, %{"errors" => []}}}
     end
 
     test "bad auth" do
       {:ok, fv} = start_supervised(FakeVault)
-      base_url = FakeVault.base_url(fv)
-      token = "bad-token"
+      cfg = %VaultClient.ClientConfig{
+        base_url: FakeVault.base_url(fv),
+        token: "bad-token"
+      }
 
-      resp = VaultClient.read_kv(base_url, "/secret", "/treason", token)
+      resp = VaultClient.read_kv(cfg, "/treason")
       assert resp == {:error, {403, %{"errors" => ["permission denied"]}}}
     end
   end

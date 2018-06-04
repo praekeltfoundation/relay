@@ -6,7 +6,7 @@ defmodule Relay.Certs.VaultKVTest do
   alias Relay.Certs.VaultKV
   alias Relay.{Certs, Resources}
 
-  setup ctx do
+  setup do
     TestHelpers.override_log_level(:warn)
     TestHelpers.setup_apps([:cowboy, :httpoison])
 
