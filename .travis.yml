@@ -39,7 +39,6 @@ jobs:
 
     - elixir: '1.6'
       otp_release: '20.3'
-      group: trusty_latest
       env:
         - BAZEL_VERSION=0.14.0
         - PROTOC_VERSION=3.5.1
