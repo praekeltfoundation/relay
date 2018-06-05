@@ -10,7 +10,7 @@ defmodule VaultClient do
     Data structure to hold vault client configuration.
     """
 
-    defstruct [:base_url, :token, engine_path: "/secret", kv_path_prefix: ""]
+    defstruct [:base_url, :token, engine_path: "secret", kv_path_prefix: ""]
 
     @type t :: %__MODULE__{
             base_url: String.t(),
@@ -41,7 +41,7 @@ defmodule VaultClient do
   end
 
   def read_kv(cfg, kv_path) do
-    path = cfg.engine_path <> "/data" <> cfg.kv_path_prefix <> kv_path
+    path = "/" <> cfg.engine_path <> "/data" <> cfg.kv_path_prefix <> kv_path
     get(cfg, path)
   end
 
