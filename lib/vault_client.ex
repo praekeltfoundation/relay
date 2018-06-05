@@ -2,6 +2,8 @@ defmodule VaultClient do
   @moduledoc """
   A very basic Vault API client. Currently supports the minimum functionality
   necessary for Relay to authenticate and read K/V data.
+
+  NOTE: Only the v2 (versioned) K/V engine is supported.
   """
   alias HTTPoison.Response
 
