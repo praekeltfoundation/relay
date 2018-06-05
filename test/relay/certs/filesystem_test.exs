@@ -83,6 +83,18 @@ defmodule Relay.Certs.FilesystemTest do
     assert_receive_update(["localhost.pem", "demo.pem"])
   end
 
+  test "mlb listener restart", %{cert_paths: [cert_path], res: res} do
+    copy_cert("localhost.pem", cert_path)
+    {:ok, fs} = start_supervised({Filesystem, resources: res})
+    assert_receive_update(["localhost.pem"])
+    # A kill signal means the terminate function isn't called.
+    Process.exit(fs, :kill)
+    assert_receive_update(["localhost.pem"])
+    copy_cert("demo.pem", cert_path)
+    assert_post("http://localhost:9090/_mlb_signal/hup", 204)
+    assert_receive_update(["localhost.pem", "demo.pem"])
+  end
+
   test "mlb bad http", %{res: res} do
     {:ok, _} = start_supervised({Filesystem, resources: res})
     assert_post("http://localhost:9090/_mlb_signal/term", 404)

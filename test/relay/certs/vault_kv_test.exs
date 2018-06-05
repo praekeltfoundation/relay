@@ -15,7 +15,11 @@ defmodule Relay.Certs.VaultKVTest do
     token = FakeVault.auth_token(fv)
     FakeVault.set_kv_data(fv, "/marathon-acme/live", %{})
 
-    put_certs_config(vault_address: base_url, vault_token: token, vault_base_path: "/marathon-acme")
+    put_certs_config(
+      vault_address: base_url,
+      vault_token: token,
+      vault_base_path: "/marathon-acme"
+    )
 
     {:ok, res} = start_supervised({TestHelpers.StubGenServer, self()})
 
@@ -28,11 +32,11 @@ defmodule Relay.Certs.VaultKVTest do
   end
 
   defp store_cert(fv, cert_file, cert_name) do
-      path = "/marathon-acme/certificates/#{cert_name}"
-      FakeVault.set_kv_data(fv, path, cert_info_from_file(cert_file))
-      live_path = "/marathon-acme/live"
-      live = FakeVault.get_kv_data(fv, live_path)
-      FakeVault.set_kv_data(fv, live_path, Map.put(live, cert_name, ""))
+    path = "/marathon-acme/certificates/#{cert_name}"
+    FakeVault.set_kv_data(fv, path, cert_info_from_file(cert_file))
+    live_path = "/marathon-acme/live"
+    live = FakeVault.get_kv_data(fv, live_path)
+    FakeVault.set_kv_data(fv, live_path, Map.put(live, cert_name, ""))
   end
 
   defp cert_info_from_file(cert_file) do
@@ -79,6 +83,18 @@ defmodule Relay.Certs.VaultKVTest do
   test "mlb signal update", %{fv: fv, res: res} do
     store_cert(fv, "localhost.pem", "localhost")
     {:ok, _} = start_supervised({VaultKV, resources: res})
+    assert_receive_update(["localhost.pem"])
+    store_cert(fv, "demo.pem", "demo")
+    assert_post("http://localhost:9090/_mlb_signal/hup", 204)
+    assert_receive_update(["localhost.pem", "demo.pem"])
+  end
+
+  test "mlb listener restart", %{fv: fv, res: res} do
+    store_cert(fv, "localhost.pem", "localhost")
+    {:ok, vkv} = start_supervised({VaultKV, resources: res})
+    assert_receive_update(["localhost.pem"])
+    # A kill signal means the terminate function isn't called.
+    Process.exit(vkv, :kill)
     assert_receive_update(["localhost.pem"])
     store_cert(fv, "demo.pem", "demo")
     assert_post("http://localhost:9090/_mlb_signal/hup", 204)

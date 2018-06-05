@@ -139,6 +139,7 @@ defmodule Relay.Certs.VaultKV do
   defp read_sni_certs(%State{vault_cfg: vault_cfg}) do
     {:ok, resp} = VaultClient.read_kv(vault_cfg, "/live")
     %{"data" => %{"data" => live}} = resp
+
     live
     |> Map.keys()
     |> Enum.map(&read_sni_cert(&1, vault_cfg))
