@@ -137,8 +137,7 @@ defmodule Relay.Certs.VaultKV do
 
   @spec read_sni_certs(State.t()) :: [CertInfo.t()]
   defp read_sni_certs(%State{vault_cfg: vault_cfg}) do
-    {:ok, resp} = VaultClient.read_kv(vault_cfg, "/live")
-    %{"data" => %{"data" => live}} = resp
+    {:ok, live} = VaultClient.read_kv_data(vault_cfg, "/live")
 
     live
     |> Map.keys()
@@ -147,8 +146,7 @@ defmodule Relay.Certs.VaultKV do
 
   @spec read_sni_cert(String.t(), VaultClient.ClientConfig.t()) :: CertInfo.t()
   defp read_sni_cert(cert_path, vault_cfg) do
-    {:ok, resp} = VaultClient.read_kv(vault_cfg, "/certificates/" <> cert_path)
-    %{"data" => %{"data" => fields}} = resp
+    {:ok, fields} = VaultClient.read_kv_data(vault_cfg, "/certificates/" <> cert_path)
     json_to_cert_info(fields)
   end
 

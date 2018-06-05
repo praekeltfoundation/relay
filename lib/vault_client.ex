@@ -40,4 +40,11 @@ defmodule VaultClient do
     path = cfg.engine_path <> "/data" <> cfg.kv_path_prefix <> kv_path
     get(cfg, path)
   end
+
+  def read_kv_data(cfg, kv_path) do
+    case read_kv(cfg, kv_path) do
+      {:ok, %{"data" => %{"data" => data}}} -> {:ok, data}
+      resp -> resp
+    end
+  end
 end
