@@ -22,7 +22,7 @@ defmodule Relay.Certs.VaultKV do
     @type t :: %__MODULE__{
             resources: GenServer.server(),
             sync_period: integer,
-            vault_cfg: VaultClient.ClientConfig.t(),
+            vault_cfg: VaultClient.Config.t(),
             version: integer
           }
   end
@@ -48,7 +48,7 @@ defmodule Relay.Certs.VaultKV do
         x -> x
       end
 
-    vault_cfg = %VaultClient.ClientConfig{
+    vault_cfg = %VaultClient.Config{
       base_url: certs_cfg(:vault_address),
       token: certs_cfg(:vault_token),
       kv_path_prefix: certs_cfg(:vault_base_path)
@@ -114,7 +114,7 @@ defmodule Relay.Certs.VaultKV do
     |> Enum.map(&read_sni_cert(&1, vault_cfg))
   end
 
-  @spec read_sni_cert(String.t(), VaultClient.ClientConfig.t()) :: CertInfo.t()
+  @spec read_sni_cert(String.t(), VaultClient.Config.t()) :: CertInfo.t()
   defp read_sni_cert(cert_path, vault_cfg) do
     {:ok, fields} = VaultClient.read_kv_data(vault_cfg, "/certificates/" <> cert_path)
     json_to_cert_info(fields)

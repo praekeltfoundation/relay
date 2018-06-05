@@ -5,7 +5,7 @@ defmodule VaultClient do
   """
   alias HTTPoison.Response
 
-  defmodule ClientConfig do
+  defmodule Config do
     @moduledoc """
     Data structure to hold vault client configuration.
     """
@@ -34,7 +34,7 @@ defmodule VaultClient do
     {:error, {status_code, message}}
   end
 
-  defp get(%ClientConfig{base_url: base_url, token: token}, path, options \\ []) do
+  defp get(%Config{base_url: base_url, token: token}, path, options \\ []) do
     headers = ["X-Vault-Token": token]
     {:ok, response} = HTTPoison.get(base_url <> "/v1" <> path, headers, options)
     vault_response(response)

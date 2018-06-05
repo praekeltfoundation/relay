@@ -12,7 +12,7 @@ defmodule VaultClientTest do
     test "read" do
       {:ok, fv} = start_supervised(FakeVault)
 
-      cfg = %VaultClient.ClientConfig{
+      cfg = %VaultClient.Config{
         base_url: FakeVault.base_url(fv),
         token: FakeVault.auth_token(fv)
       }
@@ -27,7 +27,7 @@ defmodule VaultClientTest do
     test "read data" do
       {:ok, fv} = start_supervised(FakeVault)
 
-      cfg = %VaultClient.ClientConfig{
+      cfg = %VaultClient.Config{
         base_url: FakeVault.base_url(fv),
         token: FakeVault.auth_token(fv)
       }
@@ -41,7 +41,7 @@ defmodule VaultClientTest do
     test "read missing" do
       {:ok, fv} = start_supervised(FakeVault)
 
-      cfg = %VaultClient.ClientConfig{
+      cfg = %VaultClient.Config{
         base_url: FakeVault.base_url(fv),
         token: FakeVault.auth_token(fv)
       }
@@ -53,7 +53,7 @@ defmodule VaultClientTest do
     test "read missing data" do
       {:ok, fv} = start_supervised(FakeVault)
 
-      cfg = %VaultClient.ClientConfig{
+      cfg = %VaultClient.Config{
         base_url: FakeVault.base_url(fv),
         token: FakeVault.auth_token(fv)
       }
@@ -65,7 +65,7 @@ defmodule VaultClientTest do
     test "bad auth" do
       {:ok, fv} = start_supervised(FakeVault)
 
-      cfg = %VaultClient.ClientConfig{
+      cfg = %VaultClient.Config{
         base_url: FakeVault.base_url(fv),
         token: "bad-token"
       }
