@@ -6,6 +6,10 @@ defmodule VaultClient do
   alias HTTPoison.Response
 
   defmodule ClientConfig do
+    @moduledoc """
+    Data structure to hold vault client configuration.
+    """
+
     defstruct [:base_url, :token, engine_path: "/secret", kv_path_prefix: ""]
 
     @type t :: %__MODULE__{

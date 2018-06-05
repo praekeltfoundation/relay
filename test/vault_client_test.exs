@@ -9,7 +9,7 @@ defmodule VaultClientTest do
   end
 
   describe "vault kv" do
-    test "read data" do
+    test "read" do
       {:ok, fv} = start_supervised(FakeVault)
 
       cfg = %VaultClient.ClientConfig{
@@ -24,7 +24,21 @@ defmodule VaultClientTest do
       assert data == %{"a" => 1, "b" => "two"}
     end
 
-    test "read missing data" do
+    test "read data" do
+      {:ok, fv} = start_supervised(FakeVault)
+
+      cfg = %VaultClient.ClientConfig{
+        base_url: FakeVault.base_url(fv),
+        token: FakeVault.auth_token(fv)
+      }
+
+      FakeVault.set_kv_data(fv, "/blah", %{"a" => 1, "b" => "two"})
+
+      resp = VaultClient.read_kv_data(cfg, "/blah")
+      assert resp == {:ok, %{"a" => 1, "b" => "two"}}
+    end
+
+    test "read missing" do
       {:ok, fv} = start_supervised(FakeVault)
 
       cfg = %VaultClient.ClientConfig{
@@ -33,6 +47,18 @@ defmodule VaultClientTest do
       }
 
       resp = VaultClient.read_kv(cfg, "/missing")
+      assert resp == {:error, {404, %{"errors" => []}}}
+    end
+
+    test "read missing data" do
+      {:ok, fv} = start_supervised(FakeVault)
+
+      cfg = %VaultClient.ClientConfig{
+        base_url: FakeVault.base_url(fv),
+        token: FakeVault.auth_token(fv)
+      }
+
+      resp = VaultClient.read_kv_data(cfg, "/missing")
       assert resp == {:error, {404, %{"errors" => []}}}
     end
 
