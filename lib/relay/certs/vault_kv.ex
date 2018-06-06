@@ -34,6 +34,7 @@ defmodule Relay.Certs.VaultKV do
   end
 
   defp certs_cfg(key), do: Application.fetch_env!(:relay, :certs) |> Keyword.fetch!(key)
+  defp vault_cfg(key), do: certs_cfg(:vault) |> Keyword.fetch!(key)
 
   @impl GenServer
   @spec init(GenServer.server()) :: {:ok, State.t()}
@@ -49,9 +50,9 @@ defmodule Relay.Certs.VaultKV do
       end
 
     vault_cfg = %VaultClient.Config{
-      base_url: certs_cfg(:vault_address),
-      token: certs_cfg(:vault_token),
-      kv_path_prefix: certs_cfg(:vault_base_path)
+      base_url: vault_cfg(:address),
+      token: vault_cfg(:token),
+      kv_path_prefix: vault_cfg(:base_path)
     }
 
     state = %State{

@@ -15,11 +15,7 @@ defmodule Relay.Certs.VaultKVTest do
     token = FakeVault.auth_token(fv)
     FakeVault.set_kv_data(fv, "/marathon-acme/live", %{})
 
-    put_certs_config(
-      vault_address: base_url,
-      vault_token: token,
-      vault_base_path: "/marathon-acme"
-    )
+    put_certs_config(vault: [address: base_url, token: token, base_path: "/marathon-acme"])
 
     {:ok, res} = start_supervised({TestHelpers.StubGenServer, self()})
 
@@ -27,9 +23,12 @@ defmodule Relay.Certs.VaultKVTest do
   end
 
   defp put_certs_config(opts) do
-    certs_config = Application.fetch_env!(:relay, :certs) |> Keyword.merge(opts)
+    certs_config = Application.fetch_env!(:relay, :certs) |> Keyword.merge(opts, &merge_cfg/3)
     TestHelpers.put_env(:relay, :certs, certs_config)
   end
+
+  defp merge_cfg(:vault, old, new), do: Keyword.merge(old, new)
+  defp merge_cfg(_key, _old, new), do: new
 
   defp store_cert(fv, cert_file, cert_name) do
     path = "/marathon-acme/certificates/#{cert_name}"
