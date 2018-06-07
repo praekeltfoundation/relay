@@ -1,31 +1,41 @@
-defmodule Relay.Certs.FilesystemTest do
+Code.require_file(Path.join([__DIR__, "..", "..", "vault_client", "vault_client_helper.exs"]))
+
+defmodule Relay.Certs.VaultKVTest do
   use ExUnit.Case, async: false
 
-  alias Relay.Certs.Filesystem
+  alias Relay.Certs.VaultKV
   alias Relay.{Certs, Resources}
 
-  setup ctx do
+  setup do
     TestHelpers.override_log_level(:warn)
     TestHelpers.setup_apps([:cowboy, :httpoison])
 
-    ctx = Map.put_new(ctx, :cert_dirs, ["certs"])
-    {tmpdir, cert_paths} = TestHelpers.tmpdir_subdirs(ctx.cert_dirs)
-    put_certs_config(paths: cert_paths)
+    {:ok, fv} = start_supervised(FakeVault)
+    base_url = FakeVault.base_url(fv)
+    token = FakeVault.auth_token(fv)
+    FakeVault.set_kv_data(fv, "/marathon-acme/live", %{})
+
+    put_certs_config(vault: [address: base_url, token: token, base_path: "/marathon-acme"])
 
     {:ok, res} = start_supervised({TestHelpers.StubGenServer, self()})
 
-    %{tmpdir: tmpdir, cert_paths: cert_paths, res: res}
+    %{res: res, fv: fv}
   end
 
   defp put_certs_config(opts) do
-    certs_config = Application.fetch_env!(:relay, :certs) |> Keyword.merge(opts)
+    certs_config = Application.fetch_env!(:relay, :certs) |> Keyword.merge(opts, &merge_cfg/3)
     TestHelpers.put_env(:relay, :certs, certs_config)
   end
 
-  defp copy_cert(cert_file, cert_path) do
-    src = TestHelpers.support_path(cert_file)
-    dst = Path.join(cert_path, cert_file)
-    File.cp!(src, dst)
+  defp merge_cfg(:vault, old, new), do: Keyword.merge(old, new)
+  defp merge_cfg(_key, _old, new), do: new
+
+  defp store_cert(fv, cert_file, cert_name) do
+    path = "/marathon-acme/certificates/#{cert_name}"
+    FakeVault.set_kv_data(fv, path, cert_info_from_file(cert_file))
+    live_path = "/marathon-acme/live"
+    live = FakeVault.get_kv_data(fv, live_path)
+    FakeVault.set_kv_data(fv, live_path, Map.put(live, cert_name, ""))
   end
 
   defp cert_info_from_file(cert_file) do
@@ -50,61 +60,56 @@ defmodule Relay.Certs.FilesystemTest do
   end
 
   test "startup sync no certs", %{res: res} do
-    {:ok, _} = start_supervised({Filesystem, resources: res})
+    {:ok, _} = start_supervised({VaultKV, resources: res})
     assert_receive_update([])
   end
 
-  test "startup sync one cert", %{cert_paths: [cert_path], res: res} do
-    copy_cert("localhost.pem", cert_path)
-    {:ok, _} = start_supervised({Filesystem, resources: res})
+  test "startup sync one cert", %{fv: fv, res: res} do
+    store_cert(fv, "localhost.pem", "localhost")
+    {:ok, _} = start_supervised({VaultKV, resources: res})
     assert_receive_update(["localhost.pem"])
   end
 
-  test "update with new cert", %{cert_paths: [cert_path], res: res} do
-    copy_cert("localhost.pem", cert_path)
-    {:ok, cfs} = start_supervised({Filesystem, resources: res})
+  test "update with new cert", %{fv: fv, res: res} do
+    store_cert(fv, "localhost.pem", "localhost")
+    {:ok, cfs} = start_supervised({VaultKV, resources: res})
     assert_receive_update(["localhost.pem"])
-    copy_cert("demo.pem", cert_path)
+    store_cert(fv, "demo.pem", "demo")
     GenServer.call(cfs, :update_state)
     assert_receive_update(["localhost.pem", "demo.pem"])
   end
 
-  @tag cert_dirs: ["certs", "different"]
-  test "configure cert paths", %{cert_paths: cert_paths} do
-    assert Application.fetch_env!(:relay, :certs) |> Keyword.fetch!(:paths) == cert_paths
-  end
-
-  test "mlb signal update", %{cert_paths: [cert_path], res: res} do
-    copy_cert("localhost.pem", cert_path)
-    {:ok, _} = start_supervised({Filesystem, resources: res})
+  test "mlb signal update", %{fv: fv, res: res} do
+    store_cert(fv, "localhost.pem", "localhost")
+    {:ok, _} = start_supervised({VaultKV, resources: res})
     assert_receive_update(["localhost.pem"])
-    copy_cert("demo.pem", cert_path)
+    store_cert(fv, "demo.pem", "demo")
     assert_post("http://localhost:9090/_mlb_signal/hup", 204)
     assert_receive_update(["localhost.pem", "demo.pem"])
   end
 
-  test "mlb listener restart", %{cert_paths: [cert_path], res: res} do
-    copy_cert("localhost.pem", cert_path)
-    {:ok, fs} = start_supervised({Filesystem, resources: res})
+  test "mlb listener restart", %{fv: fv, res: res} do
+    store_cert(fv, "localhost.pem", "localhost")
+    {:ok, vkv} = start_supervised({VaultKV, resources: res})
     assert_receive_update(["localhost.pem"])
     # A kill signal means the terminate function isn't called.
-    Process.exit(fs, :kill)
+    Process.exit(vkv, :kill)
     assert_receive_update(["localhost.pem"])
-    copy_cert("demo.pem", cert_path)
+    store_cert(fv, "demo.pem", "demo")
     assert_post("http://localhost:9090/_mlb_signal/hup", 204)
     assert_receive_update(["localhost.pem", "demo.pem"])
   end
 
   test "mlb bad http", %{res: res} do
-    {:ok, _} = start_supervised({Filesystem, resources: res})
+    {:ok, _} = start_supervised({VaultKV, resources: res})
     assert_post("http://localhost:9090/_mlb_signal/term", 404)
     assert_post("http://localhost:9090/wordpress/wp-login.php", 404)
   end
 
-  test "configure mlb port", %{cert_paths: [cert_path], res: res} do
-    copy_cert("localhost.pem", cert_path)
+  test "configure mlb port", %{fv: fv, res: res} do
+    store_cert(fv, "localhost.pem", "localhost")
     put_certs_config(mlb_port: 9091)
-    {:ok, _} = start_supervised({Filesystem, resources: res})
+    {:ok, _} = start_supervised({VaultKV, resources: res})
     assert_receive_update(["localhost.pem"])
 
     assert_no_post("http://localhost:9090/_mlb_signal/hup", :econnrefused)
