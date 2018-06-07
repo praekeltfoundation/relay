@@ -53,7 +53,7 @@ defmodule Relay.Server.Macros do
 
         @spec unquote(stream_func)(Enumerable.t(), Stream.t()) :: Stream.t()
         def unquote(stream_func)(req_enum, stream0) do
-          Log.debug(fn -> inspect({unquote(stream_func), self()}) end)
+          Log.debug("Stream started: #{inspect(self())} #{Log.mfa()}")
           :ok = Publisher.subscribe(Publisher, @xds, self())
           handle_requests(req_enum, stream0)
         end

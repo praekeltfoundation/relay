@@ -3,6 +3,8 @@ defmodule Relay.Certs.MarathonLbPlug do
   This plug pretends to be marathon-lb and translates the HTTP signal
   requests into cert update messages.
   """
+  use LogWrapper, as: Log
+
   use Plug.Router
 
   plug :match
@@ -20,6 +22,7 @@ defmodule Relay.Certs.MarathonLbPlug do
   end
 
   post "/_mlb_signal/:sig" when sig in ["hup", "usr1"] do
+    Log.debug("Received marathon-lb reload signal: #{sig}")
     GenServer.call(conn.private.cfs, :update_state)
     send_resp(conn, 204, "")
   end
