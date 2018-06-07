@@ -263,6 +263,7 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       doc: "The port index for marathon-acme",
       env_var: "RELAY_MARATHON_ACME_PORT_INDEX"
     ],
+    # FIXME: Relay.Certs.Filesystem specific config should probably be in a subgroup.
     "relay.certs.paths": [
       commented: true,
       datatype: [list: :binary],
@@ -270,6 +271,7 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       doc: "Paths to read certificates from",
       env_var: "RELAY_CERTS_PATHS"
     ],
+    # TODO: Relay.Certs.VaultKV config.
     "relay.certs.sync_period": [
       commented: true,
       datatype: :integer,
