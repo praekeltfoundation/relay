@@ -81,12 +81,7 @@ jobs:
         - pip install docker-ci-deploy==0.3.0
         - echo "$REGISTRY_PASS" | docker login -u "$REGISTRY_USER" --password-stdin
       deploy:
-        - provider: script
-          script: dcd -t master -V "$(git rev-parse --short HEAD)" -L "$IMAGE_NAME"
-          on:
-            branch: master
-
-        - provider: script
-          script: dcd -t better-logging -V "$(git rev-parse --short HEAD)" -L "$IMAGE_NAME"
-          on:
-            branch: better-logging
+        provider: script
+        script: dcd -t master -V "$(git rev-parse --short HEAD)" -L "$IMAGE_NAME"
+        on:
+          branch: master
