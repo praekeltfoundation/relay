@@ -1,20 +1,36 @@
 defmodule Relay.Server.Macros do
   @moduledoc false
 
-  # This function is a hack to work around coverage issues. Any line matching
-  # ~r/mk_server_func\(/ is ignored by the coverage tool.
-  defp mk_server_func(prefix, resources), do: :"#{prefix}_#{resources}"
+  alias Envoy.Api.V2.DiscoveryRequest
 
-  defmacro discovery_service(
-             name,
-             xds: xds,
-             type_url: type_url,
-             service: service,
-             resources: resources,
-             resource_type: resource_type
-           ) do
-    stream_func = mk_server_func("stream", resources)
-    fetch_func = mk_server_func("fetch", resources)
+  # This function is a hack to work around coverage issues. Any line matching
+  # ~r/process_macro_opts\(/ is ignored by the coverage tool.
+  def process_macro_opts(opts) do
+    {resources, opts} = Keyword.pop(opts, :resources)
+
+    opts
+    |> Keyword.put(:stream_func, :"stream_#{resources}")
+    |> Keyword.put(:fetch_func, :"fetch_#{resources}")
+    |> Keyword.put_new(:name_field, :name)
+    |> Map.new()
+  end
+
+  def filter_resources(%DiscoveryRequest{resource_names: []}, resources, _field), do: resources
+
+  def filter_resources(request, resources, field) do
+    resources |> Enum.filter(&(Map.fetch!(&1, field) in request.resource_names))
+  end
+
+  defmacro discovery_service(name, opts) do
+    %{
+      xds: xds,
+      type_url: type_url,
+      service: service,
+      resource_type: resource_type,
+      stream_func: stream_func,
+      fetch_func: fetch_func,
+      name_field: name_field
+    } = process_macro_opts(opts)
 
     quote do
       defmodule unquote(name) do
@@ -37,7 +53,7 @@ defmodule Relay.Server.Macros do
 
         @spec unquote(stream_func)(Enumerable.t(), Stream.t()) :: Stream.t()
         def unquote(stream_func)(req_enum, stream0) do
-          Log.debug(fn -> inspect({unquote(stream_func), self()}) end)
+          Log.debug("Stream started: #{inspect(self())} #{Log.mfa()}")
           :ok = Publisher.subscribe(Publisher, @xds, self())
           handle_requests(req_enum, stream0)
         end
@@ -55,12 +71,13 @@ defmodule Relay.Server.Macros do
         end
 
         @spec handle_request(DiscoveryRequest.t(), Stream.t()) :: Stream.t()
-        defp handle_request(_request, stream) do
+        defp handle_request(request, stream) do
           # TODO: How to handle errors?
           # FIXME: What if we get multiple updates between requests?
           receive do
             {@xds, version_info, resources} ->
-              send_reply(stream, version_info, resources)
+              filtered_resources = filter_resources(request, resources, unquote(name_field))
+              send_reply(stream, version_info, filtered_resources)
           end
         end
 
@@ -123,6 +140,7 @@ defmodule Relay.Server do
     type_url: "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment",
     service: Envoy.Api.V2.EndpointDiscoveryService.Service,
     resources: :endpoints,
-    resource_type: Envoy.Api.V2.ClusterLoadAssignment
+    resource_type: Envoy.Api.V2.ClusterLoadAssignment,
+    name_field: :cluster_name
   )
 end

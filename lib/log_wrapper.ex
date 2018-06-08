@@ -13,6 +13,19 @@ defmodule LogWrapper do
     end
   end
 
+  # This function technically doesn't belong here (it doesn't wrap an existing
+  # Logger function), but there isn't really anywhere better to put it.
+  @doc """
+  Gets the caller's module, function name, and arity as a string.
+  """
+  def mfa(skip_frames \\ 0) do
+    {:current_stacktrace, st} = Process.info(self(), :current_stacktrace)
+    # Extract the relevant stack frame information after skipping this
+    # function, the call to Process.info, and any extra frames we don't want.
+    {mod, fun, arity, _loc} = st |> Enum.drop(skip_frames + 2) |> hd
+    Exception.format_mfa(mod, fun, arity)
+  end
+
   @doc """
   Logs a debug message.
 

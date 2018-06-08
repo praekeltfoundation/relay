@@ -19,8 +19,15 @@ defmodule FakeMarathon do
   defmodule AppsHandler do
     @behaviour :cowboy_handler
 
-    def init(req, fm),
-      do: FakeMarathon.response(req, fm, 200, %{"apps" => FakeMarathon.get_apps(fm)})
+    def init(req, fm) do
+      embed =
+        req.qs
+        |> URI.query_decoder()
+        |> Enum.filter(fn {key, _value} -> key == "embed" end)
+        |> Enum.map(fn {_key, value} -> value end)
+
+      FakeMarathon.response(req, fm, 200, %{"apps" => FakeMarathon.get_apps(fm, embed)})
+    end
   end
 
   defmodule AppTasksHandler do
@@ -61,7 +68,7 @@ defmodule FakeMarathon do
 
   def end_stream(fm \\ :fake_marathon), do: GenServer.call(fm, :end_stream)
 
-  def get_apps(fm \\ :fake_marathon), do: GenServer.call(fm, :get_apps)
+  def get_apps(fm \\ :fake_marathon, embed), do: GenServer.call(fm, {:get_apps, embed})
 
   def get_app_tasks(fm \\ :fake_marathon, app_id),
     do: GenServer.call(fm, {:get_app_tasks, app_id})
@@ -107,7 +114,17 @@ defmodule FakeMarathon do
   def handle_call(:end_stream, _from, state),
     do: {:reply, SSEServer.end_stream(state.sse, "/v2/events"), state}
 
-  def handle_call(:get_apps, _from, state), do: {:reply, state.apps, state}
+  def handle_call({:get_apps, []}, _from, state), do: {:reply, state.apps, state}
+
+  def handle_call({:get_apps, ["apps.tasks"]}, _from, state) do
+    response =
+      Enum.map(state.apps, fn app ->
+        tasks = Map.get(state.app_tasks, app["id"], [])
+        Map.put(app, "tasks", tasks)
+      end)
+
+    {:reply, response, state}
+  end
 
   def handle_call({:get_app_tasks, app_id}, _from, state),
     do: {:reply, Map.get(state.app_tasks, app_id), state}

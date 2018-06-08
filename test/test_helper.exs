@@ -1,6 +1,25 @@
 defmodule TestHelpers do
   import ExUnit.Callbacks
 
+  defmodule StubGenServer do
+    @moduledoc """
+    Stub GenServer that forwards all `call`s to the pid it's configured with
+    and replies with `:ok`.
+    """
+    use GenServer
+
+    def start_link(pid), do: GenServer.start_link(__MODULE__, pid, name: StubGenServer)
+
+    @impl GenServer
+    def init(pid), do: {:ok, pid}
+
+    @impl GenServer
+    def handle_call(msg, _from, pid) do
+      send(pid, msg)
+      {:reply, :ok, pid}
+    end
+  end
+
   @doc """
   Override the global log level for the duration of a test.
 
@@ -47,6 +66,30 @@ defmodule TestHelpers do
 
     :ok
   end
+
+  @doc """
+  Create a temporary directory that will be removed after the test.
+  """
+  def tmpdir() do
+    {:ok, dir} = Temp.mkdir("relay-tests")
+    on_exit(fn -> File.rm_rf(dir) end)
+    dir
+  end
+
+  @doc """
+  Create a temporary directory with some subdirs.
+  """
+  def tmpdir_subdirs(subdirs) do
+    base_dir = tmpdir()
+    paths = Enum.map(subdirs, &Path.join(base_dir, &1))
+    Enum.each(paths, &File.mkdir_p!/1)
+    {base_dir, paths}
+  end
+
+  @doc """
+  Return a path relative to the test support dir.
+  """
+  def support_path(path), do: Path.join("support/", path) |> Path.expand(__DIR__)
 end
 
 Application.ensure_all_started(:stream_data)

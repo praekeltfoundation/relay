@@ -1,0 +1,8 @@
+*
+!mix.*
+!config/
+!lib/
+!gen/
+!src/
+!test/
+!rel/
