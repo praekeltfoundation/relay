@@ -4,6 +4,6 @@
     "gen"
   ],
   "custom_stop_words": [
-    "process_macro_opts\("
+    "process_macro_opts\\("
   ]
 }
