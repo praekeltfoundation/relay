@@ -51,7 +51,7 @@ defmodule Relay.MixProject do
       # Hackney is a dependency of HTTPoison but had a bug in versions 1.10.0 to
       # 1.12.0 that caused deadlocks with async requests.
       {:hackney, ">= 1.12.1"},
-      {:poison, "~> 3.1"},
+      {:jason, "~> 1.0"},
       {:conform, "~> 2.2"},
       {:plug, "~> 1.4"},
       {:cowboy, "~> 2.3"},

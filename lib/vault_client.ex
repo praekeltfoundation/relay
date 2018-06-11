@@ -22,17 +22,15 @@ defmodule VaultClient do
           }
   end
 
-  # The next version of Poison will have an error type, so this will need to change.
-  @typep poison_decode_error :: {:error, :invalid} | {:error, {:invalid, String.t()}}
-  @typep poison_decode_result :: {:ok, Poison.Parser.t()} | poison_decode_error
+  @typep jason_decode_result :: {:ok, term} | {:error, Jason.DecodeError}
   @typep client_error :: {:error, {integer, map}}
-  @type response :: poison_decode_result | client_error
+  @type response :: jason_decode_result | client_error
 
-  defp vault_response(%Response{status_code: 200, body: body}), do: Poison.decode(body)
+  defp vault_response(%Response{status_code: 200, body: body}), do: Jason.decode(body)
 
   defp vault_response(%Response{status_code: status_code, body: body})
        when status_code in 400..499 do
-    {:ok, message} = Poison.decode(body)
+    {:ok, message} = Jason.decode(body)
     {:error, {status_code, message}}
   end
 

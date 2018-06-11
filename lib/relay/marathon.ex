@@ -89,7 +89,7 @@ defmodule Relay.Marathon do
 
   @spec handle_event(String.t(), String.t(), GenServer.server()) :: :ok
   defp handle_event("api_post_event", data, store) do
-    {:ok, event} = Poison.decode(data)
+    {:ok, event} = Jason.decode(data)
 
     case App.from_event(event, marathon_lb_group()) do
       %App{port_indices: port_indices} = app when length(port_indices) > 0 ->
