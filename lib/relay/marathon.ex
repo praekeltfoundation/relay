@@ -114,13 +114,13 @@ defmodule Relay.Marathon do
   # app is destroyed. It has been in Marathon for a while:
   # https://github.com/mesosphere/marathon/commit/4d86315a77d994aaf7a52a67ba204cf2e955914a
   defp handle_event("app_terminated_event", data, store) do
-    {:ok, %{"appId" => app_id}} = Poison.decode(data)
+    {:ok, %{"appId" => app_id}} = Jason.decode(data)
     Log.debug("app_terminated_event for app '#{app_id}': deleting app")
     Store.delete_app(store, app_id)
   end
 
   defp handle_event("status_update_event", data, store) do
-    {:ok, %{"appId" => app_id, "taskId" => task_id} = event} = Poison.decode(data)
+    {:ok, %{"appId" => app_id, "taskId" => task_id} = event} = Jason.decode(data)
 
     case event do
       %{"taskStatus" => task_status} when task_status in @terminal_states ->
