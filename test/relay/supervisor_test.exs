@@ -4,7 +4,7 @@ defmodule Relay.SupervisorTest do
   use ExUnit.Case, async: false
 
   alias Relay.{Supervisor, Publisher, Resources, Certs, Marathon}
-  alias Relay.Supervisor.FrontendSupervisor
+  alias Relay.Supervisor.SubSupervisor
 
   alias Envoy.Api.V2.{DiscoveryRequest, DiscoveryResponse}
   alias Envoy.Api.V2.ClusterDiscoveryService.Stub, as: CDSStub
@@ -223,7 +223,7 @@ defmodule Relay.SupervisorTest do
   end
 
   defp wait_until_live do
-    case procs_live?(Supervisor) and procs_live?(FrontendSupervisor) do
+    case procs_live?(Supervisor) and procs_live?(SubSupervisor) do
       true ->
         :ok
 
