@@ -31,31 +31,40 @@ defmodule Envoy.Api.V2.Listener.FilterChainMatch do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          sni_domains: [String.t()],
           prefix_ranges: [Envoy.Api.V2.Core.CidrRange.t()],
           address_suffix: String.t(),
           suffix_len: Google.Protobuf.UInt32Value.t(),
           source_prefix_ranges: [Envoy.Api.V2.Core.CidrRange.t()],
           source_ports: [Google.Protobuf.UInt32Value.t()],
-          destination_port: Google.Protobuf.UInt32Value.t()
+          destination_port: Google.Protobuf.UInt32Value.t(),
+          server_names: [String.t()],
+          transport_protocol: String.t(),
+          application_protocols: [String.t()],
+          sni_domains: [String.t()]
         }
   defstruct [
-    :sni_domains,
     :prefix_ranges,
     :address_suffix,
     :suffix_len,
     :source_prefix_ranges,
     :source_ports,
-    :destination_port
+    :destination_port,
+    :server_names,
+    :transport_protocol,
+    :application_protocols,
+    :sni_domains
   ]
 
-  field :sni_domains, 1, repeated: true, type: :string
   field :prefix_ranges, 3, repeated: true, type: Envoy.Api.V2.Core.CidrRange
   field :address_suffix, 4, type: :string
   field :suffix_len, 5, type: Google.Protobuf.UInt32Value
   field :source_prefix_ranges, 6, repeated: true, type: Envoy.Api.V2.Core.CidrRange
   field :source_ports, 7, repeated: true, type: Google.Protobuf.UInt32Value
   field :destination_port, 8, type: Google.Protobuf.UInt32Value
+  field :server_names, 11, repeated: true, type: :string
+  field :transport_protocol, 9, type: :string
+  field :application_protocols, 10, repeated: true, type: :string
+  field :sni_domains, 1, repeated: true, type: :string, deprecated: true
 end
 
 defmodule Envoy.Api.V2.Listener.FilterChain do

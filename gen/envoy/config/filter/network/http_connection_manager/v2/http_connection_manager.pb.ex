@@ -18,6 +18,8 @@ defmodule Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionMan
           access_log: [Envoy.Config.Filter.Accesslog.V2.AccessLog.t()],
           use_remote_address: Google.Protobuf.BoolValue.t(),
           xff_num_trusted_hops: non_neg_integer,
+          skip_xff_append: boolean,
+          via: String.t(),
           generate_request_id: Google.Protobuf.BoolValue.t(),
           forward_client_cert_details: integer,
           set_current_client_cert_details:
@@ -40,6 +42,8 @@ defmodule Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionMan
     :access_log,
     :use_remote_address,
     :xff_num_trusted_hops,
+    :skip_xff_append,
+    :via,
     :generate_request_id,
     :forward_client_cert_details,
     :set_current_client_cert_details,
@@ -74,6 +78,8 @@ defmodule Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionMan
   field :access_log, 13, repeated: true, type: Envoy.Config.Filter.Accesslog.V2.AccessLog
   field :use_remote_address, 14, type: Google.Protobuf.BoolValue
   field :xff_num_trusted_hops, 19, type: :uint32
+  field :skip_xff_append, 21, type: :bool
+  field :via, 22, type: :string
   field :generate_request_id, 15, type: Google.Protobuf.BoolValue
 
   field :forward_client_cert_details, 16,
@@ -134,13 +140,17 @@ defmodule Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionMan
   @type t :: %__MODULE__{
           subject: Google.Protobuf.BoolValue.t(),
           san: Google.Protobuf.BoolValue.t(),
-          cert: boolean
+          cert: boolean,
+          dns: boolean,
+          uri: boolean
         }
-  defstruct [:subject, :san, :cert]
+  defstruct [:subject, :san, :cert, :dns, :uri]
 
   field :subject, 1, type: Google.Protobuf.BoolValue
-  field :san, 2, type: Google.Protobuf.BoolValue
+  field :san, 2, type: Google.Protobuf.BoolValue, deprecated: true
   field :cert, 3, type: :bool
+  field :dns, 4, type: :bool
+  field :uri, 5, type: :bool
 end
 
 defmodule Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionManager.CodecType do

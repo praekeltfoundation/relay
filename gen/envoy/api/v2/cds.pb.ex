@@ -12,6 +12,7 @@ defmodule Envoy.Api.V2.Cluster do
           per_connection_buffer_limit_bytes: Google.Protobuf.UInt32Value.t(),
           lb_policy: integer,
           hosts: [Envoy.Api.V2.Core.Address.t()],
+          load_assignment: Envoy.Api.V2.ClusterLoadAssignment.t(),
           health_checks: [Envoy.Api.V2.Core.HealthCheck.t()],
           max_requests_per_connection: Google.Protobuf.UInt32Value.t(),
           circuit_breakers: Envoy.Api.V2.Cluster.CircuitBreakers.t(),
@@ -29,7 +30,10 @@ defmodule Envoy.Api.V2.Cluster do
           common_lb_config: Envoy.Api.V2.Cluster.CommonLbConfig.t(),
           transport_socket: Envoy.Api.V2.Core.TransportSocket.t(),
           metadata: Envoy.Api.V2.Core.Metadata.t(),
-          protocol_selection: integer
+          protocol_selection: integer,
+          upstream_connection_options: Envoy.Api.V2.UpstreamConnectionOptions.t(),
+          close_connections_on_host_health_failure: boolean,
+          drain_connections_on_host_removal: boolean
         }
   defstruct [
     :lb_config,
@@ -41,6 +45,7 @@ defmodule Envoy.Api.V2.Cluster do
     :per_connection_buffer_limit_bytes,
     :lb_policy,
     :hosts,
+    :load_assignment,
     :health_checks,
     :max_requests_per_connection,
     :circuit_breakers,
@@ -58,7 +63,10 @@ defmodule Envoy.Api.V2.Cluster do
     :common_lb_config,
     :transport_socket,
     :metadata,
-    :protocol_selection
+    :protocol_selection,
+    :upstream_connection_options,
+    :close_connections_on_host_health_failure,
+    :drain_connections_on_host_removal
   ]
 
   oneof :lb_config, 0
@@ -70,6 +78,7 @@ defmodule Envoy.Api.V2.Cluster do
   field :per_connection_buffer_limit_bytes, 5, type: Google.Protobuf.UInt32Value
   field :lb_policy, 6, type: Envoy.Api.V2.Cluster.LbPolicy, enum: true
   field :hosts, 7, repeated: true, type: Envoy.Api.V2.Core.Address
+  field :load_assignment, 33, type: Envoy.Api.V2.ClusterLoadAssignment
   field :health_checks, 8, repeated: true, type: Envoy.Api.V2.Core.HealthCheck
   field :max_requests_per_connection, 9, type: Google.Protobuf.UInt32Value
   field :circuit_breakers, 10, type: Envoy.Api.V2.Cluster.CircuitBreakers
@@ -89,6 +98,9 @@ defmodule Envoy.Api.V2.Cluster do
   field :transport_socket, 24, type: Envoy.Api.V2.Core.TransportSocket
   field :metadata, 25, type: Envoy.Api.V2.Core.Metadata
   field :protocol_selection, 26, type: Envoy.Api.V2.Cluster.ClusterProtocolSelection, enum: true
+  field :upstream_connection_options, 30, type: Envoy.Api.V2.UpstreamConnectionOptions
+  field :close_connections_on_host_health_failure, 31, type: :bool
+  field :drain_connections_on_host_removal, 32, type: :bool
 end
 
 defmodule Envoy.Api.V2.Cluster.EdsClusterConfig do
@@ -182,11 +194,21 @@ defmodule Envoy.Api.V2.Cluster.CommonLbConfig do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
+          locality_config_specifier: {atom, any},
           healthy_panic_threshold: Envoy.Type.Percent.t()
         }
-  defstruct [:healthy_panic_threshold]
+  defstruct [:locality_config_specifier, :healthy_panic_threshold]
 
+  oneof :locality_config_specifier, 0
   field :healthy_panic_threshold, 1, type: Envoy.Type.Percent
+
+  field :zone_aware_lb_config, 2,
+    type: Envoy.Api.V2.Cluster.CommonLbConfig.ZoneAwareLbConfig,
+    oneof: 0
+
+  field :locality_weighted_lb_config, 3,
+    type: Envoy.Api.V2.Cluster.CommonLbConfig.LocalityWeightedLbConfig,
+    oneof: 0
 end
 
 defmodule Envoy.Api.V2.Cluster.CommonLbConfig.ZoneAwareLbConfig do
@@ -201,6 +223,13 @@ defmodule Envoy.Api.V2.Cluster.CommonLbConfig.ZoneAwareLbConfig do
 
   field :routing_enabled, 1, type: Envoy.Type.Percent
   field :min_cluster_size, 2, type: Google.Protobuf.UInt64Value
+end
+
+defmodule Envoy.Api.V2.Cluster.CommonLbConfig.LocalityWeightedLbConfig do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  defstruct []
 end
 
 defmodule Envoy.Api.V2.Cluster.DiscoveryType do
@@ -253,6 +282,18 @@ defmodule Envoy.Api.V2.UpstreamBindConfig do
   defstruct [:source_address]
 
   field :source_address, 1, type: Envoy.Api.V2.Core.Address
+end
+
+defmodule Envoy.Api.V2.UpstreamConnectionOptions do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          tcp_keepalive: Envoy.Api.V2.Core.TcpKeepalive.t()
+        }
+  defstruct [:tcp_keepalive]
+
+  field :tcp_keepalive, 1, type: Envoy.Api.V2.Core.TcpKeepalive
 end
 
 defmodule Envoy.Api.V2.ClusterDiscoveryService.Service do
