@@ -44,12 +44,14 @@ defmodule Envoy.Config.Trace.V2.ZipkinConfig do
 
   @type t :: %__MODULE__{
           collector_cluster: String.t(),
-          collector_endpoint: String.t()
+          collector_endpoint: String.t(),
+          trace_id_128bit: boolean
         }
-  defstruct [:collector_cluster, :collector_endpoint]
+  defstruct [:collector_cluster, :collector_endpoint, :trace_id_128bit]
 
   field :collector_cluster, 1, type: :string
   field :collector_endpoint, 2, type: :string
+  field :trace_id_128bit, 3, type: :bool
 end
 
 defmodule Envoy.Config.Trace.V2.DynamicOtConfig do

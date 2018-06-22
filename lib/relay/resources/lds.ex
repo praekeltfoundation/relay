@@ -11,7 +11,8 @@ defmodule Relay.Resources.LDS do
   alias Envoy.Api.V2.Core.DataSource
   alias Envoy.Api.V2.Listener
   alias Listener.{Filter, FilterChain, FilterChainMatch}
-  alias Envoy.Config.Filter.Accesslog.V2.{AccessLog, FileAccessLog}
+  alias Envoy.Config.Accesslog.V2.FileAccessLog
+  alias Envoy.Config.Filter.Accesslog.V2.AccessLog
   alias Envoy.Config.Filter.Http.Router.V2.Router
 
   alias Envoy.Config.Filter.Network.HttpConnectionManager.V2.{

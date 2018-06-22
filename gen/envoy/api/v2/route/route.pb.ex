@@ -13,7 +13,7 @@ defmodule Envoy.Api.V2.Route.VirtualHost do
           response_headers_to_add: [Envoy.Api.V2.Core.HeaderValueOption.t()],
           response_headers_to_remove: [String.t()],
           cors: Envoy.Api.V2.Route.CorsPolicy.t(),
-          auth: Envoy.Api.V2.Auth.AuthAction.t()
+          per_filter_config: %{String.t() => Google.Protobuf.Struct.t()}
         }
   defstruct [
     :name,
@@ -26,7 +26,7 @@ defmodule Envoy.Api.V2.Route.VirtualHost do
     :response_headers_to_add,
     :response_headers_to_remove,
     :cors,
-    :auth
+    :per_filter_config
   ]
 
   field :name, 1, type: :string
@@ -39,7 +39,25 @@ defmodule Envoy.Api.V2.Route.VirtualHost do
   field :response_headers_to_add, 10, repeated: true, type: Envoy.Api.V2.Core.HeaderValueOption
   field :response_headers_to_remove, 11, repeated: true, type: :string
   field :cors, 8, type: Envoy.Api.V2.Route.CorsPolicy
-  field :auth, 9, type: Envoy.Api.V2.Auth.AuthAction
+
+  field :per_filter_config, 12,
+    repeated: true,
+    type: Envoy.Api.V2.Route.VirtualHost.PerFilterConfigEntry,
+    map: true
+end
+
+defmodule Envoy.Api.V2.Route.VirtualHost.PerFilterConfigEntry do
+  @moduledoc false
+  use Protobuf, map: true, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          key: String.t(),
+          value: Google.Protobuf.Struct.t()
+        }
+  defstruct [:key, :value]
+
+  field :key, 1, type: :string
+  field :value, 2, type: Google.Protobuf.Struct
 end
 
 defmodule Envoy.Api.V2.Route.VirtualHost.TlsRequirementType do
@@ -60,9 +78,9 @@ defmodule Envoy.Api.V2.Route.Route do
           match: Envoy.Api.V2.Route.RouteMatch.t(),
           metadata: Envoy.Api.V2.Core.Metadata.t(),
           decorator: Envoy.Api.V2.Route.Decorator.t(),
-          auth: Envoy.Api.V2.Auth.AuthAction.t()
+          per_filter_config: %{String.t() => Google.Protobuf.Struct.t()}
         }
-  defstruct [:action, :match, :metadata, :decorator, :auth]
+  defstruct [:action, :match, :metadata, :decorator, :per_filter_config]
 
   oneof :action, 0
   field :match, 1, type: Envoy.Api.V2.Route.RouteMatch
@@ -71,7 +89,25 @@ defmodule Envoy.Api.V2.Route.Route do
   field :direct_response, 7, type: Envoy.Api.V2.Route.DirectResponseAction, oneof: 0
   field :metadata, 4, type: Envoy.Api.V2.Core.Metadata
   field :decorator, 5, type: Envoy.Api.V2.Route.Decorator
-  field :auth, 6, type: Envoy.Api.V2.Auth.AuthAction
+
+  field :per_filter_config, 8,
+    repeated: true,
+    type: Envoy.Api.V2.Route.Route.PerFilterConfigEntry,
+    map: true
+end
+
+defmodule Envoy.Api.V2.Route.Route.PerFilterConfigEntry do
+  @moduledoc false
+  use Protobuf, map: true, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          key: String.t(),
+          value: Google.Protobuf.Struct.t()
+        }
+  defstruct [:key, :value]
+
+  field :key, 1, type: :string
+  field :value, 2, type: Google.Protobuf.Struct
 end
 
 defmodule Envoy.Api.V2.Route.WeightedCluster do
@@ -100,7 +136,8 @@ defmodule Envoy.Api.V2.Route.WeightedCluster.ClusterWeight do
           metadata_match: Envoy.Api.V2.Core.Metadata.t(),
           request_headers_to_add: [Envoy.Api.V2.Core.HeaderValueOption.t()],
           response_headers_to_add: [Envoy.Api.V2.Core.HeaderValueOption.t()],
-          response_headers_to_remove: [String.t()]
+          response_headers_to_remove: [String.t()],
+          per_filter_config: %{String.t() => Google.Protobuf.Struct.t()}
         }
   defstruct [
     :name,
@@ -108,7 +145,8 @@ defmodule Envoy.Api.V2.Route.WeightedCluster.ClusterWeight do
     :metadata_match,
     :request_headers_to_add,
     :response_headers_to_add,
-    :response_headers_to_remove
+    :response_headers_to_remove,
+    :per_filter_config
   ]
 
   field :name, 1, type: :string
@@ -117,6 +155,25 @@ defmodule Envoy.Api.V2.Route.WeightedCluster.ClusterWeight do
   field :request_headers_to_add, 4, repeated: true, type: Envoy.Api.V2.Core.HeaderValueOption
   field :response_headers_to_add, 5, repeated: true, type: Envoy.Api.V2.Core.HeaderValueOption
   field :response_headers_to_remove, 6, repeated: true, type: :string
+
+  field :per_filter_config, 8,
+    repeated: true,
+    type: Envoy.Api.V2.Route.WeightedCluster.ClusterWeight.PerFilterConfigEntry,
+    map: true
+end
+
+defmodule Envoy.Api.V2.Route.WeightedCluster.ClusterWeight.PerFilterConfigEntry do
+  @moduledoc false
+  use Protobuf, map: true, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          key: String.t(),
+          value: Google.Protobuf.Struct.t()
+        }
+  defstruct [:key, :value]
+
+  field :key, 1, type: :string
+  field :value, 2, type: Google.Protobuf.Struct
 end
 
 defmodule Envoy.Api.V2.Route.RouteMatch do
@@ -195,7 +252,9 @@ defmodule Envoy.Api.V2.Route.RouteAction do
           include_vh_rate_limits: Google.Protobuf.BoolValue.t(),
           hash_policy: [Envoy.Api.V2.Route.RouteAction.HashPolicy.t()],
           use_websocket: Google.Protobuf.BoolValue.t(),
-          cors: Envoy.Api.V2.Route.CorsPolicy.t()
+          websocket_config: Envoy.Api.V2.Route.RouteAction.WebSocketProxyConfig.t(),
+          cors: Envoy.Api.V2.Route.CorsPolicy.t(),
+          max_grpc_timeout: Google.Protobuf.Duration.t()
         }
   defstruct [
     :cluster_specifier,
@@ -214,7 +273,9 @@ defmodule Envoy.Api.V2.Route.RouteAction do
     :include_vh_rate_limits,
     :hash_policy,
     :use_websocket,
-    :cors
+    :websocket_config,
+    :cors,
+    :max_grpc_timeout
   ]
 
   oneof :cluster_specifier, 0
@@ -242,7 +303,9 @@ defmodule Envoy.Api.V2.Route.RouteAction do
   field :include_vh_rate_limits, 14, type: Google.Protobuf.BoolValue
   field :hash_policy, 15, repeated: true, type: Envoy.Api.V2.Route.RouteAction.HashPolicy
   field :use_websocket, 16, type: Google.Protobuf.BoolValue
+  field :websocket_config, 22, type: Envoy.Api.V2.Route.RouteAction.WebSocketProxyConfig
   field :cors, 17, type: Envoy.Api.V2.Route.CorsPolicy
+  field :max_grpc_timeout, 23, type: Google.Protobuf.Duration
 end
 
 defmodule Envoy.Api.V2.Route.RouteAction.RetryPolicy do
@@ -311,12 +374,14 @@ defmodule Envoy.Api.V2.Route.RouteAction.HashPolicy.Cookie do
 
   @type t :: %__MODULE__{
           name: String.t(),
-          ttl: Google.Protobuf.Duration.t()
+          ttl: Google.Protobuf.Duration.t(),
+          path: String.t()
         }
-  defstruct [:name, :ttl]
+  defstruct [:name, :ttl, :path]
 
   field :name, 1, type: :string
   field :ttl, 2, type: Google.Protobuf.Duration
+  field :path, 3, type: :string
 end
 
 defmodule Envoy.Api.V2.Route.RouteAction.HashPolicy.ConnectionProperties do
@@ -329,6 +394,22 @@ defmodule Envoy.Api.V2.Route.RouteAction.HashPolicy.ConnectionProperties do
   defstruct [:source_ip]
 
   field :source_ip, 1, type: :bool
+end
+
+defmodule Envoy.Api.V2.Route.RouteAction.WebSocketProxyConfig do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          stat_prefix: String.t(),
+          idle_timeout: Google.Protobuf.Duration.t(),
+          max_connect_attempts: Google.Protobuf.UInt32Value.t()
+        }
+  defstruct [:stat_prefix, :idle_timeout, :max_connect_attempts]
+
+  field :stat_prefix, 1, type: :string
+  field :idle_timeout, 2, type: Google.Protobuf.Duration
+  field :max_connect_attempts, 3, type: Google.Protobuf.UInt32Value
 end
 
 defmodule Envoy.Api.V2.Route.RouteAction.ClusterNotFoundResponseCode do
@@ -536,17 +617,22 @@ defmodule Envoy.Api.V2.Route.HeaderMatcher do
           header_match_specifier: {atom, any},
           name: String.t(),
           value: String.t(),
-          regex: Google.Protobuf.BoolValue.t()
+          regex: Google.Protobuf.BoolValue.t(),
+          invert_match: boolean
         }
-  defstruct [:header_match_specifier, :name, :value, :regex]
+  defstruct [:header_match_specifier, :name, :value, :regex, :invert_match]
 
   oneof :header_match_specifier, 0
   field :name, 1, type: :string
-  field :value, 2, type: :string
-  field :regex, 3, type: Google.Protobuf.BoolValue
+  field :value, 2, type: :string, deprecated: true
+  field :regex, 3, type: Google.Protobuf.BoolValue, deprecated: true
   field :exact_match, 4, type: :string, oneof: 0
   field :regex_match, 5, type: :string, oneof: 0
   field :range_match, 6, type: Envoy.Type.Int64Range, oneof: 0
+  field :present_match, 7, type: :bool, oneof: 0
+  field :prefix_match, 9, type: :string, oneof: 0
+  field :suffix_match, 10, type: :string, oneof: 0
+  field :invert_match, 8, type: :bool
 end
 
 defmodule Envoy.Api.V2.Route.QueryParameterMatcher do
