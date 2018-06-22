@@ -40,8 +40,8 @@ jobs:
     - elixir: '1.6'
       otp_release: '20.3'
       env:
-        - BAZEL_VERSION=0.14.0
-        - PROTOC_VERSION=3.5.1
+        - BAZEL_VERSION=0.14.1
+        - PROTOC_VERSION=3.6.0
         - PROTOBUF_ELIXIR_VERSION=0.5.4
 
       install:
