@@ -35,7 +35,7 @@ jobs:
         # Juggle cached PLTs.
         - mkdir -p ~/.pltcache
         - cp ~/.pltcache/*-dev.plt _build/dev/ || true
-        - mix dialyzer --plt
+        - travis_wait mix dialyzer --plt
         - cp _build/dev/*-dev.plt ~/.pltcache/
         # Now that we've done the PLT dance, we can run dialyzer.
 
