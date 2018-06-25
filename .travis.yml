@@ -1,4 +1,8 @@
 language: elixir
+# `elixir: '1.6'` tracks the latest Elixir 1.6.x release.
+# Unfortunately, `otp_release: '20.3'` does not work similarly.
+elixir: '1.6'
+otp_release: '20.3.8'
 
 script:
   # This is basically `mix test` with coverage enabled.
@@ -13,17 +17,10 @@ after_success:
 
 jobs:
   include:
-    # `elixir: '1.6'` tracks the latest Elixir 1.6.x release.
-    # Unfortunately, `otp_release: '20.3'` does not work similarly.
-    - elixir: '1.6'
-      otp_release: '20.3.8'
+    - {} # Use 'default' Elixir/OTP versions
+    - otp_release: '21.0'
 
-    - elixir: '1.6'
-      otp_release: '21.0'
-
-    - elixir: '1.6'
-      otp_release: '20.3.8'
-      env:
+    - env:
         - RUN_DIALYZER=1
       cache:
         directories:
@@ -42,9 +39,7 @@ jobs:
       script:
         - mix dialyzer --halt-exit-status
 
-    - elixir: '1.6'
-      otp_release: '20.3'
-      env:
+    - env:
         - BAZEL_VERSION=0.14.1
         - PROTOC_VERSION=3.6.0
         - PROTOBUF_ELIXIR_VERSION=0.5.4
@@ -71,6 +66,8 @@ jobs:
       group: trusty_latest
       services: docker
       language: python
+      elixir: ~
+      otp_release: ~
 
       env:
         - IMAGE_NAME=praekeltfoundation/relay
