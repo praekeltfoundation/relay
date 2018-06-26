@@ -1,8 +1,6 @@
 language: elixir
-# `elixir: '1.6'` tracks the latest Elixir 1.6.x release.
-# Unfortunately, `otp_release: '20.3'` does not work similarly.
 elixir: '1.6'
-otp_release: '20.3.8'
+otp_release: '20.3'
 
 script:
   # This is basically `mix test` with coverage enabled.
@@ -18,7 +16,7 @@ after_success:
 jobs:
   include:
     - {} # Use 'default' Elixir/OTP versions
-    - otp_release: '21.0.1'
+    - otp_release: '21.0'
 
     - env:
         - RUN_DIALYZER=1
