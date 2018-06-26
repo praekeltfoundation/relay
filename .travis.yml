@@ -1,4 +1,6 @@
 language: elixir
+elixir: '1.6'
+otp_release: '20.3'
 
 script:
   # This is basically `mix test` with coverage enabled.
@@ -13,12 +15,10 @@ after_success:
 
 jobs:
   include:
-    - elixir: '1.6'
-      otp_release: '20.3'
+    - {} # Use 'default' Elixir/OTP versions
+    - otp_release: '21.0'
 
-    - elixir: '1.6'
-      otp_release: '20.3'
-      env:
+    - env:
         - RUN_DIALYZER=1
       cache:
         directories:
@@ -30,16 +30,14 @@ jobs:
         # Juggle cached PLTs.
         - mkdir -p ~/.pltcache
         - cp ~/.pltcache/*-dev.plt _build/dev/ || true
-        - mix dialyzer --plt
+        - travis_wait mix dialyzer --plt
         - cp _build/dev/*-dev.plt ~/.pltcache/
         # Now that we've done the PLT dance, we can run dialyzer.
 
       script:
         - mix dialyzer --halt-exit-status
 
-    - elixir: '1.6'
-      otp_release: '20.3'
-      env:
+    - env:
         - BAZEL_VERSION=0.14.1
         - PROTOC_VERSION=3.6.0
         - PROTOBUF_ELIXIR_VERSION=0.5.4
@@ -66,6 +64,8 @@ jobs:
       group: trusty_latest
       services: docker
       language: python
+      elixir: ~
+      otp_release: ~
 
       env:
         - IMAGE_NAME=praekeltfoundation/relay
