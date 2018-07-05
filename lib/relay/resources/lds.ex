@@ -10,7 +10,7 @@ defmodule Relay.Resources.LDS do
 
   alias Envoy.Api.V2.Core.DataSource
   alias Envoy.Api.V2.Listener
-  alias Listener.{Filter, FilterChain, FilterChainMatch}
+  alias Listener.{Filter, FilterChain, FilterChainMatch, ListenerFilter}
   alias Envoy.Config.Accesslog.V2.FileAccessLog
   alias Envoy.Config.Filter.Accesslog.V2.AccessLog
   alias Envoy.Config.Filter.Http.Router.V2.Router
@@ -21,11 +21,17 @@ defmodule Relay.Resources.LDS do
     Rds
   }
 
+  alias Google.Protobuf.Struct
+
   @spec listeners([CertInfo.t()]) :: [Listener.t()]
   def listeners(cert_infos) do
     [
       listener(:http, http_filter_chains()),
-      listener(:https, https_filter_chains(cert_infos))
+      listener(
+        :https,
+        https_filter_chains(cert_infos),
+        listener_filters: [tls_inspector_listener_filter()]
+      )
     ]
   end
 
@@ -57,7 +63,7 @@ defmodule Relay.Resources.LDS do
           )
       )
 
-    filter_chain(filters, tls_context: tls_context, sni_domains: cert_info.domains)
+    filter_chain(filters, tls_context: tls_context, server_names: cert_info.domains)
   end
 
   @spec inline_string(String.t()) :: DataSource.t()
@@ -65,16 +71,20 @@ defmodule Relay.Resources.LDS do
 
   @spec filter_chain([Filter.t()], keyword) :: FilterChain.t()
   defp filter_chain(filters, options \\ []) do
-    {sni_domains, options} = Keyword.pop(options, :sni_domains, [])
+    {server_names, options} = Keyword.pop(options, :server_names, [])
 
     # TODO: Add PROXY protocol configuration for AWS ELB support
     FilterChain.new(
       [
-        filter_chain_match: FilterChainMatch.new(sni_domains: sni_domains),
+        filter_chain_match: FilterChainMatch.new(server_names: server_names),
         filters: filters
       ] ++ options
     )
   end
+
+  @spec tls_inspector_listener_filter() :: ListenerFilter.t()
+  defp tls_inspector_listener_filter(),
+    do: ListenerFilter.new(name: "envoy.listener.tls_inspector", config: Struct.new())
 
   @spec listener(atom, [FilterChain.t()], keyword) :: Listener.t()
   defp listener(listener, filter_chains, options \\ []) do
