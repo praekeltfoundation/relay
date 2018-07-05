@@ -10,7 +10,7 @@ defmodule Relay.Resources.LDS do
 
   alias Envoy.Api.V2.Core.DataSource
   alias Envoy.Api.V2.Listener
-  alias Listener.{Filter, FilterChain, FilterChainMatch}
+  alias Listener.{Filter, FilterChain, FilterChainMatch, ListenerFilter}
   alias Envoy.Config.Accesslog.V2.FileAccessLog
   alias Envoy.Config.Filter.Accesslog.V2.AccessLog
   alias Envoy.Config.Filter.Http.Router.V2.Router
@@ -21,11 +21,17 @@ defmodule Relay.Resources.LDS do
     Rds
   }
 
+  alias Google.Protobuf.Struct
+
   @spec listeners([CertInfo.t()]) :: [Listener.t()]
   def listeners(cert_infos) do
     [
       listener(:http, http_filter_chains()),
-      listener(:https, https_filter_chains(cert_infos))
+      listener(
+        :https,
+        https_filter_chains(cert_infos),
+        listener_filters: [tls_inspector_listener_filter()]
+      )
     ]
   end
 
@@ -75,6 +81,10 @@ defmodule Relay.Resources.LDS do
       ] ++ options
     )
   end
+
+  @spec tls_inspector_listener_filter() :: ListenerFilter.t()
+  defp tls_inspector_listener_filter(),
+    do: ListenerFilter.new(name: "envoy.listener.tls_inspector", config: Struct.new())
 
   @spec listener(atom, [FilterChain.t()], keyword) :: Listener.t()
   defp listener(listener, filter_chains, options \\ []) do

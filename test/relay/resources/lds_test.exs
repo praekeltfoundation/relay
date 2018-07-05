@@ -9,7 +9,8 @@ defmodule Relay.Resources.LDSTest do
     %Address{address: {:socket_address, socket_address}} = listener.address
     %SocketAddress{port_specifier: {:port_value, port}} = socket_address
     cert_infos = Enum.map(listener.filter_chains, &extract_cert_info/1)
-    {listener.name, port, cert_infos}
+    listener_filter_names = Enum.map(listener.listener_filters, & &1.name)
+    {listener.name, port, cert_infos, listener_filter_names}
   end
 
   defp extract_cert_info(filter_chain) do
@@ -44,19 +45,23 @@ defmodule Relay.Resources.LDSTest do
 
   test "basic HTTP listener and HTTPS listener with no certs" do
     assert [http, https] = LDS.listeners([])
-    assert listener_info(http) == {"http", 8080, [nil]}
-    assert listener_info(https) == {"https", 8443, []}
+    assert listener_info(http) == {"http", 8080, [nil], []}
+    assert listener_info(https) == {"https", 8443, [], ["envoy.listener.tls_inspector"]}
   end
 
   test "basic HTTP listener and HTTPS listener with one cert" do
     assert [http, https] = LDS.listeners([@cert_info_1])
-    assert listener_info(http) == {"http", 8080, [nil]}
-    assert listener_info(https) == {"https", 8443, [@cert_info_1]}
+    assert listener_info(http) == {"http", 8080, [nil], []}
+
+    assert listener_info(https) ==
+             {"https", 8443, [@cert_info_1], ["envoy.listener.tls_inspector"]}
   end
 
   test "basic HTTP listener and HTTPS listener with two certs" do
     assert [http, https] = LDS.listeners([@cert_info_1, @cert_info_2])
-    assert listener_info(http) == {"http", 8080, [nil]}
-    assert listener_info(https) == {"https", 8443, [@cert_info_1, @cert_info_2]}
+    assert listener_info(http) == {"http", 8080, [nil], []}
+
+    assert listener_info(https) ==
+             {"https", 8443, [@cert_info_1, @cert_info_2], ["envoy.listener.tls_inspector"]}
   end
 end
