@@ -57,7 +57,7 @@ defmodule Relay.Resources.LDS do
           )
       )
 
-    filter_chain(filters, tls_context: tls_context, sni_domains: cert_info.domains)
+    filter_chain(filters, tls_context: tls_context, server_names: cert_info.domains)
   end
 
   @spec inline_string(String.t()) :: DataSource.t()
@@ -65,12 +65,12 @@ defmodule Relay.Resources.LDS do
 
   @spec filter_chain([Filter.t()], keyword) :: FilterChain.t()
   defp filter_chain(filters, options \\ []) do
-    {sni_domains, options} = Keyword.pop(options, :sni_domains, [])
+    {server_names, options} = Keyword.pop(options, :server_names, [])
 
     # TODO: Add PROXY protocol configuration for AWS ELB support
     FilterChain.new(
       [
-        filter_chain_match: FilterChainMatch.new(sni_domains: sni_domains),
+        filter_chain_match: FilterChainMatch.new(server_names: server_names),
         filters: filters
       ] ++ options
     )

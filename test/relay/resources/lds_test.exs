@@ -14,10 +14,10 @@ defmodule Relay.Resources.LDSTest do
 
   defp extract_cert_info(filter_chain) do
     case {filter_chain.filter_chain_match, filter_chain.tls_context} do
-      {%{sni_domains: []}, nil} ->
+      {%{server_names: []}, nil} ->
         nil
 
-      {%{sni_domains: domains}, tls_context} ->
+      {%{server_names: domains}, tls_context} ->
         [cert] = tls_context.common_tls_context.tls_certificates
 
         %CertInfo{
