@@ -42,16 +42,24 @@ defmodule Relay.MixProject do
   defp deps do
     [
       # 2018-06-26: grpc-elixir 0.3.0-alpha.2 has an issue that prevents us
-      # from sending messages to our servers:
+      # from sending messages to our servers. It's been fixed on master:
       # https://github.com/tony612/grpc-elixir/issues/59
+      #
+      # Another issue prevents us from using the current latest git commit :-/
+      # https://github.com/tony612/grpc-elixir/issues/67
+      #
       # We still want to use the pre-release code because the API has taken a
       # slightly different direction from the last working release
       # (0.3.0-alpha.1) and we want to keep up.
       {
         :grpc,
         git: "https://github.com/tony612/grpc-elixir.git",
-        ref: "0ef90946a495e22417c1b0c9490ef967a88060ee"
+        ref: "fce2dea02fb8be815cc5f47ab4cc240132261533"
       },
+      # As of the above commit, grpc uses cowlib from git, for the 2.4.0 tag
+      # which is now available on Hex.
+      {:cowlib, "~> 2.4", override: true},
+
       {:google_protos, "~> 0.1"},
       {:httpoison, "~> 1.0"},
       # Hackney is a dependency of HTTPoison but had a bug in versions 1.10.0 to
