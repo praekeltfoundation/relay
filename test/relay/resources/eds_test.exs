@@ -1,6 +1,7 @@
 defmodule Relay.Resources.EDSTest do
   use ExUnit.Case, async: true
 
+  alias Relay.Resolver
   alias Relay.Resources.{AppEndpoint, EDS}
 
   alias Envoy.Api.V2.ClusterLoadAssignment
@@ -11,6 +12,11 @@ defmodule Relay.Resources.EDSTest do
     name: "/mc2_0",
     addresses: [{"10.70.4.100", 15979}]
   }
+
+  setup do
+    {:ok, _resolver} = start_supervised(Resolver)
+    :ok
+  end
 
   test "simple cluster load assignment" do
     assert [cla] = EDS.cluster_load_assignments([@simple_app_endpoint])
@@ -98,6 +104,39 @@ defmodule Relay.Resources.EDSTest do
                             %SocketAddress{
                               address: "10.70.4.101",
                               port_specifier: {:port_value, 15980}
+                            }}
+                       }
+                     }
+                   }
+                 ]
+               }
+             ]
+           } = cla
+
+    assert Protobuf.Validator.valid?(cla)
+  end
+
+  test "simple cluster load assignment with hostname" do
+    app_endpoint = Map.put(@simple_app_endpoint, :addresses, [{"localhost", 15979}])
+
+    assert [cla] = EDS.cluster_load_assignments([app_endpoint])
+
+    locality = EDS.default_locality()
+
+    assert %ClusterLoadAssignment{
+             cluster_name: "/mc2_0",
+             endpoints: [
+               %LocalityLbEndpoints{
+                 locality: ^locality,
+                 lb_endpoints: [
+                   %LbEndpoint{
+                     endpoint: %Endpoint{
+                       address: %Address{
+                         address:
+                           {:socket_address,
+                            %SocketAddress{
+                              address: "127.0.0.1",
+                              port_specifier: {:port_value, 15979}
                             }}
                        }
                      }

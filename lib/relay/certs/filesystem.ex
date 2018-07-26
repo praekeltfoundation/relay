@@ -4,40 +4,15 @@ defmodule Relay.Certs.Filesystem do
   marathon-lb update request is received.
   """
 
-  defmodule MarathonLbPlug do
-    @moduledoc """
-    This plug pretends to be marathon-lb and translates the HTTP signal
-    requests into cert update messages.
-    """
-    use Plug.Router
-
-    plug :match
-    plug :dispatch
-
-    # We need to override this to get the GenServer ref into the conn so our
-    # routes can see it.
-    @impl Plug
-    def call(conn, opts) do
-      {cfs, opts} = Keyword.pop(opts, :cfs)
-
-      conn
-      |> put_private(:cfs, cfs)
-      |> super(opts)
-    end
-
-    post "/_mlb_signal/:sig" when sig in ["hup", "usr1"] do
-      GenServer.call(conn.private.cfs, :update_state)
-      send_resp(conn, 204, "")
-    end
-
-    match _ do
-      send_resp(conn, 404, "")
-    end
-  end
+  # Retry timeout in milliseconds
+  @retry_timeout 1_000
 
   alias Plug.Adapters.Cowboy2
-  alias Relay.{Certs, Resources}
+  alias Relay.{Certs, Resources, RetryStart}
+  alias Relay.Certs.MarathonLbPlug
   alias Relay.Resources.CertInfo
+
+  use LogWrapper, as: Log
 
   use GenServer
 
@@ -66,7 +41,14 @@ defmodule Relay.Certs.Filesystem do
   @spec init(GenServer.server()) :: {:ok, State.t()}
   def init(resources) do
     Process.flag(:trap_exit, true)
-    {:ok, _} = Cowboy2.http(MarathonLbPlug, [cfs: self()], port: certs_cfg(:mlb_port))
+
+    # We may not have properly cleaned up after being killed, so handle an
+    # existing listener if there is one.
+    {:ok, _} =
+      case start_mlb_listener() do
+        {:error, {:already_started, _pid}} -> restart_mlb_listener()
+        x -> x
+      end
 
     state = %State{
       resources: resources,
@@ -75,6 +57,20 @@ defmodule Relay.Certs.Filesystem do
     }
 
     {:ok, scheduled_update(state)}
+  end
+
+  defp start_mlb_listener do
+    start_fun = fn ->
+      Cowboy2.http(MarathonLbPlug, [cfs: self()], port: certs_cfg(:mlb_port))
+    end
+
+    RetryStart.retry_start(start_fun, @retry_timeout)
+  end
+
+  defp restart_mlb_listener do
+    # TODO: Log a warning here?
+    :ok = Cowboy2.shutdown(MarathonLbPlug.HTTP)
+    start_mlb_listener()
   end
 
   @impl GenServer
@@ -94,6 +90,7 @@ defmodule Relay.Certs.Filesystem do
   end
 
   defp scheduled_update(state) do
+    Log.debug("Performing scheduled update of certificates from the filesystem")
     Process.send_after(self(), :scheduled_update, state.sync_period)
     update_state(state)
   end
@@ -101,7 +98,9 @@ defmodule Relay.Certs.Filesystem do
   @spec update_state(State.t()) :: State.t()
   defp update_state(state) do
     v = "#{state.version}"
-    Resources.update_sni_certs(state.resources, v, read_sni_certs(state))
+    certs = read_sni_certs(state)
+    Log.debug("Read #{length(certs)} certificates from the filesystem for version #{v}")
+    Resources.update_sni_certs(state.resources, v, certs)
     %{state | version: state.version + 1}
   end
 
@@ -123,10 +122,10 @@ defmodule Relay.Certs.Filesystem do
   defp pem_to_cert_info(cert_bundle) do
     {:ok, key} = Certs.get_key(cert_bundle)
     certs = Certs.get_certs(cert_bundle)
-    sni_domains = Certs.get_end_entity_hostnames(certs)
+    server_names = Certs.get_end_entity_hostnames(certs)
 
     %CertInfo{
-      domains: sni_domains,
+      domains: server_names,
       key: Certs.pem_encode(key),
       cert_chain: Certs.pem_encode(certs)
     }

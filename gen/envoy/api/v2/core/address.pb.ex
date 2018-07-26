@@ -40,18 +40,34 @@ defmodule Envoy.Api.V2.Core.SocketAddress.Protocol do
   field :UDP, 1
 end
 
+defmodule Envoy.Api.V2.Core.TcpKeepalive do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          keepalive_probes: Google.Protobuf.UInt32Value.t(),
+          keepalive_time: Google.Protobuf.UInt32Value.t(),
+          keepalive_interval: Google.Protobuf.UInt32Value.t()
+        }
+  defstruct [:keepalive_probes, :keepalive_time, :keepalive_interval]
+
+  field :keepalive_probes, 1, type: Google.Protobuf.UInt32Value
+  field :keepalive_time, 2, type: Google.Protobuf.UInt32Value
+  field :keepalive_interval, 3, type: Google.Protobuf.UInt32Value
+end
+
 defmodule Envoy.Api.V2.Core.BindConfig do
   @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
           source_address: Envoy.Api.V2.Core.SocketAddress.t(),
-          freebind: boolean
+          freebind: Google.Protobuf.BoolValue.t()
         }
   defstruct [:source_address, :freebind]
 
   field :source_address, 1, type: Envoy.Api.V2.Core.SocketAddress
-  field :freebind, 2, type: :bool
+  field :freebind, 2, type: Google.Protobuf.BoolValue
 end
 
 defmodule Envoy.Api.V2.Core.Address do

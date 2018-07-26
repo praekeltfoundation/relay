@@ -4,6 +4,6 @@
     "gen"
   ],
   "custom_stop_words": [
-    "mk_server_func\("
+    "process_macro_opts\\("
   ]
 }

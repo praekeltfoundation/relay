@@ -11,7 +11,10 @@ defmodule Envoy.Api.V2.Core.HealthCheck do
           healthy_threshold: Google.Protobuf.UInt32Value.t(),
           alt_port: Google.Protobuf.UInt32Value.t(),
           reuse_connection: Google.Protobuf.BoolValue.t(),
-          no_traffic_interval: Google.Protobuf.Duration.t()
+          no_traffic_interval: Google.Protobuf.Duration.t(),
+          unhealthy_interval: Google.Protobuf.Duration.t(),
+          unhealthy_edge_interval: Google.Protobuf.Duration.t(),
+          healthy_edge_interval: Google.Protobuf.Duration.t()
         }
   defstruct [
     :health_checker,
@@ -22,7 +25,10 @@ defmodule Envoy.Api.V2.Core.HealthCheck do
     :healthy_threshold,
     :alt_port,
     :reuse_connection,
-    :no_traffic_interval
+    :no_traffic_interval,
+    :unhealthy_interval,
+    :unhealthy_edge_interval,
+    :healthy_edge_interval
   ]
 
   oneof :health_checker, 0
@@ -37,7 +43,11 @@ defmodule Envoy.Api.V2.Core.HealthCheck do
   field :tcp_health_check, 9, type: Envoy.Api.V2.Core.HealthCheck.TcpHealthCheck, oneof: 0
   field :redis_health_check, 10, type: Envoy.Api.V2.Core.HealthCheck.RedisHealthCheck, oneof: 0
   field :grpc_health_check, 11, type: Envoy.Api.V2.Core.HealthCheck.GrpcHealthCheck, oneof: 0
+  field :custom_health_check, 13, type: Envoy.Api.V2.Core.HealthCheck.CustomHealthCheck, oneof: 0
   field :no_traffic_interval, 12, type: Google.Protobuf.Duration
+  field :unhealthy_interval, 14, type: Google.Protobuf.Duration
+  field :unhealthy_edge_interval, 15, type: Google.Protobuf.Duration
+  field :healthy_edge_interval, 16, type: Google.Protobuf.Duration
 end
 
 defmodule Envoy.Api.V2.Core.HealthCheck.Payload do
@@ -63,15 +73,19 @@ defmodule Envoy.Api.V2.Core.HealthCheck.HttpHealthCheck do
           path: String.t(),
           send: Envoy.Api.V2.Core.HealthCheck.Payload.t(),
           receive: Envoy.Api.V2.Core.HealthCheck.Payload.t(),
-          service_name: String.t()
+          service_name: String.t(),
+          request_headers_to_add: [Envoy.Api.V2.Core.HeaderValueOption.t()],
+          use_http2: boolean
         }
-  defstruct [:host, :path, :send, :receive, :service_name]
+  defstruct [:host, :path, :send, :receive, :service_name, :request_headers_to_add, :use_http2]
 
   field :host, 1, type: :string
   field :path, 2, type: :string
   field :send, 3, type: Envoy.Api.V2.Core.HealthCheck.Payload
   field :receive, 4, type: Envoy.Api.V2.Core.HealthCheck.Payload
   field :service_name, 5, type: :string
+  field :request_headers_to_add, 6, repeated: true, type: Envoy.Api.V2.Core.HeaderValueOption
+  field :use_http2, 7, type: :bool
 end
 
 defmodule Envoy.Api.V2.Core.HealthCheck.TcpHealthCheck do
@@ -110,6 +124,20 @@ defmodule Envoy.Api.V2.Core.HealthCheck.GrpcHealthCheck do
   defstruct [:service_name]
 
   field :service_name, 1, type: :string
+end
+
+defmodule Envoy.Api.V2.Core.HealthCheck.CustomHealthCheck do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          name: String.t(),
+          config: Google.Protobuf.Struct.t()
+        }
+  defstruct [:name, :config]
+
+  field :name, 1, type: :string
+  field :config, 2, type: Google.Protobuf.Struct
 end
 
 defmodule Envoy.Api.V2.Core.HealthStatus do

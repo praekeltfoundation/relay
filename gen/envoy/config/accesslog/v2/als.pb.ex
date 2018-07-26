@@ -1,3 +1,26 @@
+defmodule Envoy.Config.Accesslog.V2.HttpGrpcAccessLogConfig do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          common_config: Envoy.Config.Accesslog.V2.CommonGrpcAccessLogConfig.t(),
+          additional_request_headers_to_log: [String.t()],
+          additional_response_headers_to_log: [String.t()],
+          additional_response_trailers_to_log: [String.t()]
+        }
+  defstruct [
+    :common_config,
+    :additional_request_headers_to_log,
+    :additional_response_headers_to_log,
+    :additional_response_trailers_to_log
+  ]
+
+  field :common_config, 1, type: Envoy.Config.Accesslog.V2.CommonGrpcAccessLogConfig
+  field :additional_request_headers_to_log, 2, repeated: true, type: :string
+  field :additional_response_headers_to_log, 3, repeated: true, type: :string
+  field :additional_response_trailers_to_log, 4, repeated: true, type: :string
+end
+
 defmodule Envoy.Config.Accesslog.V2.TcpGrpcAccessLogConfig do
   @moduledoc false
   use Protobuf, syntax: :proto3
@@ -8,26 +31,6 @@ defmodule Envoy.Config.Accesslog.V2.TcpGrpcAccessLogConfig do
   defstruct [:common_config]
 
   field :common_config, 1, type: Envoy.Config.Accesslog.V2.CommonGrpcAccessLogConfig
-end
-
-defmodule Envoy.Config.Accesslog.V2.HttpGrpcAccessLogConfig do
-  @moduledoc false
-  use Protobuf, syntax: :proto3
-
-  @type t :: %__MODULE__{
-          common_config: Envoy.Config.Accesslog.V2.CommonGrpcAccessLogConfig.t(),
-          additional_request_headers_to_log: [String.t()],
-          additional_response_headers_to_log: [String.t()]
-        }
-  defstruct [
-    :common_config,
-    :additional_request_headers_to_log,
-    :additional_response_headers_to_log
-  ]
-
-  field :common_config, 1, type: Envoy.Config.Accesslog.V2.CommonGrpcAccessLogConfig
-  field :additional_request_headers_to_log, 2, repeated: true, type: :string
-  field :additional_response_headers_to_log, 3, repeated: true, type: :string
 end
 
 defmodule Envoy.Config.Accesslog.V2.CommonGrpcAccessLogConfig do

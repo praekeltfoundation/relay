@@ -53,206 +53,267 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
   import: [],
   mappings: [
     "relay.listen.address": [
-      commented: false,
+      commented: true,
       datatype: :binary,
       default: "127.0.0.1",
       doc: "Address to interface for discovery service to listen on",
-      hidden: false,
-      to: "relay.listen.address"
+      env_var: "RELAY_LISTEN_ADDRESS"
     ],
     "relay.listen.port": [
-      commented: false,
+      commented: true,
       datatype: :integer,
       default: 5000,
       doc: "Port for discovery service to listen on",
-      hidden: false,
-      to: "relay.listen.port"
+      env_var: "RELAY_LISTEN_PORT"
     ],
     "relay.envoy.grpc.target_uri": [
-      commented: false,
+      commented: true,
       datatype: :binary,
       default: "127.0.0.1:5000",
       doc: "The host:port address for Envoy to connect to this discovery service on",
-      hidden: false,
-      to: "relay.envoy.grpc.target_uri"
+      env_var: "RELAY_ENVOY_GRPC_TARGET_URI"
     ],
     "relay.envoy.grpc.stat_prefix": [
-      commented: false,
+      commented: true,
       datatype: :binary,
       default: "xds_cluster",
       doc: "The prefix to use for Envoy's gRPC stats",
-      hidden: false,
-      to: "relay.envoy.grpc.stat_prefix"
+      env_var: "RELAY_ENVOY_GRPC_STAT_PREFIX"
     ],
     "relay.envoy.max_obj_name_length": [
-      commented: false,
+      commented: true,
       datatype: :integer,
       default: 60,
       doc: "The maximum length of Envoy object names",
-      hidden: false,
-      to: "relay.envoy.max_obj_name_length"
+      env_var: "RELAY_ENVOY_MAX_OBJ_NAME_LENGTH"
     ],
-    "relay.envoy.listeners.*": [
-      datatype: [list: :complex],
-      default: [],
-      hidden: true,
-      to: "relay.envoy.listeners"
-    ],
-    "relay.envoy.listeners.*.listen.address": [
+    "relay.envoy.listeners.http.address": [
       commented: true,
       # These addresses aren't transformed because Envoy takes binary addresses
       datatype: :binary,
       default: "127.0.0.1",
-      doc: "Address to interface for listener to listen on",
-      hidden: false,
-      to: "relay.envoy.listeners"
+      doc: "Address to interface for HTTP listener to listen on",
+      env_var: "RELAY_ENVOY_LISTENERS_HTTP_ADDRESS",
+      to: "relay.envoy.listeners.http.listen.address"
     ],
-    "relay.envoy.listeners.*.listen.port": [
-      commented: false,
+    "relay.envoy.listeners.http.port": [
+      commented: true,
       datatype: :integer,
       doc: "Port for listener to listen on",
-      hidden: false,
-      to: "relay.envoy.listeners"
+      default: 8080,
+      env_var: "RELAY_ENVOY_LISTENERS_HTTP_PORT",
+      to: "relay.envoy.listeners.http.listen.port"
     ],
-    "relay.envoy.listeners.*.route_config_name": [
-      commented: false,
+    "relay.envoy.listeners.http.access_log.path": [
+      commented: true,
       datatype: :binary,
-      doc: "Name for the route configuration (defaults to listener name)",
-      hidden: false,
-      to: "relay.envoy.listeners"
-    ],
-    "relay.envoy.listeners.*.http_connection_manager.stat_prefix": [
-      commented: false,
-      datatype: :binary,
-      doc: "Prefix for emitted statistics (defaults to listener name)",
-      hidden: false,
-      to: "relay.envoy.listeners"
-    ],
-    "relay.envoy.listeners.*.http_connection_manager.access_log.path": [
-      commented: false,
-      datatype: :binary,
+      default: "http_access.log",
       doc: "Path to the access log file for incoming connections",
-      hidden: false,
-      to: "relay.envoy.listeners"
+      env_var: "RELAY_ENVOY_LISTENERS_HTTP_ACCESS_LOG_PATH",
+      to: "relay.envoy.listeners.http.http_connection_manager.access_log.path"
     ],
-    "relay.envoy.listeners.*.http_connection_manager.access_log.format": [
-      commented: false,
-      datatype: :binary,
-      doc: "Format for the access log for incoming connections",
-      hidden: false,
-      to: "relay.envoy.listeners"
-    ],
-    "relay.envoy.listeners.*.router.upstream_log.path": [
-      commented: false,
-      datatype: :binary,
-      doc: "Path to the access log file for outgoing connections",
-      hidden: false,
-      to: "relay.envoy.listeners"
-    ],
-    "relay.envoy.listeners.*.router.upstream_log.format": [
-      commented: false,
-      datatype: :binary,
-      doc: "Format for the access log for outgoing connections",
-      hidden: false,
-      to: "relay.envoy.listeners"
-    ],
-    "relay.envoy.clusters.connect_timeout": [
-      commented: false,
-      datatype: :integer,
-      default: 5_000,
-      doc: "Default connect timeout for upstream clusters (ms)",
-      hidden: false,
-      to: "relay.envoy.clusters.connect_timeout"
-    ],
-    "relay.envoy.clusters.endpoints.locality.region": [
-      commented: false,
-      datatype: :binary,
-      default: "default",
-      doc: "Default locality region for upstream endpoints",
-      hidden: false,
-      to: "relay.envoy.clusters.endpoints.locality.region"
-    ],
-    "relay.envoy.clusters.endpoints.locality.zone": [
-      commented: false,
-      datatype: :binary,
-      default: "default",
-      doc: "Default locality zone for upstream endpoints",
-      hidden: false,
-      to: "relay.envoy.clusters.endpoints.locality.zone"
-    ],
-    "relay.envoy.clusters.endpoints.locality.sub_zone": [
-      commented: false,
+    "relay.envoy.listeners.http.access_log.format": [
+      commented: true,
       datatype: :binary,
       default: "",
-      doc: "Default locality sub-zone for upstream endpoints",
-      hidden: false,
-      to: "relay.envoy.clusters.endpoints.locality.sub_zone"
+      doc: "Format for the access log for incoming connections",
+      env_var: "RELAY_ENVOY_LISTENERS_HTTP_ACCESS_LOG_FORMAT",
+      to: "relay.envoy.listeners.http.http_connection_manager.access_log.format"
+    ],
+    "relay.envoy.listeners.http.upstream_log.path": [
+      commented: true,
+      datatype: :binary,
+      default: "http_upstream.log",
+      doc: "Path to the upstream log file for incoming connections",
+      env_var: "RELAY_ENVOY_LISTENERS_HTTP_UPSTREAM_LOG_PATH",
+      to: "relay.envoy.listeners.http.http_connection_manager.upstream_log.path"
+    ],
+    "relay.envoy.listeners.http.upstream_log.format": [
+      commented: true,
+      datatype: :binary,
+      default: "",
+      doc: "Format for the upstream log for incoming connections",
+      env_var: "RELAY_ENVOY_LISTENERS_HTTP_UPSTREAM_LOG_FORMAT",
+      to: "relay.envoy.listeners.http.http_connection_manager.upstream_log.format"
+    ],
+    "relay.envoy.listeners.http.use_remote_address": [
+      commented: true,
+      datatype: :boolean,
+      default: true,
+      doc:
+        "Whether to use the real remote address of the client connection when determining origin",
+      env_var: "RELAY_ENVOY_LISTENERS_HTTP_USE_REMOTE_ADDRESS",
+      to: "relay.envoy.listeners.http.http_connection_manager.use_remote_address"
+    ],
+    "relay.envoy.listeners.https.address": [
+      commented: true,
+      # These addresses aren't transformed because Envoy takes binary addresses
+      datatype: :binary,
+      default: "127.0.0.1",
+      doc: "Address to interface for HTTPS listener to listen on",
+      env_var: "RELAY_ENVOY_LISTENERS_HTTPS_ADDRESS",
+      to: "relay.envoy.listeners.https.listen.address"
+    ],
+    "relay.envoy.listeners.https.port": [
+      commented: true,
+      datatype: :integer,
+      doc: "Port for listener to listen on",
+      default: 8443,
+      env_var: "RELAY_ENVOY_LISTENERS_HTTPS_PORT",
+      to: "relay.envoy.listeners.https.listen.port"
+    ],
+    "relay.envoy.listeners.https.access_log.path": [
+      commented: true,
+      datatype: :binary,
+      default: "https_access.log",
+      doc: "Path to the access log file for incoming connections",
+      env_var: "RELAY_ENVOY_LISTENERS_HTTPS_ACCESS_LOG_PATH",
+      to: "relay.envoy.listeners.https.http_connection_manager.access_log.path"
+    ],
+    "relay.envoy.listeners.https.access_log.format": [
+      commented: true,
+      datatype: :binary,
+      default: "",
+      doc: "Format for the access log for incoming connections",
+      env_var: "RELAY_ENVOY_LISTENERS_HTTPS_ACCESS_LOG_FORMAT",
+      to: "relay.envoy.listeners.https.http_connection_manager.access_log.format"
+    ],
+    "relay.envoy.listeners.https.upstream_log.path": [
+      commented: true,
+      datatype: :binary,
+      default: "https_upstream.log",
+      doc: "Path to the upstream log file for incoming connections",
+      env_var: "RELAY_ENVOY_LISTENERS_HTTPS_UPSTREAM_LOG_PATH",
+      to: "relay.envoy.listeners.https.http_connection_manager.upstream_log.path"
+    ],
+    "relay.envoy.listeners.https.upstream_log.format": [
+      commented: true,
+      datatype: :binary,
+      default: "",
+      doc: "Format for the upstream log for incoming connections",
+      env_var: "RELAY_ENVOY_LISTENERS_HTTPS_UPSTREAM_LOG_FORMAT",
+      to: "relay.envoy.listeners.https.http_connection_manager.upstream_log.format"
+    ],
+    "relay.envoy.listeners.https.use_remote_address": [
+      commented: true,
+      datatype: :boolean,
+      default: true,
+      doc:
+        "Whether to use the real remote address of the client connection when determining origin",
+      env_var: "RELAY_ENVOY_LISTENERS_HTTPS_USE_REMOTE_ADDRESS",
+      to: "relay.envoy.listeners.https.http_connection_manager.use_remote_address"
+    ],
+    "relay.envoy.clusters.connect_timeout": [
+      commented: true,
+      datatype: :integer,
+      default: 5_000,
+      env_var: "RELAY_ENVOY_CLUSTERS_CONNECT_TIMEOUT",
+      doc: "Default connect timeout for upstream clusters (ms)"
+    ],
+    "relay.envoy.clusters.endpoints.locality.region": [
+      commented: true,
+      datatype: :binary,
+      default: "default",
+      doc: "Default locality region for upstream endpoints"
+    ],
+    "relay.envoy.clusters.endpoints.locality.zone": [
+      commented: true,
+      datatype: :binary,
+      default: "default",
+      doc: "Default locality zone for upstream endpoints"
+    ],
+    "relay.envoy.clusters.endpoints.locality.sub_zone": [
+      commented: true,
+      datatype: :binary,
+      default: "",
+      doc: "Default locality sub-zone for upstream endpoints"
     ],
     "relay.marathon.urls": [
-      commented: false,
+      commented: true,
       datatype: [list: :binary],
       default: ["http://localhost:8080"],
       doc: "URLs for Marathon's API endpoints",
-      hidden: false,
-      to: "relay.marathon.urls"
+      env_var: "RELAY_MARATHON_URLS"
     ],
     "relay.marathon.events_timeout": [
-      commented: false,
+      commented: true,
       datatype: :integer,
       default: 60_000,
       doc: "Timeout value for Marathon's event stream (ms)",
-      hidden: false,
-      to: "relay.marathon.events_timeout"
+      env_var: "RELAY_MARATHON_EVENTS_TIMEOUT"
     ],
     "relay.marathon_lb.group": [
-      commented: false,
+      commented: true,
       datatype: :binary,
       default: "external",
       doc: "The marathon-lb group to expose via Envoy",
-      hidden: false,
-      to: "relay.marathon_lb.group"
+      env_var: "RELAY_MARATHON_LB_GROUP"
     ],
     "relay.marathon_acme.app_id": [
-      commented: false,
+      commented: true,
       datatype: :binary,
       default: "/marathon-acme",
       doc: "The Marathon app ID for marathon-acme",
-      hidden: false,
-      to: "relay.marathon_acme.app_id"
+      env_var: "RELAY_MARATHON_ACME_APP_ID"
     ],
     "relay.marathon_acme.port_index": [
-      commented: false,
+      commented: true,
       datatype: :integer,
       default: 0,
       doc: "The port index for marathon-acme",
-      hidden: false,
-      to: "relay.marathon_acme.port_index"
+      env_var: "RELAY_MARATHON_ACME_PORT_INDEX"
     ],
+    # FIXME: Relay.Certs.Filesystem specific config should probably be in a subgroup.
     "relay.certs.paths": [
-      commented: false,
+      commented: true,
       datatype: [list: :binary],
       default: [],
       doc: "Paths to read certificates from",
-      hidden: false,
-      to: "relay.certs.paths"
+      env_var: "RELAY_CERTS_PATHS"
     ],
+    # TODO: Relay.Certs.VaultKV config.
     "relay.certs.sync_period": [
-      commented: false,
+      commented: true,
       datatype: :integer,
       default: 600_000,
       doc: "Time between scheduled full syncs (ms)",
-      hidden: false,
-      to: "relay.certs.sync_period"
+      env_var: "RELAY_CERTS_SYNC_PERIOD"
     ],
     "relay.certs.mlb_port": [
-      commented: false,
+      commented: true,
       datatype: :integer,
       default: 9090,
       doc: "Port to listen on for marathon-lb HTTP signals",
-      hidden: false,
-      to: "relay.certs.mlb_port"
+      env_var: "RELAY_CERTS_MLB_PORT"
+    ],
+    "relay.resolver.ttl": [
+      commented: true,
+      datatype: :integer,
+      default: 60_000,
+      doc: "Time-to-live for cached DNS responses",
+      env_var: "RELAY_RESOLVER_TTL"
+    ],
+    # We need this configured for the GRPC server to work, but we don't really
+    # want to make it user-configurable.
+    "grpc.start_server": [
+      datatype: :boolean,
+      default: true,
+      hidden: true
     ]
   ],
-  transforms: [],
+  transforms: [
+    # In order to support multi-value environment variables for these fields,
+    # we accept and split comma-separated strings. We have no way of knowing
+    # whether the value we have came from a conf file, the environment, or the
+    # default, so rather than trying to guess we just split all list items.
+    "relay.marathon.urls": fn conf ->
+      [{_, value}] = Conform.Conf.get(conf, "relay.marathon.urls")
+      Enum.flat_map(value, &String.split(&1, ~r{,\s*}))
+    end,
+    "relay.certs.paths": fn conf ->
+      [{_, value}] = Conform.Conf.get(conf, "relay.certs.paths")
+      Enum.flat_map(value, &String.split(&1, ~r{,\s*}))
+    end
+  ],
   validators: []
 ]

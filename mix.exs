@@ -15,7 +15,8 @@ defmodule Relay.MixProject do
         coveralls: :test,
         "coveralls.json": :test,
         "coveralls.detail": :test,
-        credo: :test
+        credo: :test,
+        release: :prod
       ],
       dialyzer: dialyzer(),
       elixirc_paths: ["lib", "gen"]
@@ -53,7 +54,7 @@ defmodule Relay.MixProject do
       # Hackney is a dependency of HTTPoison but had a bug in versions 1.10.0 to
       # 1.12.0 that caused deadlocks with async requests.
       {:hackney, ">= 1.12.1"},
-      {:poison, "~> 3.1"},
+      {:jason, "~> 1.0"},
       {:conform, "~> 2.2"},
       {:plug, "~> 1.4"},
       {:cowboy, "~> 2.3"},
@@ -66,12 +67,14 @@ defmodule Relay.MixProject do
         only: :test,
         app: false
       },
+      {:uuid, "~> 1.1", only: :test},
       {:temp, "~> 0.4", only: :test},
       {:excoveralls, "~> 0.8", only: :test},
 
-      # Dev/test tools.
+      # Dev/test/build tools.
       {:dialyxir, "~> 0.5", only: :dev, runtime: false},
-      {:credo, "~> 0.9", only: [:dev, :test], runtime: false}
+      {:credo, "~> 0.9", only: [:dev, :test], runtime: false},
+      {:distillery, "~> 1.5", runtime: false}
     ]
   end
 

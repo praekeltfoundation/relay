@@ -1,5 +1,6 @@
 language: elixir
 elixir: '1.6'
+otp_release: '20.3'
 
 script:
   # This is basically `mix test` with coverage enabled.
@@ -14,12 +15,11 @@ after_success:
 
 jobs:
   include:
-    - elixir: '1.6'
-      otp_release: '20.3'
+    - {} # Use 'default' Elixir/OTP versions
+    - elixir: '1.7'
+      otp_release: '21.0'
 
-    - elixir: '1.6'
-      otp_release: '20.3'
-      env:
+    - env:
         - RUN_DIALYZER=1
       cache:
         directories:
@@ -31,26 +31,24 @@ jobs:
         # Juggle cached PLTs.
         - mkdir -p ~/.pltcache
         - cp ~/.pltcache/*-dev.plt _build/dev/ || true
-        - mix dialyzer --plt
+        - travis_wait mix dialyzer --plt
         - cp _build/dev/*-dev.plt ~/.pltcache/
         # Now that we've done the PLT dance, we can run dialyzer.
 
       script:
         - mix dialyzer --halt-exit-status
 
-    - group: trusty_latest
-      jdk: openjdk8
-      env:
-        - BAZEL_VERSION=0.12.0
-        - PROTOC_VERSION=3.5.1
+    - env:
+        - BAZEL_VERSION=0.15.1
+        - PROTOC_VERSION=3.6.0
         - PROTOBUF_ELIXIR_VERSION=0.5.4
 
       install:
         # Install Bazel
-        - curl -L "https://github.com/bazelbuild/bazel/releases/download/$BAZEL_VERSION/bazel-$BAZEL_VERSION-without-jdk-installer-linux-x86_64.sh" > bazel-installer.sh
+        - curl -fL "https://github.com/bazelbuild/bazel/releases/download/$BAZEL_VERSION/bazel-$BAZEL_VERSION-installer-linux-x86_64.sh" > bazel-installer.sh
         - bash bazel-installer.sh --user
         # Install protoc
-        - curl -L https://github.com/google/protobuf/releases/download/v$PROTOC_VERSION/protoc-$PROTOC_VERSION-linux-x86_64.zip > protoc.zip
+        - curl -fL https://github.com/google/protobuf/releases/download/v$PROTOC_VERSION/protoc-$PROTOC_VERSION-linux-x86_64.zip > protoc.zip
         - mkdir ~/protoc && unzip -d ~/protoc protoc.zip && ln -s ~/protoc/bin/protoc ~/bin/protoc
         # Install protoc-gen-elixir
         - mix local.hex --force && mix escript.install --force hex protobuf "$PROTOBUF_ELIXIR_VERSION"
@@ -62,3 +60,27 @@ jobs:
         - if [[ -n "$(git status -s lib/)" ]]; then
             git status lib/; git diff -- lib/ | head -n 500; false;
           fi
+
+    - sudo: required
+      group: trusty_latest
+      services: docker
+      language: python
+      elixir: ~
+      otp_release: ~
+
+      env:
+        - IMAGE_NAME=praekeltfoundation/relay
+        - REGISTRY_USER=praekeltorgdeploy
+        - secure: "QShzxge3nA5z8hZXyYR9CqHjLTFipDAwH4WdXe4KykXH33CfW2y9QeEK3rXGf3gmE5BYBMd5XL08sIpQegrk3apQpWKjwzV+HA6ReMFR+KgIOUrQey6ysNPOQBKhrpRsH1mWwLYWz1KkByHT0KOM6+2DnzOYmrVgLXNSNQavNk0W80AjpuqruQx65vaYaRJW4hOFoXtf9+ZwxYyD4U5gROSLY4/9KzGjYi6P4GWQj3fvK9tJ/mQXE2Gqm+1LnQsAR8vuSduQKmyeEWdImys8UeXOprkug8A/WPx+kOXL06QeQPVlcNaf8bnbiJT562j4v7qkdgBwSJLJXx+eWZg5y+2F+ajwG8F6TbXok4ySSCN/k5k4kBqvX5VaXUbetboATd80TlSJjfrS67OgGdCM4b9isOFbR0yYcVU5Q+K/QaGIsORzP71ddz1wPzc7752gyeKZavHtAOJ5ZlwVPO7Jf7TsKjn7xk+XhXx72arI7/gGNjPbHHIg/APXTTgo57lLJkzuzwIlxfn05QSOMWsCzd7CKmijCiJxeXH5SLDgKJOt+88P1A4JZi1cFsj/YMkZmSmjN0ScIXJzQt5wn43ZskQ0VboUEPwaNSUhPjQlqkj7kooIplzXO8D9KwlCm8V+JhGmVBhcfFh36Mif1huDro90U3SxDKbYu82ddsCuz3Y="
+
+      script: docker build -t "$IMAGE_NAME" .
+      after_script: docker images
+
+      before_deploy:
+        - pip install docker-ci-deploy==0.3.0
+        - echo "$REGISTRY_PASS" | docker login -u "$REGISTRY_USER" --password-stdin
+      deploy:
+        provider: script
+        script: dcd -t master -V "$(git rev-parse --short HEAD)" -L "$IMAGE_NAME"
+        on:
+          branch: master

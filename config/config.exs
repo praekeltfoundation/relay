@@ -51,7 +51,8 @@ config :relay,
             path: "http_access.log",
             format: ""
             # TODO: Figure out how to configure filters
-          ]
+          ],
+          use_remote_address: true
         ],
         router: [
           upstream_log: [
@@ -71,7 +72,8 @@ config :relay,
             path: "https_access.log",
             format: ""
             # TODO: Figure out how to configure filters
-          ]
+          ],
+          use_remote_address: true
         ],
         router: [
           upstream_log: [
@@ -108,4 +110,9 @@ config :relay,
     paths: [],
     sync_period: 600_000,
     mlb_port: 9090
+  ],
+  resolver: [
+    ttl: 60_000
   ]
+
+config :grpc, start_server: true
