@@ -41,13 +41,16 @@ defmodule Relay.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      # 2018-04-23: grpc-elixir 0.3.0-alpha.2 has an issue that prevents us
+      # 2018-06-26: grpc-elixir 0.3.0-alpha.2 has an issue that prevents us
       # from sending messages to our servers:
       # https://github.com/tony612/grpc-elixir/issues/59
+      # We still want to use the pre-release code because the API has taken a
+      # slightly different direction from the last working release
+      # (0.3.0-alpha.1) and we want to keep up.
       {
         :grpc,
         git: "https://github.com/tony612/grpc-elixir.git",
-        ref: "7353aa04cbf4cd982183aacd54d645fe6b4571dd"
+        ref: "0ef90946a495e22417c1b0c9490ef967a88060ee"
       },
       {:google_protos, "~> 0.1"},
       {:httpoison, "~> 1.0"},
