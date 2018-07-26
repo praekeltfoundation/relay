@@ -16,7 +16,8 @@ after_success:
 jobs:
   include:
     - {} # Use 'default' Elixir/OTP versions
-    - otp_release: '21.0'
+    - elixir: '1.7'
+      otp_release: '21.0'
 
     - env:
         - RUN_DIALYZER=1
