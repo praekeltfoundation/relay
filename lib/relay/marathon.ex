@@ -92,7 +92,7 @@ defmodule Relay.Marathon do
     {:ok, event} = Jason.decode(data)
 
     case App.from_event(event, marathon_lb_group()) do
-      %App{port_indices: port_indices} = app when length(port_indices) > 0 ->
+      %App{port_indices: port_indices} = app when port_indices != [] ->
         case event["appDefinition"] do
           %{"instances" => instances} when instances > 0 ->
             log_api_post_event(event, "updating app")
