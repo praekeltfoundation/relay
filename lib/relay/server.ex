@@ -51,7 +51,7 @@ defmodule Relay.Server.Macros do
         def xds, do: @xds
         def type_url, do: @type_url
 
-        @spec unquote(stream_func)(Enumerable.t(), Stream.t()) :: Stream.t()
+        @spec unquote(stream_func)(Enumerable.t(), Stream.t()) :: :ok
         def unquote(stream_func)(req_enum, stream) do
           Log.debug("Stream started: #{inspect(self())} #{Log.mfa()}")
           :ok = Publisher.subscribe(Publisher, @xds, self())
