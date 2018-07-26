@@ -41,11 +41,24 @@ defmodule Relay.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:grpc, "~> 0.3.0-alpha.1"},
-      # 2018-03-26: grpc has the dependency `{:gun, "~> 1.0.0-pre.5"}` which
-      # actually pulls in 1.0.0-pre.4b which causes errors with GRPC streams
-      # that return an error code.
-      {:gun, "1.0.0-pre.5"},
+      # 2018-06-26: grpc-elixir 0.3.0-alpha.2 has an issue that prevents us
+      # from sending messages to our servers. It's been fixed on master:
+      # https://github.com/tony612/grpc-elixir/issues/59
+      #
+      # Another issue prevents us from using the current latest git commit :-/
+      # https://github.com/tony612/grpc-elixir/issues/67
+      #
+      # We still want to use the pre-release code because the API has taken a
+      # slightly different direction from the last working release
+      # (0.3.0-alpha.1) and we want to keep up.
+      {
+        :grpc,
+        git: "https://github.com/tony612/grpc-elixir.git",
+        ref: "fce2dea02fb8be815cc5f47ab4cc240132261533"
+      },
+      # As of the above commit, grpc uses cowlib from git for the 2.4.0 tag
+      # which is now available on Hex. Prefer Hex.
+      {:cowlib, "~> 2.4", override: true},
       {:google_protos, "~> 0.1"},
       {:httpoison, "~> 1.0"},
       # Hackney is a dependency of HTTPoison but had a bug in versions 1.10.0 to
