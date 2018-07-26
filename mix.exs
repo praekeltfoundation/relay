@@ -56,10 +56,9 @@ defmodule Relay.MixProject do
         git: "https://github.com/tony612/grpc-elixir.git",
         ref: "fce2dea02fb8be815cc5f47ab4cc240132261533"
       },
-      # As of the above commit, grpc uses cowlib from git, for the 2.4.0 tag
-      # which is now available on Hex.
+      # As of the above commit, grpc uses cowlib from git for the 2.4.0 tag
+      # which is now available on Hex. Prefer Hex.
       {:cowlib, "~> 2.4", override: true},
-
       {:google_protos, "~> 0.1"},
       {:httpoison, "~> 1.0"},
       # Hackney is a dependency of HTTPoison but had a bug in versions 1.10.0 to
