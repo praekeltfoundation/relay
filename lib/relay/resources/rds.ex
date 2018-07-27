@@ -1,4 +1,6 @@
 defmodule Relay.Resources.RDS do
+  use LogWrapper, as: Log
+
   @moduledoc """
   Builds Envoy RouteConfiguration values from cluster resources.
   """
@@ -36,7 +38,16 @@ defmodule Relay.Resources.RDS do
     apps
     |> Enum.reduce(%{}, &apps_by_domain/2)
     |> Enum.filter(fn {_, apps} -> length(apps) > 1 end)
+    |> log_duplicate_warning()
     |> Enum.map(fn {dom, _} -> dom end)
+  end
+
+  defp log_duplicate_warning([]), do: []
+
+  defp log_duplicate_warning(duplicates) do
+    # TODO: Better log message formatting.
+    Log.warn("Apps with duplicate domains found: #{inspect(duplicates)}")
+    duplicates
   end
 
   defp apps_by_domain(%AppEndpoint{name: name, domains: domains}, domain_map) do
