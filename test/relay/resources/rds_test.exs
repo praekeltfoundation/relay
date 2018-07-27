@@ -163,6 +163,26 @@ defmodule Relay.Resources.RDSTest do
     assert Protobuf.Validator.valid?(https_vhost)
   end
 
+  test "duplicate domains" do
+    app1 = %AppEndpoint{name: "/app1", domains: ["foo.xyz"]}
+    app2 = %AppEndpoint{name: "/app2", domains: ["foo.xyz", "bar.xyz"]}
+    app3 = %AppEndpoint{name: "/app3", domains: ["baz.xyz", "quux.xyz"]}
+
+    assert [
+             %RouteConfiguration{name: "http", virtual_hosts: [http1, http2, http3]},
+             %RouteConfiguration{name: "https", virtual_hosts: [https1, https2, https3]}
+           ] = RDS.route_configurations([app1, app2, app3])
+
+    assert %VirtualHost{name: "http_/app1", domains: []} = http1
+    assert %VirtualHost{name: "https_/app1", domains: []} = https1
+
+    assert %VirtualHost{name: "http_/app2", domains: ["bar.xyz"]} = http2
+    assert %VirtualHost{name: "https_/app2", domains: ["bar.xyz"]} = https2
+
+    assert %VirtualHost{name: "http_/app3", domains: ["baz.xyz", "quux.xyz"]} = http3
+    assert %VirtualHost{name: "https_/app3", domains: ["baz.xyz", "quux.xyz"]} = https3
+  end
+
   test "http to https redirect" do
     app_endpoint = %{@simple_app_endpoint | redirect_to_https: true}
 
