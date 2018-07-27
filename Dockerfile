@@ -28,7 +28,7 @@ RUN mix release --env=prod
 
 # We don't actually need Erlang/Elixir installed, because it's all included in
 # the release package. Thus, we start from the base alpine image.
-FROM alpine:3.7
+FROM alpine:3.8
 
 # We need bash for the generated scripts, tini for signal propagation, and
 # openssl for crypto.
