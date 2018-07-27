@@ -25,9 +25,21 @@ defmodule Relay.Resources.RDS do
   @spec filter_duplicate_domains([AppEndpoint.t()]) :: {[AppEndpoint.t()], [String.t()]}
   defp filter_duplicate_domains(apps) do
     duplicate_domains = find_duplicate_domains(apps)
-    filtered_apps = apps |> Enum.map(&filter_app_domains(&1, duplicate_domains))
+
+    filtered_apps =
+      apps
+      |> Enum.map(&filter_app_domains(&1, duplicate_domains))
+      |> Enum.filter(&check_app_domains/1)
+
     {filtered_apps, duplicate_domains}
   end
+
+  defp check_app_domains(%AppEndpoint{name: name, domains: []}) do
+    Log.warn("App has no routable domains: #{name}")
+    false
+  end
+
+  defp check_app_domains(%AppEndpoint{}), do: true
 
   defp filter_app_domains(app, duplicate_domains),
     do: %AppEndpoint{app | domains: app.domains |> reject_items(duplicate_domains)}

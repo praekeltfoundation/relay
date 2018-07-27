@@ -106,7 +106,7 @@ defmodule Relay.Resources.RDSTest do
   end
 
   test "multiple simple apps" do
-    simple_app_endpoint2 = %{@simple_app_endpoint | name: "/mc3_0"}
+    simple_app_endpoint2 = %AppEndpoint{name: "/mc3_0", domains: ["mc3.example.org"]}
 
     assert [http_config, https_config] =
              RDS.route_configurations([@simple_app_endpoint, simple_app_endpoint2])
@@ -164,17 +164,17 @@ defmodule Relay.Resources.RDSTest do
   end
 
   test "duplicate domains" do
+    # app1 has only duplicate domains, so it will be filtered out completely.
     app1 = %AppEndpoint{name: "/app1", domains: ["foo.xyz"]}
+    # app2 has a mix of dups and non-dups, so it will lose the dups.
     app2 = %AppEndpoint{name: "/app2", domains: ["foo.xyz", "bar.xyz"]}
+    # app2 has no duplicate domains, so it won't be touched.
     app3 = %AppEndpoint{name: "/app3", domains: ["baz.xyz", "quux.xyz"]}
 
     assert [
-             %RouteConfiguration{name: "http", virtual_hosts: [http1, http2, http3]},
-             %RouteConfiguration{name: "https", virtual_hosts: [https1, https2, https3]}
+             %RouteConfiguration{name: "http", virtual_hosts: [http2, http3]},
+             %RouteConfiguration{name: "https", virtual_hosts: [https2, https3]}
            ] = RDS.route_configurations([app1, app2, app3])
-
-    assert %VirtualHost{name: "http_/app1", domains: []} = http1
-    assert %VirtualHost{name: "https_/app1", domains: []} = https1
 
     assert %VirtualHost{name: "http_/app2", domains: ["bar.xyz"]} = http2
     assert %VirtualHost{name: "https_/app2", domains: ["bar.xyz"]} = https2
