@@ -73,7 +73,7 @@ defmodule Relay.MixProject do
       {
         :sse_test_server,
         git: "https://github.com/praekeltfoundation/sse_test_server.git",
-        ref: "8f5373cdb4722b145e978fff4d4eb039072c655c",
+        ref: "2a3f83892020a6861464644ee8014d20b188fac0",
         only: :test,
         app: false
       },
@@ -82,7 +82,7 @@ defmodule Relay.MixProject do
       {:excoveralls, "~> 0.8", only: :test},
 
       # Dev/test/build tools.
-      {:dialyxir, "~> 0.5", only: :dev, runtime: false},
+      {:dialyxir, "~> 1.0.0-rc.3", only: :dev, runtime: false},
       {:credo, "~> 0.9", only: [:dev, :test], runtime: false},
       {:distillery, "~> 1.5", runtime: false}
     ]
