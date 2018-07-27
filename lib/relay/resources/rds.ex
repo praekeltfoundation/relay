@@ -50,17 +50,17 @@ defmodule Relay.Resources.RDS do
     apps
     |> Enum.reduce(%{}, &apps_by_domain/2)
     |> Enum.filter(fn {_, apps} -> length(apps) > 1 end)
-    |> log_duplicate_warning()
+    |> log_duplicate_warnings()
     |> Enum.map(fn {dom, _} -> dom end)
   end
 
-  defp log_duplicate_warning([]), do: []
-
-  defp log_duplicate_warning(duplicates) do
-    # TODO: Better log message formatting.
-    Log.warn("Apps with duplicate domains found: #{inspect(duplicates)}")
+  defp log_duplicate_warnings(duplicates) do
+    duplicates |> Enum.each(&log_duplicate_warning/1)
     duplicates
   end
+
+  defp log_duplicate_warning({domain, apps}),
+    do: Log.warn("Domain #{domain} claimed by multiple apps: #{Enum.join(apps, " ")}")
 
   defp apps_by_domain(%AppEndpoint{name: name, domains: domains}, domain_map) do
     Enum.reduce(domains, domain_map, fn dom, dom_map ->

@@ -171,16 +171,27 @@ defmodule Relay.Resources.RDSTest do
     # app2 has no duplicate domains, so it won't be touched.
     app3 = %AppEndpoint{name: "/app3", domains: ["baz.xyz", "quux.xyz"]}
 
-    assert [
-             %RouteConfiguration{name: "http", virtual_hosts: [http2, http3]},
-             %RouteConfiguration{name: "https", virtual_hosts: [https2, https3]}
-           ] = RDS.route_configurations([app1, app2, app3])
+    import ExUnit.CaptureLog
 
-    assert %VirtualHost{name: "http_/app2", domains: ["bar.xyz"]} = http2
-    assert %VirtualHost{name: "https_/app2", domains: ["bar.xyz"]} = https2
+    logs =
+      capture_log(fn ->
+        # We only want to capture the logs from the RDS.route_configurations
+        # call, but everything else in here needs access to the return value.
+        assert [
+                 %RouteConfiguration{name: "http", virtual_hosts: [http2, http3]},
+                 %RouteConfiguration{name: "https", virtual_hosts: [https2, https3]}
+               ] = RDS.route_configurations([app1, app2, app3])
 
-    assert %VirtualHost{name: "http_/app3", domains: ["baz.xyz", "quux.xyz"]} = http3
-    assert %VirtualHost{name: "https_/app3", domains: ["baz.xyz", "quux.xyz"]} = https3
+        assert %VirtualHost{name: "http_/app2", domains: ["bar.xyz"]} = http2
+        assert %VirtualHost{name: "https_/app2", domains: ["bar.xyz"]} = https2
+
+        assert %VirtualHost{name: "http_/app3", domains: ["baz.xyz", "quux.xyz"]} = http3
+        assert %VirtualHost{name: "https_/app3", domains: ["baz.xyz", "quux.xyz"]} = https3
+      end)
+
+    assert [_, dup_log, _, app_log, _] = String.split(logs, "\n")
+    assert dup_log =~ ~r"Domain foo.xyz claimed by multiple apps: /app2 /app1"
+    assert app_log =~ ~r"App has no routable domains: /app1"
   end
 
   test "http to https redirect" do
