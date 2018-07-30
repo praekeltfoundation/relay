@@ -10,6 +10,7 @@ defmodule Relay.Resources do
 
   defmodule CertInfo do
     @moduledoc "Certificate data for SNI."
+    @derive Jason.Encoder # We encode CertInfos as JSON for storing in Vault
     defstruct [:domains, :key, :cert_chain]
     # key and cert_chain are PEM-encoded strings.
     @type t :: %__MODULE__{
