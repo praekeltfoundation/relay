@@ -52,6 +52,12 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
   extends: [],
   import: [],
   mappings: [
+    "logger.level": [
+      datatype: [enum: [:debug, :info, :warn, :error]],
+      default: :info,
+      doc: "Global log level",
+      env_var: "LOGGER_LEVEL"
+    ],
     "relay.listen.address": [
       commented: true,
       datatype: :binary,
