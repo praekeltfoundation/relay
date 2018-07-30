@@ -12,7 +12,7 @@ defmodule FakeMarathon do
 
   def response(req, fm, status_code, json) do
     headers = %{"content-type" => "application/json"}
-    {:ok, body} = Poison.encode(json)
+    {:ok, body} = Jason.encode(json)
     {:ok, :cowboy_req.reply(status_code, headers, body, req), fm}
   end
 

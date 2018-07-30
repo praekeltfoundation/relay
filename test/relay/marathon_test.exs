@@ -304,7 +304,7 @@ defmodule Relay.MarathonTest do
     test "relevant app", %{fake_marathon: fm} do
       assert_receive_update([@test_app_endpoint])
 
-      FakeMarathon.event(fm, "api_post_event", Poison.encode!(@test_api_post_event))
+      FakeMarathon.event(fm, "api_post_event", Jason.encode!(@test_api_post_event))
 
       assert_receive_update([@test_event_endpoint_no_address, @test_app_endpoint])
     end
@@ -321,7 +321,7 @@ defmodule Relay.MarathonTest do
       event_data =
         @test_api_post_event
         |> Map.put("appDefinition", app_definition)
-        |> Poison.encode!()
+        |> Jason.encode!()
 
       FakeMarathon.event(fm, "api_post_event", event_data)
 
@@ -341,7 +341,7 @@ defmodule Relay.MarathonTest do
       event_data =
         @test_api_post_event
         |> Map.put("appDefinition", app_definition)
-        |> Poison.encode!()
+        |> Jason.encode!()
 
       FakeMarathon.event(fm, "api_post_event", event_data)
 
@@ -351,7 +351,7 @@ defmodule Relay.MarathonTest do
     test "app becomes irrelevant (no relevant ports)", %{fake_marathon: fm} do
       assert_receive_update([@test_app_endpoint])
 
-      FakeMarathon.event(fm, "api_post_event", Poison.encode!(@test_api_post_event))
+      FakeMarathon.event(fm, "api_post_event", Jason.encode!(@test_api_post_event))
       assert_receive_update([@test_event_endpoint_no_address, @test_app_endpoint])
 
       # Clear the labels so the app is irrelevant
@@ -363,7 +363,7 @@ defmodule Relay.MarathonTest do
       event_data =
         @test_api_post_event
         |> Map.put("appDefinition", app_definition)
-        |> Poison.encode!()
+        |> Jason.encode!()
 
       FakeMarathon.event(fm, "api_post_event", event_data)
 
@@ -373,7 +373,7 @@ defmodule Relay.MarathonTest do
     test "app becomes irrelevant (suspended)", %{fake_marathon: fm} do
       assert_receive_update([@test_app_endpoint])
 
-      FakeMarathon.event(fm, "api_post_event", Poison.encode!(@test_api_post_event))
+      FakeMarathon.event(fm, "api_post_event", Jason.encode!(@test_api_post_event))
       assert_receive_update([@test_event_endpoint_no_address, @test_app_endpoint])
 
       # Scale to 0 instances so the app is suspended
@@ -385,7 +385,7 @@ defmodule Relay.MarathonTest do
       event_data =
         @test_api_post_event
         |> Map.put("appDefinition", app_definition)
-        |> Poison.encode!()
+        |> Jason.encode!()
 
       FakeMarathon.event(fm, "api_post_event", event_data)
 
@@ -398,11 +398,11 @@ defmodule Relay.MarathonTest do
       assert_receive_update([@test_app_endpoint])
 
       # TODO: Should we be storing the tasks app some other way?
-      FakeMarathon.event(fm, "api_post_event", Poison.encode!(@test_api_post_event))
+      FakeMarathon.event(fm, "api_post_event", Jason.encode!(@test_api_post_event))
       # Clear the mailbox messages
       assert_receive_update([@test_event_endpoint_no_address, @test_app_endpoint])
 
-      FakeMarathon.event(fm, "app_terminated_event", Poison.encode!(@test_app_terminated_event))
+      FakeMarathon.event(fm, "app_terminated_event", Jason.encode!(@test_app_terminated_event))
 
       assert_receive_update([@test_app_endpoint])
     end
@@ -413,11 +413,11 @@ defmodule Relay.MarathonTest do
       assert_receive_update([@test_app_endpoint])
 
       # TODO: Should we be storing the tasks app some other way?
-      FakeMarathon.event(fm, "api_post_event", Poison.encode!(@test_api_post_event))
+      FakeMarathon.event(fm, "api_post_event", Jason.encode!(@test_api_post_event))
       # Clear the mailbox messages
       assert_receive_update([@test_event_endpoint_no_address, @test_app_endpoint])
 
-      FakeMarathon.event(fm, "status_update_event", Poison.encode!(@test_status_update_event))
+      FakeMarathon.event(fm, "status_update_event", Jason.encode!(@test_status_update_event))
 
       assert_receive_update([@test_event_endpoint, @test_app_endpoint])
     end
@@ -426,7 +426,7 @@ defmodule Relay.MarathonTest do
       assert_receive_update([@test_app_endpoint])
 
       # Don't store the app
-      FakeMarathon.event(fm, "status_update_event", Poison.encode!(@test_status_update_event))
+      FakeMarathon.event(fm, "status_update_event", Jason.encode!(@test_status_update_event))
 
       refute_update()
     end
@@ -435,16 +435,16 @@ defmodule Relay.MarathonTest do
       assert_receive_update([@test_app_endpoint])
 
       # TODO: Should we be storing the tasks app some other way?
-      FakeMarathon.event(fm, "api_post_event", Poison.encode!(@test_api_post_event))
+      FakeMarathon.event(fm, "api_post_event", Jason.encode!(@test_api_post_event))
       assert_receive_update([@test_event_endpoint_no_address, @test_app_endpoint])
 
-      FakeMarathon.event(fm, "status_update_event", Poison.encode!(@test_status_update_event))
+      FakeMarathon.event(fm, "status_update_event", Jason.encode!(@test_status_update_event))
       assert_receive_update([@test_event_endpoint, @test_app_endpoint])
 
       event_data =
         @test_status_update_event
         |> Map.put("taskStatus", "TASK_KILLED")
-        |> Poison.encode!()
+        |> Jason.encode!()
 
       FakeMarathon.event(fm, "status_update_event", event_data)
 
@@ -462,7 +462,7 @@ defmodule Relay.MarathonTest do
       "timestamp" => "2018-04-11T11:45:47.417Z"
     }
 
-    FakeMarathon.event(fm, "event_stream_attached", Poison.encode!(event))
+    FakeMarathon.event(fm, "event_stream_attached", Jason.encode!(event))
 
     refute_update()
   end
