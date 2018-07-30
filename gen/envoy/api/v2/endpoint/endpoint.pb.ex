@@ -3,11 +3,25 @@ defmodule Envoy.Api.V2.Endpoint.Endpoint do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          address: Envoy.Api.V2.Core.Address.t()
+          address: Envoy.Api.V2.Core.Address.t(),
+          health_check_config: Envoy.Api.V2.Endpoint.Endpoint.HealthCheckConfig.t()
         }
-  defstruct [:address]
+  defstruct [:address, :health_check_config]
 
   field :address, 1, type: Envoy.Api.V2.Core.Address
+  field :health_check_config, 2, type: Envoy.Api.V2.Endpoint.Endpoint.HealthCheckConfig
+end
+
+defmodule Envoy.Api.V2.Endpoint.Endpoint.HealthCheckConfig do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          port_value: non_neg_integer
+        }
+  defstruct [:port_value]
+
+  field :port_value, 1, type: :uint32
 end
 
 defmodule Envoy.Api.V2.Endpoint.LbEndpoint do

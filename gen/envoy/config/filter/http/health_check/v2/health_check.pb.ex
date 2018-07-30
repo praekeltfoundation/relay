@@ -6,18 +6,27 @@ defmodule Envoy.Config.Filter.Http.HealthCheck.V2.HealthCheck do
           pass_through_mode: Google.Protobuf.BoolValue.t(),
           endpoint: String.t(),
           cache_time: Google.Protobuf.Duration.t(),
-          cluster_min_healthy_percentages: %{String.t() => Envoy.Type.Percent.t()}
+          cluster_min_healthy_percentages: %{String.t() => Envoy.Type.Percent.t()},
+          headers: [Envoy.Api.V2.Route.HeaderMatcher.t()]
         }
-  defstruct [:pass_through_mode, :endpoint, :cache_time, :cluster_min_healthy_percentages]
+  defstruct [
+    :pass_through_mode,
+    :endpoint,
+    :cache_time,
+    :cluster_min_healthy_percentages,
+    :headers
+  ]
 
   field :pass_through_mode, 1, type: Google.Protobuf.BoolValue
-  field :endpoint, 2, type: :string
+  field :endpoint, 2, type: :string, deprecated: true
   field :cache_time, 3, type: Google.Protobuf.Duration
 
   field :cluster_min_healthy_percentages, 4,
     repeated: true,
     type: Envoy.Config.Filter.Http.HealthCheck.V2.HealthCheck.ClusterMinHealthyPercentagesEntry,
     map: true
+
+  field :headers, 5, repeated: true, type: Envoy.Api.V2.Route.HeaderMatcher
 end
 
 defmodule Envoy.Config.Filter.Http.HealthCheck.V2.HealthCheck.ClusterMinHealthyPercentagesEntry do

@@ -82,30 +82,33 @@ defmodule Envoy.Api.V2.Auth.CertificateValidationContext do
 
   @type t :: %__MODULE__{
           trusted_ca: Envoy.Api.V2.Core.DataSource.t(),
+          verify_certificate_spki: [String.t()],
           verify_certificate_hash: [String.t()],
-          verify_spki_sha256: [String.t()],
           verify_subject_alt_name: [String.t()],
           require_ocsp_staple: Google.Protobuf.BoolValue.t(),
           require_signed_certificate_timestamp: Google.Protobuf.BoolValue.t(),
-          crl: Envoy.Api.V2.Core.DataSource.t()
+          crl: Envoy.Api.V2.Core.DataSource.t(),
+          allow_expired_certificate: boolean
         }
   defstruct [
     :trusted_ca,
+    :verify_certificate_spki,
     :verify_certificate_hash,
-    :verify_spki_sha256,
     :verify_subject_alt_name,
     :require_ocsp_staple,
     :require_signed_certificate_timestamp,
-    :crl
+    :crl,
+    :allow_expired_certificate
   ]
 
   field :trusted_ca, 1, type: Envoy.Api.V2.Core.DataSource
+  field :verify_certificate_spki, 3, repeated: true, type: :string
   field :verify_certificate_hash, 2, repeated: true, type: :string
-  field :verify_spki_sha256, 3, repeated: true, type: :string
   field :verify_subject_alt_name, 4, repeated: true, type: :string
   field :require_ocsp_staple, 5, type: Google.Protobuf.BoolValue
   field :require_signed_certificate_timestamp, 6, type: Google.Protobuf.BoolValue
   field :crl, 7, type: Envoy.Api.V2.Core.DataSource
+  field :allow_expired_certificate, 8, type: :bool
 end
 
 defmodule Envoy.Api.V2.Auth.CommonTlsContext do
@@ -113,22 +116,23 @@ defmodule Envoy.Api.V2.Auth.CommonTlsContext do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
+          validation_context_type: {atom, any},
           tls_params: Envoy.Api.V2.Auth.TlsParameters.t(),
           tls_certificates: [Envoy.Api.V2.Auth.TlsCertificate.t()],
           tls_certificate_sds_secret_configs: [Envoy.Api.V2.Auth.SdsSecretConfig.t()],
-          validation_context: Envoy.Api.V2.Auth.CertificateValidationContext.t(),
           alpn_protocols: [String.t()],
           deprecated_v1: Envoy.Api.V2.Auth.CommonTlsContext.DeprecatedV1.t()
         }
   defstruct [
+    :validation_context_type,
     :tls_params,
     :tls_certificates,
     :tls_certificate_sds_secret_configs,
-    :validation_context,
     :alpn_protocols,
     :deprecated_v1
   ]
 
+  oneof :validation_context_type, 0
   field :tls_params, 1, type: Envoy.Api.V2.Auth.TlsParameters
   field :tls_certificates, 2, repeated: true, type: Envoy.Api.V2.Auth.TlsCertificate
 
@@ -136,7 +140,12 @@ defmodule Envoy.Api.V2.Auth.CommonTlsContext do
     repeated: true,
     type: Envoy.Api.V2.Auth.SdsSecretConfig
 
-  field :validation_context, 3, type: Envoy.Api.V2.Auth.CertificateValidationContext
+  field :validation_context, 3, type: Envoy.Api.V2.Auth.CertificateValidationContext, oneof: 0
+
+  field :validation_context_sds_secret_config, 7,
+    type: Envoy.Api.V2.Auth.SdsSecretConfig,
+    oneof: 0
+
   field :alpn_protocols, 4, repeated: true, type: :string
   field :deprecated_v1, 5, type: Envoy.Api.V2.Auth.CommonTlsContext.DeprecatedV1, deprecated: true
 end
@@ -159,12 +168,14 @@ defmodule Envoy.Api.V2.Auth.UpstreamTlsContext do
 
   @type t :: %__MODULE__{
           common_tls_context: Envoy.Api.V2.Auth.CommonTlsContext.t(),
-          sni: String.t()
+          sni: String.t(),
+          allow_renegotiation: boolean
         }
-  defstruct [:common_tls_context, :sni]
+  defstruct [:common_tls_context, :sni, :allow_renegotiation]
 
   field :common_tls_context, 1, type: Envoy.Api.V2.Auth.CommonTlsContext
   field :sni, 2, type: :string
+  field :allow_renegotiation, 3, type: :bool
 end
 
 defmodule Envoy.Api.V2.Auth.DownstreamTlsContext do
@@ -223,4 +234,5 @@ defmodule Envoy.Api.V2.Auth.Secret do
   field :name, 1, type: :string
   field :tls_certificate, 2, type: Envoy.Api.V2.Auth.TlsCertificate, oneof: 0
   field :session_ticket_keys, 3, type: Envoy.Api.V2.Auth.TlsSessionTicketKeys, oneof: 0
+  field :validation_context, 4, type: Envoy.Api.V2.Auth.CertificateValidationContext, oneof: 0
 end

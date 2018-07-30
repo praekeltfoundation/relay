@@ -13,7 +13,8 @@ defmodule Envoy.Api.V2.Listener do
           drain_type: integer,
           listener_filters: [Envoy.Api.V2.Listener.ListenerFilter.t()],
           transparent: Google.Protobuf.BoolValue.t(),
-          freebind: Google.Protobuf.BoolValue.t()
+          freebind: Google.Protobuf.BoolValue.t(),
+          tcp_fast_open_queue_length: Google.Protobuf.UInt32Value.t()
         }
   defstruct [
     :name,
@@ -26,7 +27,8 @@ defmodule Envoy.Api.V2.Listener do
     :drain_type,
     :listener_filters,
     :transparent,
-    :freebind
+    :freebind,
+    :tcp_fast_open_queue_length
   ]
 
   field :name, 1, type: :string
@@ -40,6 +42,7 @@ defmodule Envoy.Api.V2.Listener do
   field :listener_filters, 9, repeated: true, type: Envoy.Api.V2.Listener.ListenerFilter
   field :transparent, 10, type: Google.Protobuf.BoolValue
   field :freebind, 11, type: Google.Protobuf.BoolValue
+  field :tcp_fast_open_queue_length, 12, type: Google.Protobuf.UInt32Value
 end
 
 defmodule Envoy.Api.V2.Listener.DeprecatedV1 do

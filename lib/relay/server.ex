@@ -51,11 +51,11 @@ defmodule Relay.Server.Macros do
         def xds, do: @xds
         def type_url, do: @type_url
 
-        @spec unquote(stream_func)(Enumerable.t(), Stream.t()) :: Stream.t()
-        def unquote(stream_func)(req_enum, stream0) do
+        @spec unquote(stream_func)(Enumerable.t(), Stream.t()) :: :ok
+        def unquote(stream_func)(req_enum, stream) do
           Log.debug("Stream started: #{inspect(self())} #{Log.mfa()}")
           :ok = Publisher.subscribe(Publisher, @xds, self())
-          handle_requests(req_enum, stream0)
+          handle_requests(req_enum, stream)
         end
 
         @spec unquote(fetch_func)(DiscoveryRequest.t(), Stream.t()) :: DiscoveryResponse.t()
@@ -63,11 +63,9 @@ defmodule Relay.Server.Macros do
           raise GRPC.RPCError, status: GRPC.Status.unimplemented(), message: "not implemented"
         end
 
-        @spec handle_requests(Enumerable.t(), Stream.t()) :: Stream.t()
-        defp handle_requests(req_enum, stream0) do
-          # We must use the `Stream` returned by `GRPC.Server.send_reply` for
-          # each subsequent request and return the final `Stream`.
-          req_enum |> Enum.reduce(stream0, &handle_request(&1, &2))
+        @spec handle_requests(Enumerable.t(), Stream.t()) :: :ok
+        defp handle_requests(req_enum, stream) do
+          req_enum |> Enum.each(&handle_request(&1, stream))
         end
 
         @spec handle_request(DiscoveryRequest.t(), Stream.t()) :: Stream.t()

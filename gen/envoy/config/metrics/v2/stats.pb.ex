@@ -47,13 +47,15 @@ defmodule Envoy.Config.Metrics.V2.StatsdSink do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          statsd_specifier: {atom, any}
+          statsd_specifier: {atom, any},
+          prefix: String.t()
         }
-  defstruct [:statsd_specifier]
+  defstruct [:statsd_specifier, :prefix]
 
   oneof :statsd_specifier, 0
   field :address, 1, type: Envoy.Api.V2.Core.Address, oneof: 0
   field :tcp_cluster_name, 2, type: :string, oneof: 0
+  field :prefix, 3, type: :string
 end
 
 defmodule Envoy.Config.Metrics.V2.DogStatsdSink do

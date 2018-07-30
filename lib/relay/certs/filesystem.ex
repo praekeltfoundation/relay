@@ -122,10 +122,10 @@ defmodule Relay.Certs.Filesystem do
   defp pem_to_cert_info(cert_bundle) do
     {:ok, key} = Certs.get_key(cert_bundle)
     certs = Certs.get_certs(cert_bundle)
-    sni_domains = Certs.get_end_entity_hostnames(certs)
+    server_names = Certs.get_end_entity_hostnames(certs)
 
     %CertInfo{
-      domains: sni_domains,
+      domains: server_names,
       key: Certs.pem_encode(key),
       cert_chain: Certs.pem_encode(certs)
     }

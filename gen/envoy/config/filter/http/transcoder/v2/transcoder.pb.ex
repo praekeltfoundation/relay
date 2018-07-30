@@ -6,9 +6,10 @@ defmodule Envoy.Config.Filter.Http.Transcoder.V2.GrpcJsonTranscoder do
           descriptor_set: {atom, any},
           services: [String.t()],
           print_options:
-            Envoy.Config.Filter.Http.Transcoder.V2.GrpcJsonTranscoder.PrintOptions.t()
+            Envoy.Config.Filter.Http.Transcoder.V2.GrpcJsonTranscoder.PrintOptions.t(),
+          match_incoming_request_route: boolean
         }
-  defstruct [:descriptor_set, :services, :print_options]
+  defstruct [:descriptor_set, :services, :print_options, :match_incoming_request_route]
 
   oneof :descriptor_set, 0
   field :proto_descriptor, 1, type: :string, oneof: 0
@@ -17,6 +18,8 @@ defmodule Envoy.Config.Filter.Http.Transcoder.V2.GrpcJsonTranscoder do
 
   field :print_options, 3,
     type: Envoy.Config.Filter.Http.Transcoder.V2.GrpcJsonTranscoder.PrintOptions
+
+  field :match_incoming_request_route, 5, type: :bool
 end
 
 defmodule Envoy.Config.Filter.Http.Transcoder.V2.GrpcJsonTranscoder.PrintOptions do
