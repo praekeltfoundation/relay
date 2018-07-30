@@ -29,7 +29,7 @@ defmodule MarathonTestHelpers do
       Map.new(fields)
       |> Map.put_new(:timestamp, DateTime.utc_now() |> DateTime.to_iso8601())
       |> Map.put(:eventType, event_type)
-      |> Poison.encode()
+      |> Jason.encode()
 
     %Event{event: event_type, data: data}
   end

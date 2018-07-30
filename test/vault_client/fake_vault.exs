@@ -10,7 +10,7 @@ defmodule FakeVault do
 
   def reply(req, fv, status_code, json) do
     headers = %{"content-type" => "application/json"}
-    {:ok, body} = Poison.encode(json)
+    {:ok, body} = Jason.encode(json)
     {:ok, :cowboy_req.reply(status_code, headers, body, req), fv}
   end
 
