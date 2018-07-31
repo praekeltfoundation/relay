@@ -320,6 +320,8 @@ defmodule Relay.SupervisorTest do
 
   defp confirm_process_restarts(process_to_kill, processes_that_restart) do
     Process.flag(:trap_exit, true)
+    # Wait for everything to be live before we start monitoring.
+    Liveness.wait_until_live()
     procs = Liveness.monitor_procs()
 
     # Kill the specified process to observe the restart behaviour.
