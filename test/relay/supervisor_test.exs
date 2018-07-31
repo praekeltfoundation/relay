@@ -347,6 +347,16 @@ defmodule Relay.SupervisorTest do
     assert_example_response()
   end
 
+  test "when Marathon exits it is restarted" do
+    confirm_process_restarts(Marathon, [])
+    assert_example_response()
+  end
+
+  test "when Marathon.Store exits Marathon is also restarted" do
+    confirm_process_restarts(Marathon.Store, [Marathon])
+    assert_example_response()
+  end
+
   test "when the GRPC supervisor exits it is restarted" do
     # Capture the error logged when we kill the supervisor
     assert capture_log(fn ->
