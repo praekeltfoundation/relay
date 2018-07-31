@@ -3,8 +3,7 @@ Code.require_file(Path.join([__DIR__, "..", "marathon_client", "marathon_client_
 defmodule Relay.SupervisorTest do
   use ExUnit.Case, async: false
 
-  alias Relay.{Supervisor, Publisher, Resources, Certs, Marathon}
-  alias Relay.Supervisor.FrontendSupervisor
+  alias Relay.{Supervisor, Publisher, Resolver, Resources, Certs, Marathon}
 
   alias Envoy.Api.V2.{DiscoveryRequest, DiscoveryResponse}
   alias Envoy.Api.V2.ClusterDiscoveryService.Stub, as: CDSStub
@@ -171,6 +170,8 @@ defmodule Relay.SupervisorTest do
   end
 
   defp assert_example_response do
+    # Wait for any potential startup/restart instabilities to settle.
+    Process.sleep(50)
     assert_cds_response(Resources.CDS.clusters(@test_app_endpoints))
     assert_lds_response(Resources.LDS.listeners([cert_info_from_file("localhost.pem")]))
   end
@@ -222,37 +223,6 @@ defmodule Relay.SupervisorTest do
     end
   end
 
-  defp wait_until_live do
-    case procs_live?(Supervisor) and procs_live?(FrontendSupervisor) do
-      true ->
-        :ok
-
-      _ ->
-        Process.sleep(10)
-        wait_until_live()
-    end
-  end
-
-  defp procs_live?(sup) do
-    case Elixir.Supervisor.count_children(sup) do
-      %{specs: n, active: n} -> true
-      _ -> false
-    end
-  catch
-    # `Supervisor.count_children` uses `:gen.call` under the hood, which
-    # monitors the process we're querying during the query. This is fine if
-    # we're part of a supervision tree, but for these tests we don't really
-    # want to crash if the process we're querying is down. To get around this,
-    # we catch exits (which is almost always a terrible idea) and return
-    # `false` instead.
-    :exit, _ ->
-      false
-  end
-
-  defp monitor_by_name(name), do: name |> Process.whereis() |> Process.monitor()
-
-  defp kill_by_name(name), do: name |> Process.whereis() |> Process.exit(:kill)
-
   test "retry listener startup when address is in use" do
     :ok = stop_supervised(Supervisor)
 
@@ -278,138 +248,128 @@ defmodule Relay.SupervisorTest do
     Task.await(blocker_task)
   end
 
-  test "when the Publisher exits everything is restarted" do
+  defmodule Liveness do
+    alias Relay.{Supervisor, Publisher, Resolver, Resources, Certs, Marathon}
+
+    @sups [Supervisor, Supervisor.SubSupervisor, Marathon.Supervisor]
+    @procs_top [Publisher, Resolver, Resources]
+    @procs_sub [Certs.Filesystem, GRPC.Server.Supervisor]
+    @procs_marathon [Marathon.Store, Marathon]
+    @all_procs Enum.concat([@sups, @procs_top, @procs_sub, @procs_marathon])
+
+    def marathon_tree(), do: [Marathon.Supervisor | @procs_marathon]
+    def sub_tree(), do: [Supervisor.SubSupervisor | @procs_sub ++ marathon_tree()]
+
+    def monitor_procs() do
+      @all_procs
+      |> Enum.map(fn name ->
+        pid = Process.whereis(name)
+        {name, {pid, Process.monitor(pid)}}
+      end)
+    end
+
+    def kill(procs, name) do
+      {pid, _} = Keyword.fetch!(procs, name)
+      Process.exit(pid, :kill)
+    end
+
+    def assert_exited(procs, killed_names, shutdown_names) do
+      {killed_procs, rest} = Keyword.split(procs, killed_names)
+      {shutdown_procs, live_procs} = Keyword.split(rest, shutdown_names)
+
+      # Exited procs must have generated a :DOWN message.
+      Enum.each(killed_procs, &proc_exited(&1, :killed))
+      Enum.each(shutdown_procs, &proc_exited(&1, :shutdown))
+
+      # Live procs must still have the same pid.
+      Enum.each(live_procs, fn {name, {pid, _}} ->
+        assert Process.alive?(pid), "Expected #{name} (#{inspect(pid)}) to be alive"
+      end)
+    end
+
+    defp proc_exited({_, {pid, ref}}, expected_reason) do
+      assert_receive {:DOWN, ^ref, :process, ^pid, reason}, 1_000
+      # Process monitoring is async, and sometimes we kill the process before
+      # the monitor gets to it.
+      assert reason in [expected_reason, :noproc]
+    end
+
+    defp sup_live?(sup) do
+      case Elixir.Supervisor.count_children(sup) do
+        %{specs: n, active: n} -> true
+        _ -> false
+      end
+    catch
+      # `Supervisor.count_children` uses `:gen.call` under the hood, which
+      # monitors the process we're querying during the query. This is fine if
+      # we're part of a supervision tree, but for these tests we don't really
+      # want to crash if the process we're querying is down. To get around
+      # this, we catch exits (which is almost always a terrible idea) and
+      # return `false` instead.
+      :exit, _ ->
+        false
+    end
+
+    def wait_until_live do
+      case Enum.all?(@sups, &sup_live?/1) do
+        true ->
+          :ok
+
+        _ ->
+          Process.sleep(10)
+          wait_until_live()
+      end
+    end
+  end
+
+  defp confirm_process_restarts(process_to_kill, processes_that_restart) do
     Process.flag(:trap_exit, true)
+    # Wait for everything to be live before we start monitoring.
+    Liveness.wait_until_live()
+    procs = Liveness.monitor_procs()
 
-    # Monitor resources, server, and demo
-    resources_ref = monitor_by_name(Resources)
-    server_ref = monitor_by_name(GRPC.Server.Supervisor)
-    marathon_store_ref = monitor_by_name(Marathon.Store)
-    marathon_ref = monitor_by_name(Marathon)
-    certs_fs_ref = monitor_by_name(Certs.Filesystem)
+    # Kill the specified process to observe the restart behaviour.
+    Liveness.kill(procs, process_to_kill)
 
-    # Wait for all the initial interation to finish
-    Process.sleep(50)
+    # The process we killed and eveything that depends on it exit.
+    Liveness.assert_exited(procs, [process_to_kill], processes_that_restart)
 
-    # Exit the Publisher process
-    kill_by_name(Publisher)
-
-    # Resources, server, and demo quit
-    assert_receive {:DOWN, ^resources_ref, :process, _, :shutdown}, 1_000
-    assert_receive {:DOWN, ^server_ref, :process, _, :shutdown}, 1_000
-    assert_receive {:DOWN, ^certs_fs_ref, :process, _, :shutdown}, 1_000
-    assert_receive {:DOWN, ^marathon_store_ref, :process, _, :shutdown}, 1_000
-    assert_receive {:DOWN, ^marathon_ref, :process, _, :shutdown}, 1_000
-
-    wait_until_live()
-
-    # Things still work as everything has been restarted
+    # Wait until everything's back up before checking it all works.
+    Liveness.wait_until_live()
     assert_example_response()
   end
 
-  test "when Resources exits everything except Publisher is restarted" do
-    Process.flag(:trap_exit, true)
+  # We combine the tests for each supervisor to share the significant
+  # setup/teardown cost as much as possible.
 
-    publisher_pid = Process.whereis(Publisher)
-
-    # Monitor the server and demo
-    server_ref = monitor_by_name(GRPC.Server.Supervisor)
-    marathon_store_ref = monitor_by_name(Marathon.Store)
-    marathon_ref = monitor_by_name(Marathon)
-    certs_fs_ref = monitor_by_name(Certs.Filesystem)
-
-    # Wait for all the initial interation to finish
-    Process.sleep(50)
-
-    # Exit the Publisher process
-    kill_by_name(Resources)
-
-    # The server and demo quit
-    assert_receive {:DOWN, ^server_ref, :process, _, :shutdown}, 1_000
-    assert_receive {:DOWN, ^certs_fs_ref, :process, _, :shutdown}, 1_000
-    assert_receive {:DOWN, ^marathon_store_ref, :process, _, :shutdown}, 1_000
-    assert_receive {:DOWN, ^marathon_ref, :process, _, :shutdown}, 1_000
-
-    # Publisher still happily running
-    assert Process.alive?(publisher_pid)
-
-    wait_until_live()
-
-    # Things still work as everything has been restarted
+  test "top-level Supervisor restart behaviour" do
+    # rest_for_one, [Publisher, Resolver, Resources, Supervisor.SubSupervisor]
     assert_example_response()
+    confirm_process_restarts(Publisher, [Resolver, Resources | Liveness.sub_tree()])
+    confirm_process_restarts(Resolver, [Resources | Liveness.sub_tree()])
+    confirm_process_restarts(Resources, Liveness.sub_tree())
+    # We don't kill Supervisor.Subsupervisor, because tracking its child
+    # processes is complicated by transient intermediate states.
   end
 
-  test "when the GRPC supervisor exits it is restarted" do
-    Process.flag(:trap_exit, true)
-
-    publisher_pid = Process.whereis(Publisher)
-    resources_pid = Process.whereis(Resources)
-    marathon_store_pid = Process.whereis(Marathon.Store)
-    marathon_pid = Process.whereis(Marathon)
-    certs_fs_pid = Process.whereis(Certs.Filesystem)
-
-    grpc_pid = Process.whereis(GRPC.Server.Supervisor)
-    grpc_ref = Process.monitor(grpc_pid)
-
-    # Wait for all the initial interation to finish
-    Process.sleep(50)
-
-    # Capture the error logged when we kill the supervisor
+  test "SubSupervisor restart behaviour" do
+    # one_for_one, [Marathon.Supervisor, Certs.Filesystem, GRPC.Server.Supervisor]
+    assert_example_response()
+    # We don't kill Marathon.Supervisor, because tracking its child processes
+    # is complicated by transient intermediate states.
+    confirm_process_restarts(Certs.Filesystem, [])
+    # This one causes an error to be logged sometime after the supervisor exits.
     assert capture_log(fn ->
-             # Exit the GRPC process
-             grpc_pid |> Process.exit(:kill)
-
-             # Check the GRPC supervisor quit
-             assert_receive {:DOWN, ^grpc_ref, :process, _, :killed}, 1_000
-
-             # Other things still happily running
-             assert Process.alive?(publisher_pid)
-             assert Process.alive?(resources_pid)
-             assert Process.alive?(marathon_store_pid)
-             assert Process.alive?(marathon_pid)
-             assert Process.alive?(certs_fs_pid)
-
-             wait_until_live()
+             confirm_process_restarts(GRPC.Server.Supervisor, [])
+             # Give the log entry some extra time to arrive.
+             Process.sleep(50)
            end) =~ ~r/\[error\] GenServer #PID<\S*> terminating\n\*\* \(stop\) killed/
-
-    # Everything else still works because it's all running again
-    assert_example_response()
   end
 
-  # We don't bother testing the Marathon stuff, because it's the same behaviour
-  # as this.
-
-  test "when Certs.Filesystem exits it is restarted" do
-    Process.flag(:trap_exit, true)
-
-    publisher_pid = Process.whereis(Publisher)
-    resources_pid = Process.whereis(Resources)
-    grpc_pid = Process.whereis(GRPC.Server.Supervisor)
-    marathon_store_pid = Process.whereis(Marathon.Store)
-    marathon_pid = Process.whereis(Marathon)
-
-    certs_fs_pid = Process.whereis(Certs.Filesystem)
-    certs_fs_ref = Process.monitor(certs_fs_pid)
-
-    # Wait for all the initial interation to finish
-    Process.sleep(50)
-
-    # Exit the certs_fs process
-    certs_fs_pid |> Process.exit(:kill)
-
-    # Check certs_fs quit
-    assert_receive {:DOWN, ^certs_fs_ref, :process, _, :killed}, 1_000
-
-    # Other things still happily running
-    assert Process.alive?(publisher_pid)
-    assert Process.alive?(resources_pid)
-    assert Process.alive?(grpc_pid)
-    assert Process.alive?(marathon_store_pid)
-    assert Process.alive?(marathon_pid)
-
-    wait_until_live()
-
-    # Everything else still works because the state is still available
+  test "Marathon.Supervisor restart behaviour" do
+    # rest_for_one, [Marathon.Store, Marathon]
     assert_example_response()
+    confirm_process_restarts(Marathon.Store, [Marathon])
+    confirm_process_restarts(Marathon, [])
   end
 end
