@@ -287,8 +287,12 @@ defmodule Relay.SupervisorTest do
       end)
     end
 
-    defp proc_exited({_, {pid, ref}}, reason),
-      do: assert_receive({:DOWN, ^ref, :process, ^pid, ^reason}, 1_000)
+    defp proc_exited({_, {pid, ref}}, expected_reason) do
+      assert_receive {:DOWN, ^ref, :process, ^pid, reason}, 1_000
+      # Process monitoring is async, and sometimes we kill the process before
+      # the monitor gets to it.
+      assert reason in [expected_reason, :noproc]
+    end
 
     defp sup_live?(sup) do
       case Elixir.Supervisor.count_children(sup) do
