@@ -307,7 +307,7 @@ defmodule Relay.SupervisorTest do
     end
 
     def wait_until_live do
-      case Enum.any?(@sups, &sup_live?/1) do
+      case Enum.all?(@sups, &sup_live?/1) do
         true ->
           :ok
 
