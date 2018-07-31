@@ -18,6 +18,20 @@ defmodule Relay.Marathon.StoreTest do
     version: "2017-11-08T15:06:31.066Z"
   }
 
+  @test_app2 %App{
+    id: "/mc1",
+    labels: %{
+      "HAPROXY_0_REDIRECT_TO_HTTPS" => "true",
+      "HAPROXY_0_VHOST" => "mc1.example.org",
+      "HAPROXY_GROUP" => "external",
+      "MARATHON_ACME_0_DOMAIN" => "mc1.example.org"
+    },
+    networking_mode: :"container/bridge",
+    ports_list: [80],
+    port_indices: [0],
+    version: "2017-11-08T15:06:31.066Z"
+  }
+
   @test_task %Task{
     address: "10.70.4.100",
     app_id: "/mc2",
@@ -449,25 +463,22 @@ defmodule Relay.Marathon.StoreTest do
   end
 
   test "get apps", %{store: store} do
-    app2 = %{@test_app | id: "/mc1"}
-
     assert Store.update_app(store, @test_app) == :ok
-    assert Store.update_app(store, app2) == :ok
+    assert Store.update_app(store, @test_app2) == :ok
 
-    assert store |> get_state() |> Store.State.get_apps() == [app2, @test_app]
+    assert store |> get_state() |> Store.State.get_apps() == [@test_app2, @test_app]
   end
 
   test "get apps and tasks", %{store: store} do
-    app2 = %{@test_app | id: "/mc1"}
     task2 = %{@test_task | id: "mc2.00000000"}
 
     assert Store.update_app(store, @test_app) == :ok
-    assert Store.update_app(store, app2) == :ok
+    assert Store.update_app(store, @test_app2) == :ok
     assert Store.update_task(store, @test_task) == :ok
     assert Store.update_task(store, task2) == :ok
 
     assert store |> get_state() |> Store.State.get_apps_and_tasks() == [
-             {app2, []},
+             {@test_app2, []},
              {@test_app, [task2, @test_task]}
            ]
   end
