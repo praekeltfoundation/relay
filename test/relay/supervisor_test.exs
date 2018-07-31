@@ -170,6 +170,8 @@ defmodule Relay.SupervisorTest do
   end
 
   defp assert_example_response do
+    # Wait for any potential startup/restart instabilities to settle.
+    Process.sleep(50)
     assert_cds_response(Resources.CDS.clusters(@test_app_endpoints))
     assert_lds_response(Resources.LDS.listeners([cert_info_from_file("localhost.pem")]))
   end
@@ -319,53 +321,49 @@ defmodule Relay.SupervisorTest do
   defp confirm_process_restarts(process_to_kill, processes_that_restart) do
     Process.flag(:trap_exit, true)
     procs = Liveness.monitor_procs()
-    # Wait for all the initial interaction to finish
-    Process.sleep(50)
 
-    # Kill the specified process to observe the restart behaviour
+    # Kill the specified process to observe the restart behaviour.
     Liveness.kill(procs, process_to_kill)
 
-    # The process we killed and eveything that depends on it exit
+    # The process we killed and eveything that depends on it exit.
     Liveness.assert_exited(procs, [process_to_kill], processes_that_restart)
 
-    # Wait until everything's back up before returning
+    # Wait until everything's back up before checking it all works.
     Liveness.wait_until_live()
+    assert_example_response()
   end
 
-  test "when the Publisher exits everything is restarted" do
+  # We combine the tests for each supervisor to share the significant
+  # setup/teardown cost as much as possible.
+
+  test "top-level Supervisor restart behaviour" do
+    # rest_for_one, [Publisher, Resolver, Resources, Supervisor.SubSupervisor]
+    assert_example_response()
     confirm_process_restarts(Publisher, [Resolver, Resources | Liveness.sub_tree()])
-    assert_example_response()
-  end
-
-  test "when Resources exits everything except Publisher is restarted" do
+    confirm_process_restarts(Resolver, [Resources | Liveness.sub_tree()])
     confirm_process_restarts(Resources, Liveness.sub_tree())
-    assert_example_response()
+    # We don't kill Supervisor.Subsupervisor, because tracking its child
+    # processes is complicated by transient intermediate states.
   end
 
-  test "when Certs.Filesystem exits it is restarted" do
+  test "SubSupervisor restart behaviour" do
+    # one_for_one, [Marathon.Supervisor, Certs.Filesystem, GRPC.Server.Supervisor]
+    assert_example_response()
+    # We don't kill Marathon.Supervisor, because tracking its child processes
+    # is complicated by transient intermediate states.
     confirm_process_restarts(Certs.Filesystem, [])
-    assert_example_response()
-  end
-
-  test "when Marathon exits it is restarted" do
-    confirm_process_restarts(Marathon, [])
-    assert_example_response()
-  end
-
-  test "when Marathon.Store exits Marathon is also restarted" do
-    confirm_process_restarts(Marathon.Store, [Marathon])
-    assert_example_response()
-  end
-
-  test "when the GRPC supervisor exits it is restarted" do
-    # Capture the error logged when we kill the supervisor
+    # This one causes an error to be logged sometime after the supervisor exits.
     assert capture_log(fn ->
              confirm_process_restarts(GRPC.Server.Supervisor, [])
-             # The log entry we capture is apparently sent *after* the GRPC
-             # supervisor exits, so we need to wait a bit for it to arrive.
+             # Give the log entry some extra time to arrive.
              Process.sleep(50)
            end) =~ ~r/\[error\] GenServer #PID<\S*> terminating\n\*\* \(stop\) killed/
+  end
 
+  test "Marathon.Supervisor restart behaviour" do
+    # rest_for_one, [Marathon.Store, Marathon]
     assert_example_response()
+    confirm_process_restarts(Marathon.Store, [Marathon])
+    confirm_process_restarts(Marathon, [])
   end
 end
