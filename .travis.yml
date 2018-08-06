@@ -24,7 +24,7 @@ jobs:
       cache:
         directories:
           - $HOME/.mix
-          #- $HOME/.pltcache
+          - $HOME/.pltcache
 
       before_script:
         - mix compile
