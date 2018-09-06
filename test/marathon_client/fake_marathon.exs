@@ -62,7 +62,7 @@ defmodule FakeMarathon do
     end
 
     @impl :cowboy_loop
-    def init(req = %{method: "GET"}, state) do
+    def init(%{method: "GET"} = req, state) do
       case :cowboy_req.parse_header("accept", req) do
         [{{"text", "event-stream", _}, _, _}] -> handle_sse_stream(req, state)
         _ -> {:ok, :cowboy_req.reply(406, req), state}
