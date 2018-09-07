@@ -65,7 +65,6 @@ defmodule Relay.MixProject do
       # 1.12.0 that caused deadlocks with async requests.
       {:hackney, ">= 1.12.1"},
       {:jason, "~> 1.0"},
-      {:conform, "~> 2.2"},
       {:plug, "~> 1.4"},
       {:cowboy, "~> 2.3"},
 
@@ -77,7 +76,7 @@ defmodule Relay.MixProject do
       # Dev/test/build tools.
       {:dialyxir, "~> 1.0.0-rc.3", only: :dev, runtime: false},
       {:credo, "~> 0.9", only: [:dev, :test], runtime: false},
-      {:distillery, "~> 1.5", runtime: false}
+      {:distillery, "~> 2.0", runtime: false}
     ]
   end
 
