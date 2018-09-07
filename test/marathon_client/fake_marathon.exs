@@ -4,10 +4,8 @@ defmodule FakeMarathon do
   """
   use GenServer
 
-  alias SSETestServer.SSEServer
-
   defmodule State do
-    defstruct sse: nil, listener: nil, apps: [], app_tasks: %{}
+    defstruct listener: nil, apps: [], app_tasks: %{}, event_streams: []
   end
 
   def response(req, fm, status_code, json) do
@@ -44,6 +42,56 @@ defmodule FakeMarathon do
           FakeMarathon.response(req, fm, 200, %{"tasks" => app_tasks})
       end
     end
+  end
+
+  defmodule SSEHandler do
+    @behaviour :cowboy_loop
+
+    defmodule StreamOpts do
+      defstruct response_delay: 0
+    end
+
+    defmodule State do
+      @enforce_keys [:fake_marathon]
+      defstruct fake_marathon: nil, opts: %StreamOpts{}
+
+      def new(fake_marathon, opts) do
+        stream_opts = struct!(StreamOpts, opts)
+        %__MODULE__{fake_marathon: fake_marathon, opts: stream_opts}
+      end
+    end
+
+    @impl :cowboy_loop
+    def init(%{method: "GET"} = req, state) do
+      case :cowboy_req.parse_header("accept", req) do
+        [{{"text", "event-stream", _}, _, _}] -> handle_sse_stream(req, state)
+        _ -> {:ok, :cowboy_req.reply(406, req), state}
+      end
+    end
+
+    # Reject non-GET methods with a 405.
+    @impl :cowboy_loop
+    def init(req, state) do
+      {:ok, :cowboy_req.reply(405, req), state}
+    end
+
+    def handle_sse_stream(req, state) do
+      :ok = GenServer.call(state.fake_marathon, {:event_stream, self()})
+      if state.opts.response_delay > 0, do: Process.sleep(state.opts.response_delay)
+      req_resp = :cowboy_req.stream_reply(200, %{"content-type" => "text/event-stream"}, req)
+      {:cowboy_loop, req_resp, state}
+    end
+
+    @impl :cowboy_loop
+    def info({:stream_bytes, bytes}, req, state) do
+      :ok = :cowboy_req.stream_body(bytes, :nofin, req)
+      {:ok, req, state}
+    end
+
+    @impl :cowboy_loop
+    def info(:close, req, state), do: {:stop, req, state}
+
+    def send_info(handler, thing), do: send(handler, thing)
   end
 
   ## Client
@@ -83,19 +131,18 @@ defmodule FakeMarathon do
   def init(opts) do
     # Trap exits so terminate/2 gets called reliably.
     Process.flag(:trap_exit, true)
-    {:ok, sse} = SSEServer.start_link(opts, name: nil)
     listener = make_ref()
 
     handlers = [
       {"/v2/apps", AppsHandler, self()},
       # FIXME: Support app IDs with `/` in them
       {"/v2/apps/:app_id/tasks", AppTasksHandler, self()},
-      SSEServer.configure_endpoint_handler(sse, "/v2/events", opts)
+      {"/v2/events", SSEHandler, SSEHandler.State.new(self(), opts)}
     ]
 
     dispatch = :cowboy_router.compile([{:_, handlers}])
     {:ok, _} = :cowboy.start_clear(listener, [], %{env: %{dispatch: dispatch}})
-    {:ok, %State{sse: sse, listener: listener}}
+    {:ok, %State{listener: listener}}
   end
 
   def terminate(reason, state) do
@@ -103,16 +150,21 @@ defmodule FakeMarathon do
     reason
   end
 
+  def handle_call({:event_stream, pid}, _from, state) do
+    new_state = %State{state | event_streams: [pid | state.event_streams]}
+    {:reply, :ok, new_state}
+  end
+
   def handle_call(:port, _from, state), do: {:reply, :ranch.get_port(state.listener), state}
 
   def handle_call({:event, event, data}, _from, state),
-    do: {:reply, SSEServer.event(state.sse, "/v2/events", event, data), state}
+    do: send_to_handler({:stream_bytes, mkevent(event, data)}, state)
 
   def handle_call(:keepalive, _from, state),
-    do: {:reply, SSEServer.keepalive(state.sse, "/v2/events"), state}
+    do: send_to_handler({:stream_bytes, "\r\n"}, state)
 
   def handle_call(:end_stream, _from, state),
-    do: {:reply, SSEServer.end_stream(state.sse, "/v2/events"), state}
+    do: send_to_handler(:close, state)
 
   def handle_call({:get_apps, []}, _from, state), do: {:reply, state.apps, state}
 
@@ -133,5 +185,12 @@ defmodule FakeMarathon do
 
   def handle_call({:set_app_tasks, app_id, tasks}, _from, %{app_tasks: app_tasks} = state) do
     {:reply, :ok, %{state | app_tasks: Map.put(app_tasks, app_id, tasks)}}
+  end
+
+  defp mkevent(event, data), do: "event: #{event}\r\ndata: #{data}\r\n\r\n"
+
+  defp send_to_handler(thing, state) do
+    Enum.each(state.event_streams, &SSEHandler.send_info(&1, thing))
+    {:reply, :ok, state}
   end
 end
