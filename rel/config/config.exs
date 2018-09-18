@@ -4,38 +4,49 @@
 use Mix.Config
 
 defmodule Cfg do
+  @moduledoc """
+  Some hacky tools for fetching config values from environment variables.
+  """
 
+  @doc """
+  Read a config option from environment variable. If the environment variable
+  is set, its value is converted into the required type and written to the
+  application environment in the appropriate place.
+  """
   def get_env_value(app, dotted_key, env_var, type) do
-    keys =
-      dotted_key
-      |> String.split(".")
-      |> Enum.map(&String.to_atom/1)
     case env_var |> System.get_env() |> typed_value(type) do
       nil -> []
       val ->
+        keys = split_dotted_key(dotted_key)
         app_env = Application.get_all_env(app)
         new_env = Mix.Config.merge([{app, app_env}], [{app, build_config(keys, val)}])
         Mix.Config.persist(new_env)
     end
   end
 
-  def build_config([], value), do: value
-  def build_config([key | keys], value), do: [{key, build_config(keys, value)}]
+  defp split_dotted_key(dotted_key) do
+    dotted_key
+    |> String.split(".")
+    |> Enum.map(&String.to_atom/1)
+  end
+
+  defp build_config([], value), do: value
+  defp build_config([key | keys], value), do: [{key, build_config(keys, value)}]
 
   # TODO: Better errors, etc.
-  def typed_value(nil, _), do: nil
-  def typed_value(val, :binary), do: val
-  def typed_value(val, :atom), do: String.to_atom(val)
-  def typed_value(val, :integer) do
+  defp typed_value(nil, _), do: nil
+  defp typed_value(val, :binary), do: val
+  defp typed_value(val, :atom), do: String.to_atom(val)
+  defp typed_value(val, :integer) do
     {int, ""} = Integer.parse(val)
     int
   end
-  def typed_value(val, [enum: vals]) do
+  defp typed_value(val, [enum: vals]) do
     atom = typed_value(val, :atom)
     true = atom in vals
     atom
   end
-  def typed_value(val, [list: type]) do
+  defp typed_value(val, [list: type]) do
     val
     |> String.split(~r{,\s*})
     |> Enum.map(&typed_value(&1, type))
