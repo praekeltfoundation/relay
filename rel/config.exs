@@ -15,8 +15,14 @@ environment :prod do
   set include_erts: true
   set include_src: false
   # The pre_start hook sets $ERLANG_COOKIE to a random value if is unset.
-  set pre_configure_hook: "rel/hooks/pre_configure"
+  set pre_configure_hooks: "rel/hooks/pre_configure.d"
   set cookie: "${ERLANG_COOKIE}"
+  set config_providers: [
+    {Mix.Releases.Config.Providers.Elixir, ["${RELEASE_ROOT_DIR}/etc/config.exs"]}
+  ]
+  set overlays: [
+    {:copy, "rel/config/config.exs", "etc/config.exs"}
+  ]
 end
 
 release :relay do
@@ -24,5 +30,4 @@ release :relay do
   set applications: [
     :runtime_tools
   ]
-  plugin Conform.ReleasePlugin
 end
