@@ -4,13 +4,15 @@ defmodule Envoy.Config.Filter.Http.Fault.V2.FaultAbort do
 
   @type t :: %__MODULE__{
           error_type: {atom, any},
-          percent: non_neg_integer
+          percent: non_neg_integer,
+          percentage: Envoy.Type.FractionalPercent.t()
         }
-  defstruct [:error_type, :percent]
+  defstruct [:error_type, :percent, :percentage]
 
   oneof :error_type, 0
-  field :percent, 1, type: :uint32
+  field :percent, 1, type: :uint32, deprecated: true
   field :http_status, 2, type: :uint32, oneof: 0
+  field :percentage, 3, type: Envoy.Type.FractionalPercent
 end
 
 defmodule Envoy.Config.Filter.Http.Fault.V2.HTTPFault do

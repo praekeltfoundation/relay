@@ -41,19 +41,22 @@ defmodule Envoy.Api.V2.Core.Http2ProtocolOptions do
           hpack_table_size: Google.Protobuf.UInt32Value.t(),
           max_concurrent_streams: Google.Protobuf.UInt32Value.t(),
           initial_stream_window_size: Google.Protobuf.UInt32Value.t(),
-          initial_connection_window_size: Google.Protobuf.UInt32Value.t()
+          initial_connection_window_size: Google.Protobuf.UInt32Value.t(),
+          allow_connect: boolean
         }
   defstruct [
     :hpack_table_size,
     :max_concurrent_streams,
     :initial_stream_window_size,
-    :initial_connection_window_size
+    :initial_connection_window_size,
+    :allow_connect
   ]
 
   field :hpack_table_size, 1, type: Google.Protobuf.UInt32Value
   field :max_concurrent_streams, 2, type: Google.Protobuf.UInt32Value
   field :initial_stream_window_size, 3, type: Google.Protobuf.UInt32Value
   field :initial_connection_window_size, 4, type: Google.Protobuf.UInt32Value
+  field :allow_connect, 5, type: :bool
 end
 
 defmodule Envoy.Api.V2.Core.GrpcProtocolOptions do

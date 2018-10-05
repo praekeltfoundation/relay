@@ -3,8 +3,8 @@ defmodule Envoy.Config.Filter.Network.TcpProxy.V2.TcpProxy do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
+          cluster_specifier: {atom, any},
           stat_prefix: String.t(),
-          cluster: String.t(),
           metadata_match: Envoy.Api.V2.Core.Metadata.t(),
           idle_timeout: Google.Protobuf.Duration.t(),
           downstream_idle_timeout: Google.Protobuf.Duration.t(),
@@ -14,8 +14,8 @@ defmodule Envoy.Config.Filter.Network.TcpProxy.V2.TcpProxy do
           max_connect_attempts: Google.Protobuf.UInt32Value.t()
         }
   defstruct [
+    :cluster_specifier,
     :stat_prefix,
-    :cluster,
     :metadata_match,
     :idle_timeout,
     :downstream_idle_timeout,
@@ -25,8 +25,14 @@ defmodule Envoy.Config.Filter.Network.TcpProxy.V2.TcpProxy do
     :max_connect_attempts
   ]
 
+  oneof :cluster_specifier, 0
   field :stat_prefix, 1, type: :string
-  field :cluster, 2, type: :string
+  field :cluster, 2, type: :string, oneof: 0
+
+  field :weighted_clusters, 10,
+    type: Envoy.Config.Filter.Network.TcpProxy.V2.TcpProxy.WeightedCluster,
+    oneof: 0
+
   field :metadata_match, 9, type: Envoy.Api.V2.Core.Metadata
   field :idle_timeout, 8, type: Google.Protobuf.Duration
   field :downstream_idle_timeout, 3, type: Google.Protobuf.Duration
@@ -72,4 +78,34 @@ defmodule Envoy.Config.Filter.Network.TcpProxy.V2.TcpProxy.DeprecatedV1.TCPRoute
   field :destination_ports, 3, type: :string
   field :source_ip_list, 4, repeated: true, type: Envoy.Api.V2.Core.CidrRange
   field :source_ports, 5, type: :string
+end
+
+defmodule Envoy.Config.Filter.Network.TcpProxy.V2.TcpProxy.WeightedCluster do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          clusters: [
+            Envoy.Config.Filter.Network.TcpProxy.V2.TcpProxy.WeightedCluster.ClusterWeight.t()
+          ]
+        }
+  defstruct [:clusters]
+
+  field :clusters, 1,
+    repeated: true,
+    type: Envoy.Config.Filter.Network.TcpProxy.V2.TcpProxy.WeightedCluster.ClusterWeight
+end
+
+defmodule Envoy.Config.Filter.Network.TcpProxy.V2.TcpProxy.WeightedCluster.ClusterWeight do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          name: String.t(),
+          weight: non_neg_integer
+        }
+  defstruct [:name, :weight]
+
+  field :name, 1, type: :string
+  field :weight, 2, type: :uint32
 end

@@ -19,11 +19,30 @@ defmodule Envoy.Api.V2.ClusterLoadAssignment.Policy do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          drop_overload: float
+          drop_overloads: [Envoy.Api.V2.ClusterLoadAssignment.Policy.DropOverload.t()],
+          overprovisioning_factor: Google.Protobuf.UInt32Value.t()
         }
-  defstruct [:drop_overload]
+  defstruct [:drop_overloads, :overprovisioning_factor]
 
-  field :drop_overload, 1, type: :double
+  field :drop_overloads, 2,
+    repeated: true,
+    type: Envoy.Api.V2.ClusterLoadAssignment.Policy.DropOverload
+
+  field :overprovisioning_factor, 3, type: Google.Protobuf.UInt32Value
+end
+
+defmodule Envoy.Api.V2.ClusterLoadAssignment.Policy.DropOverload do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          category: String.t(),
+          drop_percentage: Envoy.Type.FractionalPercent.t()
+        }
+  defstruct [:category, :drop_percentage]
+
+  field :category, 1, type: :string
+  field :drop_percentage, 2, type: Envoy.Type.FractionalPercent
 end
 
 defmodule Envoy.Api.V2.EndpointDiscoveryService.Service do

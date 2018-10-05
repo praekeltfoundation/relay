@@ -68,6 +68,8 @@ defmodule Envoy.Config.Rbac.V2alpha.Permission do
   field :header, 4, type: Envoy.Api.V2.Route.HeaderMatcher, oneof: 0
   field :destination_ip, 5, type: Envoy.Api.V2.Core.CidrRange, oneof: 0
   field :destination_port, 6, type: :uint32, oneof: 0
+  field :metadata, 7, type: Envoy.Type.Matcher.MetadataMatcher, oneof: 0
+  field :not_rule, 8, type: Envoy.Config.Rbac.V2alpha.Permission, oneof: 0
 end
 
 defmodule Envoy.Config.Rbac.V2alpha.Permission.Set do
@@ -98,6 +100,8 @@ defmodule Envoy.Config.Rbac.V2alpha.Principal do
   field :authenticated, 4, type: Envoy.Config.Rbac.V2alpha.Principal.Authenticated, oneof: 0
   field :source_ip, 5, type: Envoy.Api.V2.Core.CidrRange, oneof: 0
   field :header, 6, type: Envoy.Api.V2.Route.HeaderMatcher, oneof: 0
+  field :metadata, 7, type: Envoy.Type.Matcher.MetadataMatcher, oneof: 0
+  field :not_id, 8, type: Envoy.Config.Rbac.V2alpha.Principal, oneof: 0
 end
 
 defmodule Envoy.Config.Rbac.V2alpha.Principal.Set do
@@ -117,9 +121,9 @@ defmodule Envoy.Config.Rbac.V2alpha.Principal.Authenticated do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          name: String.t()
+          principal_name: Envoy.Type.Matcher.StringMatcher.t()
         }
-  defstruct [:name]
+  defstruct [:principal_name]
 
-  field :name, 1, type: :string
+  field :principal_name, 2, type: Envoy.Type.Matcher.StringMatcher
 end

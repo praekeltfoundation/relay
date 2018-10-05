@@ -134,6 +134,51 @@ defmodule Envoy.Api.V2.Core.TransportSocket do
   field :config, 2, type: Google.Protobuf.Struct
 end
 
+defmodule Envoy.Api.V2.Core.SocketOption do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          value: {atom, any},
+          description: String.t(),
+          level: integer,
+          name: integer,
+          state: integer
+        }
+  defstruct [:value, :description, :level, :name, :state]
+
+  oneof :value, 0
+  field :description, 1, type: :string
+  field :level, 2, type: :int64
+  field :name, 3, type: :int64
+  field :int_value, 4, type: :int64, oneof: 0
+  field :buf_value, 5, type: :bytes, oneof: 0
+  field :state, 6, type: Envoy.Api.V2.Core.SocketOption.SocketState, enum: true
+end
+
+defmodule Envoy.Api.V2.Core.SocketOption.SocketState do
+  @moduledoc false
+  use Protobuf, enum: true, syntax: :proto3
+
+  field :STATE_PREBIND, 0
+  field :STATE_BOUND, 1
+  field :STATE_LISTENING, 2
+end
+
+defmodule Envoy.Api.V2.Core.RuntimeFractionalPercent do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          default_value: Envoy.Type.FractionalPercent.t(),
+          runtime_key: String.t()
+        }
+  defstruct [:default_value, :runtime_key]
+
+  field :default_value, 1, type: Envoy.Type.FractionalPercent
+  field :runtime_key, 2, type: :string
+end
+
 defmodule Envoy.Api.V2.Core.RoutingPriority do
   @moduledoc false
   use Protobuf, enum: true, syntax: :proto3

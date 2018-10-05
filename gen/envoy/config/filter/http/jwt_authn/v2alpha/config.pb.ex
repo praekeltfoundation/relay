@@ -1,4 +1,4 @@
-defmodule Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtRule do
+defmodule Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtProvider do
   @moduledoc false
   use Protobuf, syntax: :proto3
 
@@ -64,18 +64,117 @@ defmodule Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtHeader do
   field :value_prefix, 2, type: :string
 end
 
+defmodule Envoy.Config.Filter.Http.JwtAuthn.V2alpha.ProviderWithAudiences do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          provider_name: String.t(),
+          audiences: [String.t()]
+        }
+  defstruct [:provider_name, :audiences]
+
+  field :provider_name, 1, type: :string
+  field :audiences, 2, repeated: true, type: :string
+end
+
+defmodule Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtRequirement do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          requires_type: {atom, any}
+        }
+  defstruct [:requires_type]
+
+  oneof :requires_type, 0
+  field :provider_name, 1, type: :string, oneof: 0
+
+  field :provider_and_audiences, 2,
+    type: Envoy.Config.Filter.Http.JwtAuthn.V2alpha.ProviderWithAudiences,
+    oneof: 0
+
+  field :requires_any, 3,
+    type: Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtRequirementOrList,
+    oneof: 0
+
+  field :requires_all, 4,
+    type: Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtRequirementAndList,
+    oneof: 0
+
+  field :allow_missing_or_failed, 5, type: Google.Protobuf.Empty, oneof: 0
+end
+
+defmodule Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtRequirementOrList do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          requirements: [Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtRequirement.t()]
+        }
+  defstruct [:requirements]
+
+  field :requirements, 1,
+    repeated: true,
+    type: Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtRequirement
+end
+
+defmodule Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtRequirementAndList do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          requirements: [Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtRequirement.t()]
+        }
+  defstruct [:requirements]
+
+  field :requirements, 1,
+    repeated: true,
+    type: Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtRequirement
+end
+
+defmodule Envoy.Config.Filter.Http.JwtAuthn.V2alpha.RequirementRule do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          match: Envoy.Api.V2.Route.RouteMatch.t(),
+          requires: Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtRequirement.t()
+        }
+  defstruct [:match, :requires]
+
+  field :match, 1, type: Envoy.Api.V2.Route.RouteMatch
+  field :requires, 2, type: Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtRequirement
+end
+
 defmodule Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtAuthentication do
   @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          rules: [Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtRule.t()],
-          allow_missing_or_failed: boolean,
-          bypass: [Envoy.Api.V2.Route.RouteMatch.t()]
+          providers: %{String.t() => Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtProvider.t()},
+          rules: [Envoy.Config.Filter.Http.JwtAuthn.V2alpha.RequirementRule.t()]
         }
-  defstruct [:rules, :allow_missing_or_failed, :bypass]
+  defstruct [:providers, :rules]
 
-  field :rules, 1, repeated: true, type: Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtRule
-  field :allow_missing_or_failed, 2, type: :bool
-  field :bypass, 3, repeated: true, type: Envoy.Api.V2.Route.RouteMatch
+  field :providers, 1,
+    repeated: true,
+    type: Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtAuthentication.ProvidersEntry,
+    map: true
+
+  field :rules, 2, repeated: true, type: Envoy.Config.Filter.Http.JwtAuthn.V2alpha.RequirementRule
+end
+
+defmodule Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtAuthentication.ProvidersEntry do
+  @moduledoc false
+  use Protobuf, map: true, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          key: String.t(),
+          value: Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtProvider.t()
+        }
+  defstruct [:key, :value]
+
+  field :key, 1, type: :string
+  field :value, 2, type: Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtProvider
 end

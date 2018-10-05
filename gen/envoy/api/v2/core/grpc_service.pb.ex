@@ -77,6 +77,13 @@ defmodule Envoy.Api.V2.Core.GrpcService.GoogleGrpc.SslCredentials do
   field :cert_chain, 3, type: Envoy.Api.V2.Core.DataSource
 end
 
+defmodule Envoy.Api.V2.Core.GrpcService.GoogleGrpc.GoogleLocalCredentials do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  defstruct []
+end
+
 defmodule Envoy.Api.V2.Core.GrpcService.GoogleGrpc.ChannelCredentials do
   @moduledoc false
   use Protobuf, syntax: :proto3
@@ -93,6 +100,10 @@ defmodule Envoy.Api.V2.Core.GrpcService.GoogleGrpc.ChannelCredentials do
     oneof: 0
 
   field :google_default, 2, type: Google.Protobuf.Empty, oneof: 0
+
+  field :local_credentials, 3,
+    type: Envoy.Api.V2.Core.GrpcService.GoogleGrpc.GoogleLocalCredentials,
+    oneof: 0
 end
 
 defmodule Envoy.Api.V2.Core.GrpcService.GoogleGrpc.CallCredentials do

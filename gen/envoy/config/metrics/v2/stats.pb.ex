@@ -63,10 +63,24 @@ defmodule Envoy.Config.Metrics.V2.DogStatsdSink do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          dog_statsd_specifier: {atom, any}
+          dog_statsd_specifier: {atom, any},
+          prefix: String.t()
         }
-  defstruct [:dog_statsd_specifier]
+  defstruct [:dog_statsd_specifier, :prefix]
 
   oneof :dog_statsd_specifier, 0
   field :address, 1, type: Envoy.Api.V2.Core.Address, oneof: 0
+  field :prefix, 3, type: :string
+end
+
+defmodule Envoy.Config.Metrics.V2.HystrixSink do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          num_buckets: integer
+        }
+  defstruct [:num_buckets]
+
+  field :num_buckets, 1, type: :int64
 end

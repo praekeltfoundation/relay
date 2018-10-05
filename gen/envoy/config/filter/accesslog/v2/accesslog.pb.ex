@@ -36,6 +36,10 @@ defmodule Envoy.Config.Filter.Accesslog.V2.AccessLogFilter do
   field :and_filter, 6, type: Envoy.Config.Filter.Accesslog.V2.AndFilter, oneof: 0
   field :or_filter, 7, type: Envoy.Config.Filter.Accesslog.V2.OrFilter, oneof: 0
   field :header_filter, 8, type: Envoy.Config.Filter.Accesslog.V2.HeaderFilter, oneof: 0
+
+  field :response_flag_filter, 9,
+    type: Envoy.Config.Filter.Accesslog.V2.ResponseFlagFilter,
+    oneof: 0
 end
 
 defmodule Envoy.Config.Filter.Accesslog.V2.ComparisonFilter do
@@ -149,4 +153,16 @@ defmodule Envoy.Config.Filter.Accesslog.V2.HeaderFilter do
   defstruct [:header]
 
   field :header, 1, type: Envoy.Api.V2.Route.HeaderMatcher
+end
+
+defmodule Envoy.Config.Filter.Accesslog.V2.ResponseFlagFilter do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          flags: [String.t()]
+        }
+  defstruct [:flags]
+
+  field :flags, 1, repeated: true, type: :string
 end

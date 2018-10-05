@@ -20,6 +20,7 @@ defmodule Envoy.Api.V2.Cluster do
           common_http_protocol_options: Envoy.Api.V2.Core.HttpProtocolOptions.t(),
           http_protocol_options: Envoy.Api.V2.Core.Http1ProtocolOptions.t(),
           http2_protocol_options: Envoy.Api.V2.Core.Http2ProtocolOptions.t(),
+          extension_protocol_options: %{String.t() => Google.Protobuf.Struct.t()},
           dns_refresh_rate: Google.Protobuf.Duration.t(),
           dns_lookup_family: integer,
           dns_resolvers: [Envoy.Api.V2.Core.Address.t()],
@@ -53,6 +54,7 @@ defmodule Envoy.Api.V2.Cluster do
     :common_http_protocol_options,
     :http_protocol_options,
     :http2_protocol_options,
+    :extension_protocol_options,
     :dns_refresh_rate,
     :dns_lookup_family,
     :dns_resolvers,
@@ -77,7 +79,7 @@ defmodule Envoy.Api.V2.Cluster do
   field :connect_timeout, 4, type: Google.Protobuf.Duration
   field :per_connection_buffer_limit_bytes, 5, type: Google.Protobuf.UInt32Value
   field :lb_policy, 6, type: Envoy.Api.V2.Cluster.LbPolicy, enum: true
-  field :hosts, 7, repeated: true, type: Envoy.Api.V2.Core.Address
+  field :hosts, 7, repeated: true, type: Envoy.Api.V2.Core.Address, deprecated: true
   field :load_assignment, 33, type: Envoy.Api.V2.ClusterLoadAssignment
   field :health_checks, 8, repeated: true, type: Envoy.Api.V2.Core.HealthCheck
   field :max_requests_per_connection, 9, type: Google.Protobuf.UInt32Value
@@ -86,6 +88,12 @@ defmodule Envoy.Api.V2.Cluster do
   field :common_http_protocol_options, 29, type: Envoy.Api.V2.Core.HttpProtocolOptions
   field :http_protocol_options, 13, type: Envoy.Api.V2.Core.Http1ProtocolOptions
   field :http2_protocol_options, 14, type: Envoy.Api.V2.Core.Http2ProtocolOptions
+
+  field :extension_protocol_options, 35,
+    repeated: true,
+    type: Envoy.Api.V2.Cluster.ExtensionProtocolOptionsEntry,
+    map: true
+
   field :dns_refresh_rate, 16, type: Google.Protobuf.Duration
   field :dns_lookup_family, 17, type: Envoy.Api.V2.Cluster.DnsLookupFamily, enum: true
   field :dns_resolvers, 18, repeated: true, type: Envoy.Api.V2.Core.Address
@@ -94,6 +102,7 @@ defmodule Envoy.Api.V2.Cluster do
   field :upstream_bind_config, 21, type: Envoy.Api.V2.Core.BindConfig
   field :lb_subset_config, 22, type: Envoy.Api.V2.Cluster.LbSubsetConfig
   field :ring_hash_lb_config, 23, type: Envoy.Api.V2.Cluster.RingHashLbConfig, oneof: 0
+  field :original_dst_lb_config, 34, type: Envoy.Api.V2.Cluster.OriginalDstLbConfig, oneof: 0
   field :common_lb_config, 27, type: Envoy.Api.V2.Cluster.CommonLbConfig
   field :transport_socket, 24, type: Envoy.Api.V2.Core.TransportSocket
   field :metadata, 25, type: Envoy.Api.V2.Core.Metadata
@@ -117,6 +126,20 @@ defmodule Envoy.Api.V2.Cluster.EdsClusterConfig do
   field :service_name, 2, type: :string
 end
 
+defmodule Envoy.Api.V2.Cluster.ExtensionProtocolOptionsEntry do
+  @moduledoc false
+  use Protobuf, map: true, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          key: String.t(),
+          value: Google.Protobuf.Struct.t()
+        }
+  defstruct [:key, :value]
+
+  field :key, 1, type: :string
+  field :value, 2, type: Google.Protobuf.Struct
+end
+
 defmodule Envoy.Api.V2.Cluster.LbSubsetConfig do
   @moduledoc false
   use Protobuf, syntax: :proto3
@@ -124,9 +147,10 @@ defmodule Envoy.Api.V2.Cluster.LbSubsetConfig do
   @type t :: %__MODULE__{
           fallback_policy: integer,
           default_subset: Google.Protobuf.Struct.t(),
-          subset_selectors: [Envoy.Api.V2.Cluster.LbSubsetConfig.LbSubsetSelector.t()]
+          subset_selectors: [Envoy.Api.V2.Cluster.LbSubsetConfig.LbSubsetSelector.t()],
+          locality_weight_aware: boolean
         }
-  defstruct [:fallback_policy, :default_subset, :subset_selectors]
+  defstruct [:fallback_policy, :default_subset, :subset_selectors, :locality_weight_aware]
 
   field :fallback_policy, 1,
     type: Envoy.Api.V2.Cluster.LbSubsetConfig.LbSubsetFallbackPolicy,
@@ -137,6 +161,8 @@ defmodule Envoy.Api.V2.Cluster.LbSubsetConfig do
   field :subset_selectors, 3,
     repeated: true,
     type: Envoy.Api.V2.Cluster.LbSubsetConfig.LbSubsetSelector
+
+  field :locality_weight_aware, 4, type: :bool
 end
 
 defmodule Envoy.Api.V2.Cluster.LbSubsetConfig.LbSubsetSelector do
@@ -189,15 +215,28 @@ defmodule Envoy.Api.V2.Cluster.RingHashLbConfig.DeprecatedV1 do
   field :use_std_hash, 1, type: Google.Protobuf.BoolValue
 end
 
+defmodule Envoy.Api.V2.Cluster.OriginalDstLbConfig do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          use_http_header: boolean
+        }
+  defstruct [:use_http_header]
+
+  field :use_http_header, 1, type: :bool
+end
+
 defmodule Envoy.Api.V2.Cluster.CommonLbConfig do
   @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
           locality_config_specifier: {atom, any},
-          healthy_panic_threshold: Envoy.Type.Percent.t()
+          healthy_panic_threshold: Envoy.Type.Percent.t(),
+          update_merge_window: Google.Protobuf.Duration.t()
         }
-  defstruct [:locality_config_specifier, :healthy_panic_threshold]
+  defstruct [:locality_config_specifier, :healthy_panic_threshold, :update_merge_window]
 
   oneof :locality_config_specifier, 0
   field :healthy_panic_threshold, 1, type: Envoy.Type.Percent
@@ -209,6 +248,8 @@ defmodule Envoy.Api.V2.Cluster.CommonLbConfig do
   field :locality_weighted_lb_config, 3,
     type: Envoy.Api.V2.Cluster.CommonLbConfig.LocalityWeightedLbConfig,
     oneof: 0
+
+  field :update_merge_window, 4, type: Google.Protobuf.Duration
 end
 
 defmodule Envoy.Api.V2.Cluster.CommonLbConfig.ZoneAwareLbConfig do
@@ -303,6 +344,10 @@ defmodule Envoy.Api.V2.ClusterDiscoveryService.Service do
   rpc :StreamClusters,
       stream(Envoy.Api.V2.DiscoveryRequest),
       stream(Envoy.Api.V2.DiscoveryResponse)
+
+  rpc :IncrementalClusters,
+      stream(Envoy.Api.V2.IncrementalDiscoveryRequest),
+      stream(Envoy.Api.V2.IncrementalDiscoveryResponse)
 
   rpc :FetchClusters, Envoy.Api.V2.DiscoveryRequest, Envoy.Api.V2.DiscoveryResponse
 end

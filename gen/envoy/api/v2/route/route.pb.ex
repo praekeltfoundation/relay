@@ -10,6 +10,7 @@ defmodule Envoy.Api.V2.Route.VirtualHost do
           virtual_clusters: [Envoy.Api.V2.Route.VirtualCluster.t()],
           rate_limits: [Envoy.Api.V2.Route.RateLimit.t()],
           request_headers_to_add: [Envoy.Api.V2.Core.HeaderValueOption.t()],
+          request_headers_to_remove: [String.t()],
           response_headers_to_add: [Envoy.Api.V2.Core.HeaderValueOption.t()],
           response_headers_to_remove: [String.t()],
           cors: Envoy.Api.V2.Route.CorsPolicy.t(),
@@ -23,6 +24,7 @@ defmodule Envoy.Api.V2.Route.VirtualHost do
     :virtual_clusters,
     :rate_limits,
     :request_headers_to_add,
+    :request_headers_to_remove,
     :response_headers_to_add,
     :response_headers_to_remove,
     :cors,
@@ -36,6 +38,7 @@ defmodule Envoy.Api.V2.Route.VirtualHost do
   field :virtual_clusters, 5, repeated: true, type: Envoy.Api.V2.Route.VirtualCluster
   field :rate_limits, 6, repeated: true, type: Envoy.Api.V2.Route.RateLimit
   field :request_headers_to_add, 7, repeated: true, type: Envoy.Api.V2.Core.HeaderValueOption
+  field :request_headers_to_remove, 13, repeated: true, type: :string
   field :response_headers_to_add, 10, repeated: true, type: Envoy.Api.V2.Core.HeaderValueOption
   field :response_headers_to_remove, 11, repeated: true, type: :string
   field :cors, 8, type: Envoy.Api.V2.Route.CorsPolicy
@@ -78,9 +81,23 @@ defmodule Envoy.Api.V2.Route.Route do
           match: Envoy.Api.V2.Route.RouteMatch.t(),
           metadata: Envoy.Api.V2.Core.Metadata.t(),
           decorator: Envoy.Api.V2.Route.Decorator.t(),
-          per_filter_config: %{String.t() => Google.Protobuf.Struct.t()}
+          per_filter_config: %{String.t() => Google.Protobuf.Struct.t()},
+          request_headers_to_add: [Envoy.Api.V2.Core.HeaderValueOption.t()],
+          request_headers_to_remove: [String.t()],
+          response_headers_to_add: [Envoy.Api.V2.Core.HeaderValueOption.t()],
+          response_headers_to_remove: [String.t()]
         }
-  defstruct [:action, :match, :metadata, :decorator, :per_filter_config]
+  defstruct [
+    :action,
+    :match,
+    :metadata,
+    :decorator,
+    :per_filter_config,
+    :request_headers_to_add,
+    :request_headers_to_remove,
+    :response_headers_to_add,
+    :response_headers_to_remove
+  ]
 
   oneof :action, 0
   field :match, 1, type: Envoy.Api.V2.Route.RouteMatch
@@ -94,6 +111,11 @@ defmodule Envoy.Api.V2.Route.Route do
     repeated: true,
     type: Envoy.Api.V2.Route.Route.PerFilterConfigEntry,
     map: true
+
+  field :request_headers_to_add, 9, repeated: true, type: Envoy.Api.V2.Core.HeaderValueOption
+  field :request_headers_to_remove, 12, repeated: true, type: :string
+  field :response_headers_to_add, 10, repeated: true, type: Envoy.Api.V2.Core.HeaderValueOption
+  field :response_headers_to_remove, 11, repeated: true, type: :string
 end
 
 defmodule Envoy.Api.V2.Route.Route.PerFilterConfigEntry do
@@ -135,6 +157,7 @@ defmodule Envoy.Api.V2.Route.WeightedCluster.ClusterWeight do
           weight: Google.Protobuf.UInt32Value.t(),
           metadata_match: Envoy.Api.V2.Core.Metadata.t(),
           request_headers_to_add: [Envoy.Api.V2.Core.HeaderValueOption.t()],
+          request_headers_to_remove: [String.t()],
           response_headers_to_add: [Envoy.Api.V2.Core.HeaderValueOption.t()],
           response_headers_to_remove: [String.t()],
           per_filter_config: %{String.t() => Google.Protobuf.Struct.t()}
@@ -144,6 +167,7 @@ defmodule Envoy.Api.V2.Route.WeightedCluster.ClusterWeight do
     :weight,
     :metadata_match,
     :request_headers_to_add,
+    :request_headers_to_remove,
     :response_headers_to_add,
     :response_headers_to_remove,
     :per_filter_config
@@ -153,6 +177,7 @@ defmodule Envoy.Api.V2.Route.WeightedCluster.ClusterWeight do
   field :weight, 2, type: Google.Protobuf.UInt32Value
   field :metadata_match, 3, type: Envoy.Api.V2.Core.Metadata
   field :request_headers_to_add, 4, repeated: true, type: Envoy.Api.V2.Core.HeaderValueOption
+  field :request_headers_to_remove, 9, repeated: true, type: :string
   field :response_headers_to_add, 5, repeated: true, type: Envoy.Api.V2.Core.HeaderValueOption
   field :response_headers_to_remove, 6, repeated: true, type: :string
 
@@ -182,21 +207,39 @@ defmodule Envoy.Api.V2.Route.RouteMatch do
 
   @type t :: %__MODULE__{
           path_specifier: {atom, any},
+          runtime_specifier: {atom, any},
           case_sensitive: Google.Protobuf.BoolValue.t(),
-          runtime: Envoy.Api.V2.Core.RuntimeUInt32.t(),
           headers: [Envoy.Api.V2.Route.HeaderMatcher.t()],
-          query_parameters: [Envoy.Api.V2.Route.QueryParameterMatcher.t()]
+          query_parameters: [Envoy.Api.V2.Route.QueryParameterMatcher.t()],
+          grpc: Envoy.Api.V2.Route.RouteMatch.GrpcRouteMatchOptions.t()
         }
-  defstruct [:path_specifier, :case_sensitive, :runtime, :headers, :query_parameters]
+  defstruct [
+    :path_specifier,
+    :runtime_specifier,
+    :case_sensitive,
+    :headers,
+    :query_parameters,
+    :grpc
+  ]
 
   oneof :path_specifier, 0
+  oneof :runtime_specifier, 1
   field :prefix, 1, type: :string, oneof: 0
   field :path, 2, type: :string, oneof: 0
   field :regex, 3, type: :string, oneof: 0
   field :case_sensitive, 4, type: Google.Protobuf.BoolValue
-  field :runtime, 5, type: Envoy.Api.V2.Core.RuntimeUInt32
+  field :runtime, 5, type: Envoy.Api.V2.Core.RuntimeUInt32, deprecated: true, oneof: 1
+  field :runtime_fraction, 9, type: Envoy.Api.V2.Core.RuntimeFractionalPercent, oneof: 1
   field :headers, 6, repeated: true, type: Envoy.Api.V2.Route.HeaderMatcher
   field :query_parameters, 7, repeated: true, type: Envoy.Api.V2.Route.QueryParameterMatcher
+  field :grpc, 8, type: Envoy.Api.V2.Route.RouteMatch.GrpcRouteMatchOptions
+end
+
+defmodule Envoy.Api.V2.Route.RouteMatch.GrpcRouteMatchOptions do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  defstruct []
 end
 
 defmodule Envoy.Api.V2.Route.CorsPolicy do
@@ -205,6 +248,7 @@ defmodule Envoy.Api.V2.Route.CorsPolicy do
 
   @type t :: %__MODULE__{
           allow_origin: [String.t()],
+          allow_origin_regex: [String.t()],
           allow_methods: String.t(),
           allow_headers: String.t(),
           expose_headers: String.t(),
@@ -214,6 +258,7 @@ defmodule Envoy.Api.V2.Route.CorsPolicy do
         }
   defstruct [
     :allow_origin,
+    :allow_origin_regex,
     :allow_methods,
     :allow_headers,
     :expose_headers,
@@ -223,6 +268,7 @@ defmodule Envoy.Api.V2.Route.CorsPolicy do
   ]
 
   field :allow_origin, 1, repeated: true, type: :string
+  field :allow_origin_regex, 8, repeated: true, type: :string
   field :allow_methods, 2, type: :string
   field :allow_headers, 3, type: :string
   field :expose_headers, 4, type: :string
@@ -242,6 +288,7 @@ defmodule Envoy.Api.V2.Route.RouteAction do
           metadata_match: Envoy.Api.V2.Core.Metadata.t(),
           prefix_rewrite: String.t(),
           timeout: Google.Protobuf.Duration.t(),
+          idle_timeout: Google.Protobuf.Duration.t(),
           retry_policy: Envoy.Api.V2.Route.RouteAction.RetryPolicy.t(),
           request_mirror_policy: Envoy.Api.V2.Route.RouteAction.RequestMirrorPolicy.t(),
           priority: integer,
@@ -263,6 +310,7 @@ defmodule Envoy.Api.V2.Route.RouteAction do
     :metadata_match,
     :prefix_rewrite,
     :timeout,
+    :idle_timeout,
     :retry_policy,
     :request_mirror_policy,
     :priority,
@@ -293,17 +341,31 @@ defmodule Envoy.Api.V2.Route.RouteAction do
   field :host_rewrite, 6, type: :string, oneof: 1
   field :auto_host_rewrite, 7, type: Google.Protobuf.BoolValue, oneof: 1
   field :timeout, 8, type: Google.Protobuf.Duration
+  field :idle_timeout, 24, type: Google.Protobuf.Duration
   field :retry_policy, 9, type: Envoy.Api.V2.Route.RouteAction.RetryPolicy
   field :request_mirror_policy, 10, type: Envoy.Api.V2.Route.RouteAction.RequestMirrorPolicy
   field :priority, 11, type: Envoy.Api.V2.Core.RoutingPriority, enum: true
-  field :request_headers_to_add, 12, repeated: true, type: Envoy.Api.V2.Core.HeaderValueOption
-  field :response_headers_to_add, 18, repeated: true, type: Envoy.Api.V2.Core.HeaderValueOption
-  field :response_headers_to_remove, 19, repeated: true, type: :string
+
+  field :request_headers_to_add, 12,
+    repeated: true,
+    type: Envoy.Api.V2.Core.HeaderValueOption,
+    deprecated: true
+
+  field :response_headers_to_add, 18,
+    repeated: true,
+    type: Envoy.Api.V2.Core.HeaderValueOption,
+    deprecated: true
+
+  field :response_headers_to_remove, 19, repeated: true, type: :string, deprecated: true
   field :rate_limits, 13, repeated: true, type: Envoy.Api.V2.Route.RateLimit
   field :include_vh_rate_limits, 14, type: Google.Protobuf.BoolValue
   field :hash_policy, 15, repeated: true, type: Envoy.Api.V2.Route.RouteAction.HashPolicy
-  field :use_websocket, 16, type: Google.Protobuf.BoolValue
-  field :websocket_config, 22, type: Envoy.Api.V2.Route.RouteAction.WebSocketProxyConfig
+  field :use_websocket, 16, type: Google.Protobuf.BoolValue, deprecated: true
+
+  field :websocket_config, 22,
+    type: Envoy.Api.V2.Route.RouteAction.WebSocketProxyConfig,
+    deprecated: true
+
   field :cors, 17, type: Envoy.Api.V2.Route.CorsPolicy
   field :max_grpc_timeout, 23, type: Google.Protobuf.Duration
 end
@@ -315,13 +377,60 @@ defmodule Envoy.Api.V2.Route.RouteAction.RetryPolicy do
   @type t :: %__MODULE__{
           retry_on: String.t(),
           num_retries: Google.Protobuf.UInt32Value.t(),
-          per_try_timeout: Google.Protobuf.Duration.t()
+          per_try_timeout: Google.Protobuf.Duration.t(),
+          retry_priority: Envoy.Api.V2.Route.RouteAction.RetryPolicy.RetryPriority.t(),
+          retry_host_predicate: [
+            Envoy.Api.V2.Route.RouteAction.RetryPolicy.RetryHostPredicate.t()
+          ],
+          host_selection_retry_max_attempts: integer
         }
-  defstruct [:retry_on, :num_retries, :per_try_timeout]
+  defstruct [
+    :retry_on,
+    :num_retries,
+    :per_try_timeout,
+    :retry_priority,
+    :retry_host_predicate,
+    :host_selection_retry_max_attempts
+  ]
 
   field :retry_on, 1, type: :string
   field :num_retries, 2, type: Google.Protobuf.UInt32Value
   field :per_try_timeout, 3, type: Google.Protobuf.Duration
+  field :retry_priority, 4, type: Envoy.Api.V2.Route.RouteAction.RetryPolicy.RetryPriority
+
+  field :retry_host_predicate, 5,
+    repeated: true,
+    type: Envoy.Api.V2.Route.RouteAction.RetryPolicy.RetryHostPredicate
+
+  field :host_selection_retry_max_attempts, 6, type: :int64
+end
+
+defmodule Envoy.Api.V2.Route.RouteAction.RetryPolicy.RetryPriority do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          name: String.t(),
+          config: Google.Protobuf.Struct.t()
+        }
+  defstruct [:name, :config]
+
+  field :name, 1, type: :string
+  field :config, 2, type: Google.Protobuf.Struct
+end
+
+defmodule Envoy.Api.V2.Route.RouteAction.RetryPolicy.RetryHostPredicate do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          name: String.t(),
+          config: Google.Protobuf.Struct.t()
+        }
+  defstruct [:name, :config]
+
+  field :name, 1, type: :string
+  field :config, 2, type: Google.Protobuf.Struct
 end
 
 defmodule Envoy.Api.V2.Route.RouteAction.RequestMirrorPolicy do
@@ -343,9 +452,10 @@ defmodule Envoy.Api.V2.Route.RouteAction.HashPolicy do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          policy_specifier: {atom, any}
+          policy_specifier: {atom, any},
+          terminal: boolean
         }
-  defstruct [:policy_specifier]
+  defstruct [:policy_specifier, :terminal]
 
   oneof :policy_specifier, 0
   field :header, 1, type: Envoy.Api.V2.Route.RouteAction.HashPolicy.Header, oneof: 0
@@ -354,6 +464,8 @@ defmodule Envoy.Api.V2.Route.RouteAction.HashPolicy do
   field :connection_properties, 3,
     type: Envoy.Api.V2.Route.RouteAction.HashPolicy.ConnectionProperties,
     oneof: 0
+
+  field :terminal, 4, type: :bool
 end
 
 defmodule Envoy.Api.V2.Route.RouteAction.HashPolicy.Header do
@@ -616,16 +728,12 @@ defmodule Envoy.Api.V2.Route.HeaderMatcher do
   @type t :: %__MODULE__{
           header_match_specifier: {atom, any},
           name: String.t(),
-          value: String.t(),
-          regex: Google.Protobuf.BoolValue.t(),
           invert_match: boolean
         }
-  defstruct [:header_match_specifier, :name, :value, :regex, :invert_match]
+  defstruct [:header_match_specifier, :name, :invert_match]
 
   oneof :header_match_specifier, 0
   field :name, 1, type: :string
-  field :value, 2, type: :string, deprecated: true
-  field :regex, 3, type: Google.Protobuf.BoolValue, deprecated: true
   field :exact_match, 4, type: :string, oneof: 0
   field :regex_match, 5, type: :string, oneof: 0
   field :range_match, 6, type: Envoy.Type.Int64Range, oneof: 0

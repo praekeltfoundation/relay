@@ -62,12 +62,14 @@ defmodule Envoy.Api.V2.Core.BindConfig do
 
   @type t :: %__MODULE__{
           source_address: Envoy.Api.V2.Core.SocketAddress.t(),
-          freebind: Google.Protobuf.BoolValue.t()
+          freebind: Google.Protobuf.BoolValue.t(),
+          socket_options: [Envoy.Api.V2.Core.SocketOption.t()]
         }
-  defstruct [:source_address, :freebind]
+  defstruct [:source_address, :freebind, :socket_options]
 
   field :source_address, 1, type: Envoy.Api.V2.Core.SocketAddress
   field :freebind, 2, type: Google.Protobuf.BoolValue
+  field :socket_options, 3, repeated: true, type: Envoy.Api.V2.Core.SocketOption
 end
 
 defmodule Envoy.Api.V2.Core.Address do

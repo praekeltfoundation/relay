@@ -7,6 +7,7 @@ defmodule Envoy.Config.Bootstrap.V2.Bootstrap do
           static_resources: Envoy.Config.Bootstrap.V2.Bootstrap.StaticResources.t(),
           dynamic_resources: Envoy.Config.Bootstrap.V2.Bootstrap.DynamicResources.t(),
           cluster_manager: Envoy.Config.Bootstrap.V2.ClusterManager.t(),
+          hds_config: Envoy.Api.V2.Core.ApiConfigSource.t(),
           flags_path: String.t(),
           stats_sinks: [Envoy.Config.Metrics.V2.StatsSink.t()],
           stats_config: Envoy.Config.Metrics.V2.StatsConfig.t(),
@@ -15,13 +16,15 @@ defmodule Envoy.Config.Bootstrap.V2.Bootstrap do
           tracing: Envoy.Config.Trace.V2.Tracing.t(),
           rate_limit_service: Envoy.Config.Ratelimit.V2.RateLimitServiceConfig.t(),
           runtime: Envoy.Config.Bootstrap.V2.Runtime.t(),
-          admin: Envoy.Config.Bootstrap.V2.Admin.t()
+          admin: Envoy.Config.Bootstrap.V2.Admin.t(),
+          overload_manager: Envoy.Config.Overload.V2alpha.OverloadManager.t()
         }
   defstruct [
     :node,
     :static_resources,
     :dynamic_resources,
     :cluster_manager,
+    :hds_config,
     :flags_path,
     :stats_sinks,
     :stats_config,
@@ -30,13 +33,15 @@ defmodule Envoy.Config.Bootstrap.V2.Bootstrap do
     :tracing,
     :rate_limit_service,
     :runtime,
-    :admin
+    :admin,
+    :overload_manager
   ]
 
   field :node, 1, type: Envoy.Api.V2.Core.Node
   field :static_resources, 2, type: Envoy.Config.Bootstrap.V2.Bootstrap.StaticResources
   field :dynamic_resources, 3, type: Envoy.Config.Bootstrap.V2.Bootstrap.DynamicResources
   field :cluster_manager, 4, type: Envoy.Config.Bootstrap.V2.ClusterManager
+  field :hds_config, 14, type: Envoy.Api.V2.Core.ApiConfigSource
   field :flags_path, 5, type: :string
   field :stats_sinks, 6, repeated: true, type: Envoy.Config.Metrics.V2.StatsSink
   field :stats_config, 13, type: Envoy.Config.Metrics.V2.StatsConfig
@@ -46,6 +51,7 @@ defmodule Envoy.Config.Bootstrap.V2.Bootstrap do
   field :rate_limit_service, 10, type: Envoy.Config.Ratelimit.V2.RateLimitServiceConfig
   field :runtime, 11, type: Envoy.Config.Bootstrap.V2.Runtime
   field :admin, 12, type: Envoy.Config.Bootstrap.V2.Admin
+  field :overload_manager, 15, type: Envoy.Config.Overload.V2alpha.OverloadManager
 end
 
 defmodule Envoy.Config.Bootstrap.V2.Bootstrap.StaticResources do
