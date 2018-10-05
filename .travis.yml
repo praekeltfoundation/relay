@@ -17,7 +17,7 @@ jobs:
   include:
     - {} # Use 'default' Elixir/OTP versions
     - elixir: '1.7'
-      otp_release: '21.0'
+      otp_release: '21.1'
 
     - env:
         - RUN_DIALYZER=1
