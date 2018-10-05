@@ -39,8 +39,8 @@ jobs:
         - mix dialyzer --halt-exit-status
 
     - env:
-        - BAZEL_VERSION=0.15.1
-        - PROTOC_VERSION=3.6.0
+        - BAZEL_VERSION=0.17.2
+        - PROTOC_VERSION=3.6.1
         - PROTOBUF_ELIXIR_VERSION=0.5.4
 
       install:
