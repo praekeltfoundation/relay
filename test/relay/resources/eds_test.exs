@@ -164,17 +164,15 @@ defmodule Relay.Resources.EDSTest do
 
   test "cluster load assignment with options" do
     alias Google.Protobuf.{UInt32Value, UInt64Value}
+    alias ClusterLoadAssignment.Policy
 
     app_endpoint = %AppEndpoint{
       @simple_app_endpoint
       | cla_opts: [
           policy:
-            ClusterLoadAssignment.Policy.new(
+            Policy.new(
               drop_overloads: [
-                ClusterLoadAssignment.Policy.DropOverload.new(
-                  category: "throttle",
-                  drop_percentage: 50
-                )
+                Policy.DropOverload.new(category: "throttle", drop_percentage: 50)
               ]
             )
         ],
@@ -185,12 +183,9 @@ defmodule Relay.Resources.EDSTest do
     assert [cla] = EDS.cluster_load_assignments([app_endpoint])
 
     assert %ClusterLoadAssignment{
-             policy: %ClusterLoadAssignment.Policy{
+             policy: %Policy{
                drop_overloads: [
-                 %ClusterLoadAssignment.Policy.DropOverload{
-                   category: "throttle",
-                   drop_percentage: 50
-                 }
+                 %Policy.DropOverload{category: "throttle", drop_percentage: 50}
                ]
              },
              endpoints: [
