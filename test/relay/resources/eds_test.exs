@@ -167,7 +167,17 @@ defmodule Relay.Resources.EDSTest do
 
     app_endpoint = %AppEndpoint{
       @simple_app_endpoint
-      | cla_opts: [policy: ClusterLoadAssignment.Policy.new(drop_overload: 5.0)],
+      | cla_opts: [
+          policy:
+            ClusterLoadAssignment.Policy.new(
+              drop_overloads: [
+                ClusterLoadAssignment.Policy.DropOverload.new(
+                  category: "throttle",
+                  drop_percentage: 50
+                )
+              ]
+            )
+        ],
         llb_endpoint_opts: [load_balancing_weight: UInt64Value.new(value: 42)],
         lb_endpoint_opts: [load_balancing_weight: UInt32Value.new(value: 13)]
     }
@@ -175,7 +185,14 @@ defmodule Relay.Resources.EDSTest do
     assert [cla] = EDS.cluster_load_assignments([app_endpoint])
 
     assert %ClusterLoadAssignment{
-             policy: %ClusterLoadAssignment.Policy{drop_overload: 5.0},
+             policy: %ClusterLoadAssignment.Policy{
+               drop_overloads: [
+                 %ClusterLoadAssignment.Policy.DropOverload{
+                   category: "throttle",
+                   drop_percentage: 50
+                 }
+               ]
+             },
              endpoints: [
                %LocalityLbEndpoints{
                  load_balancing_weight: %UInt64Value{value: 42},
