@@ -17,8 +17,8 @@ defmodule Envoy.Config.Filter.Network.ThriftProxy.V2alpha1.Route do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          match: Envoy.Config.Filter.Network.ThriftProxy.V2alpha1.RouteMatch.t(),
-          route: Envoy.Config.Filter.Network.ThriftProxy.V2alpha1.RouteAction.t()
+          match: Envoy.Config.Filter.Network.ThriftProxy.V2alpha1.RouteMatch.t() | nil,
+          route: Envoy.Config.Filter.Network.ThriftProxy.V2alpha1.RouteAction.t() | nil
         }
   defstruct [:match, :route]
 
@@ -50,7 +50,7 @@ defmodule Envoy.Config.Filter.Network.ThriftProxy.V2alpha1.RouteAction do
 
   @type t :: %__MODULE__{
           cluster_specifier: {atom, any},
-          metadata_match: Envoy.Api.V2.Core.Metadata.t()
+          metadata_match: Envoy.Api.V2.Core.Metadata.t() | nil
         }
   defstruct [:cluster_specifier, :metadata_match]
 
@@ -86,8 +86,8 @@ defmodule Envoy.Config.Filter.Network.ThriftProxy.V2alpha1.WeightedCluster.Clust
 
   @type t :: %__MODULE__{
           name: String.t(),
-          weight: Google.Protobuf.UInt32Value.t(),
-          metadata_match: Envoy.Api.V2.Core.Metadata.t()
+          weight: Google.Protobuf.UInt32Value.t() | nil,
+          metadata_match: Envoy.Api.V2.Core.Metadata.t() | nil
         }
   defstruct [:name, :weight, :metadata_match]
 

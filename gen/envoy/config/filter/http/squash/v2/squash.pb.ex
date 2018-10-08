@@ -4,10 +4,10 @@ defmodule Envoy.Config.Filter.Http.Squash.V2.Squash do
 
   @type t :: %__MODULE__{
           cluster: String.t(),
-          attachment_template: Google.Protobuf.Struct.t(),
-          request_timeout: Google.Protobuf.Duration.t(),
-          attachment_timeout: Google.Protobuf.Duration.t(),
-          attachment_poll_period: Google.Protobuf.Duration.t()
+          attachment_template: Google.Protobuf.Struct.t() | nil,
+          request_timeout: Google.Protobuf.Duration.t() | nil,
+          attachment_timeout: Google.Protobuf.Duration.t() | nil,
+          attachment_poll_period: Google.Protobuf.Duration.t() | nil
         }
   defstruct [
     :cluster,

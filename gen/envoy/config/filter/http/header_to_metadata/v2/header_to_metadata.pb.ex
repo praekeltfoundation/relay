@@ -41,8 +41,10 @@ defmodule Envoy.Config.Filter.Http.HeaderToMetadata.V2.Config.Rule do
 
   @type t :: %__MODULE__{
           header: String.t(),
-          on_header_present: Envoy.Config.Filter.Http.HeaderToMetadata.V2.Config.KeyValuePair.t(),
-          on_header_missing: Envoy.Config.Filter.Http.HeaderToMetadata.V2.Config.KeyValuePair.t(),
+          on_header_present:
+            Envoy.Config.Filter.Http.HeaderToMetadata.V2.Config.KeyValuePair.t() | nil,
+          on_header_missing:
+            Envoy.Config.Filter.Http.HeaderToMetadata.V2.Config.KeyValuePair.t() | nil,
           remove: boolean
         }
   defstruct [:header, :on_header_present, :on_header_missing, :remove]

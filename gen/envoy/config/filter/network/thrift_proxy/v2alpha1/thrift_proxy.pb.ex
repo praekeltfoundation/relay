@@ -6,7 +6,8 @@ defmodule Envoy.Config.Filter.Network.ThriftProxy.V2alpha1.ThriftProxy do
           transport: integer,
           protocol: integer,
           stat_prefix: String.t(),
-          route_config: Envoy.Config.Filter.Network.ThriftProxy.V2alpha1.RouteConfiguration.t(),
+          route_config:
+            Envoy.Config.Filter.Network.ThriftProxy.V2alpha1.RouteConfiguration.t() | nil,
           thrift_filters: [Envoy.Config.Filter.Network.ThriftProxy.V2alpha1.ThriftFilter.t()]
         }
   defstruct [:transport, :protocol, :stat_prefix, :route_config, :thrift_filters]
@@ -35,7 +36,7 @@ defmodule Envoy.Config.Filter.Network.ThriftProxy.V2alpha1.ThriftFilter do
 
   @type t :: %__MODULE__{
           name: String.t(),
-          config: Google.Protobuf.Struct.t()
+          config: Google.Protobuf.Struct.t() | nil
         }
   defstruct [:name, :config]
 

@@ -4,11 +4,11 @@ defmodule Envoy.Api.V2.DiscoveryRequest do
 
   @type t :: %__MODULE__{
           version_info: String.t(),
-          node: Envoy.Api.V2.Core.Node.t(),
+          node: Envoy.Api.V2.Core.Node.t() | nil,
           resource_names: [String.t()],
           type_url: String.t(),
           response_nonce: String.t(),
-          error_detail: Google.Rpc.Status.t()
+          error_detail: Google.Rpc.Status.t() | nil
         }
   defstruct [:version_info, :node, :resource_names, :type_url, :response_nonce, :error_detail]
 
@@ -45,13 +45,13 @@ defmodule Envoy.Api.V2.IncrementalDiscoveryRequest do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          node: Envoy.Api.V2.Core.Node.t(),
+          node: Envoy.Api.V2.Core.Node.t() | nil,
           type_url: String.t(),
           resource_names_subscribe: [String.t()],
           resource_names_unsubscribe: [String.t()],
           initial_resource_versions: %{String.t() => String.t()},
           response_nonce: String.t(),
-          error_detail: Google.Rpc.Status.t()
+          error_detail: Google.Rpc.Status.t() | nil
         }
   defstruct [
     :node,
@@ -115,7 +115,7 @@ defmodule Envoy.Api.V2.Resource do
 
   @type t :: %__MODULE__{
           version: String.t(),
-          resource: Google.Protobuf.Any.t()
+          resource: Google.Protobuf.Any.t() | nil
         }
   defstruct [:version, :resource]
 

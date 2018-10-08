@@ -26,7 +26,7 @@ defmodule Envoy.Config.TransportSocket.Capture.V2alpha.Capture do
 
   @type t :: %__MODULE__{
           sink_selector: {atom, any},
-          transport_socket: Envoy.Api.V2.Core.TransportSocket.t()
+          transport_socket: Envoy.Api.V2.Core.TransportSocket.t() | nil
         }
   defstruct [:sink_selector, :transport_socket]
 

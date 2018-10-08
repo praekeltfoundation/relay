@@ -4,18 +4,18 @@ defmodule Envoy.Api.V2.Core.HealthCheck do
 
   @type t :: %__MODULE__{
           health_checker: {atom, any},
-          timeout: Google.Protobuf.Duration.t(),
-          interval: Google.Protobuf.Duration.t(),
-          interval_jitter: Google.Protobuf.Duration.t(),
+          timeout: Google.Protobuf.Duration.t() | nil,
+          interval: Google.Protobuf.Duration.t() | nil,
+          interval_jitter: Google.Protobuf.Duration.t() | nil,
           interval_jitter_percent: non_neg_integer,
-          unhealthy_threshold: Google.Protobuf.UInt32Value.t(),
-          healthy_threshold: Google.Protobuf.UInt32Value.t(),
-          alt_port: Google.Protobuf.UInt32Value.t(),
-          reuse_connection: Google.Protobuf.BoolValue.t(),
-          no_traffic_interval: Google.Protobuf.Duration.t(),
-          unhealthy_interval: Google.Protobuf.Duration.t(),
-          unhealthy_edge_interval: Google.Protobuf.Duration.t(),
-          healthy_edge_interval: Google.Protobuf.Duration.t(),
+          unhealthy_threshold: Google.Protobuf.UInt32Value.t() | nil,
+          healthy_threshold: Google.Protobuf.UInt32Value.t() | nil,
+          alt_port: Google.Protobuf.UInt32Value.t() | nil,
+          reuse_connection: Google.Protobuf.BoolValue.t() | nil,
+          no_traffic_interval: Google.Protobuf.Duration.t() | nil,
+          unhealthy_interval: Google.Protobuf.Duration.t() | nil,
+          unhealthy_edge_interval: Google.Protobuf.Duration.t() | nil,
+          healthy_edge_interval: Google.Protobuf.Duration.t() | nil,
           event_log_path: String.t()
         }
   defstruct [
@@ -76,8 +76,8 @@ defmodule Envoy.Api.V2.Core.HealthCheck.HttpHealthCheck do
   @type t :: %__MODULE__{
           host: String.t(),
           path: String.t(),
-          send: Envoy.Api.V2.Core.HealthCheck.Payload.t(),
-          receive: Envoy.Api.V2.Core.HealthCheck.Payload.t(),
+          send: Envoy.Api.V2.Core.HealthCheck.Payload.t() | nil,
+          receive: Envoy.Api.V2.Core.HealthCheck.Payload.t() | nil,
           service_name: String.t(),
           request_headers_to_add: [Envoy.Api.V2.Core.HeaderValueOption.t()],
           request_headers_to_remove: [String.t()],
@@ -109,7 +109,7 @@ defmodule Envoy.Api.V2.Core.HealthCheck.TcpHealthCheck do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          send: Envoy.Api.V2.Core.HealthCheck.Payload.t(),
+          send: Envoy.Api.V2.Core.HealthCheck.Payload.t() | nil,
           receive: [Envoy.Api.V2.Core.HealthCheck.Payload.t()]
         }
   defstruct [:send, :receive]
@@ -148,7 +148,7 @@ defmodule Envoy.Api.V2.Core.HealthCheck.CustomHealthCheck do
 
   @type t :: %__MODULE__{
           name: String.t(),
-          config: Google.Protobuf.Struct.t()
+          config: Google.Protobuf.Struct.t() | nil
         }
   defstruct [:name, :config]
 

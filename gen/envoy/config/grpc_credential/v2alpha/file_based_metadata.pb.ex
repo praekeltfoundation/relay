@@ -3,7 +3,7 @@ defmodule Envoy.Config.GrpcCredential.V2alpha.FileBasedMetadataConfig do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          secret_data: Envoy.Api.V2.Core.DataSource.t(),
+          secret_data: Envoy.Api.V2.Core.DataSource.t() | nil,
           header_key: String.t(),
           header_prefix: String.t()
         }

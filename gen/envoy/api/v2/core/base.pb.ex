@@ -21,8 +21,8 @@ defmodule Envoy.Api.V2.Core.Node do
   @type t :: %__MODULE__{
           id: String.t(),
           cluster: String.t(),
-          metadata: Google.Protobuf.Struct.t(),
-          locality: Envoy.Api.V2.Core.Locality.t(),
+          metadata: Google.Protobuf.Struct.t() | nil,
+          locality: Envoy.Api.V2.Core.Locality.t() | nil,
           build_version: String.t()
         }
   defstruct [:id, :cluster, :metadata, :locality, :build_version]
@@ -39,7 +39,7 @@ defmodule Envoy.Api.V2.Core.Metadata do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          filter_metadata: %{String.t() => Google.Protobuf.Struct.t()}
+          filter_metadata: %{String.t() => Google.Protobuf.Struct.t() | nil}
         }
   defstruct [:filter_metadata]
 
@@ -55,7 +55,7 @@ defmodule Envoy.Api.V2.Core.Metadata.FilterMetadataEntry do
 
   @type t :: %__MODULE__{
           key: String.t(),
-          value: Google.Protobuf.Struct.t()
+          value: Google.Protobuf.Struct.t() | nil
         }
   defstruct [:key, :value]
 
@@ -96,8 +96,8 @@ defmodule Envoy.Api.V2.Core.HeaderValueOption do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          header: Envoy.Api.V2.Core.HeaderValue.t(),
-          append: Google.Protobuf.BoolValue.t()
+          header: Envoy.Api.V2.Core.HeaderValue.t() | nil,
+          append: Google.Protobuf.BoolValue.t() | nil
         }
   defstruct [:header, :append]
 
@@ -126,7 +126,7 @@ defmodule Envoy.Api.V2.Core.TransportSocket do
 
   @type t :: %__MODULE__{
           name: String.t(),
-          config: Google.Protobuf.Struct.t()
+          config: Google.Protobuf.Struct.t() | nil
         }
   defstruct [:name, :config]
 
@@ -170,7 +170,7 @@ defmodule Envoy.Api.V2.Core.RuntimeFractionalPercent do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          default_value: Envoy.Type.FractionalPercent.t(),
+          default_value: Envoy.Type.FractionalPercent.t() | nil,
           runtime_key: String.t()
         }
   defstruct [:default_value, :runtime_key]

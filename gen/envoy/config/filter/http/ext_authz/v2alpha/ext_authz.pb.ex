@@ -19,7 +19,7 @@ defmodule Envoy.Config.Filter.Http.ExtAuthz.V2alpha.HttpService do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          server_uri: Envoy.Api.V2.Core.HttpUri.t(),
+          server_uri: Envoy.Api.V2.Core.HttpUri.t() | nil,
           path_prefix: String.t(),
           allowed_authorization_headers: [String.t()],
           allowed_request_headers: [String.t()],

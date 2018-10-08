@@ -5,7 +5,7 @@ defmodule Envoy.Config.Filter.Http.Fault.V2.FaultAbort do
   @type t :: %__MODULE__{
           error_type: {atom, any},
           percent: non_neg_integer,
-          percentage: Envoy.Type.FractionalPercent.t()
+          percentage: Envoy.Type.FractionalPercent.t() | nil
         }
   defstruct [:error_type, :percent, :percentage]
 
@@ -20,8 +20,8 @@ defmodule Envoy.Config.Filter.Http.Fault.V2.HTTPFault do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          delay: Envoy.Config.Filter.Fault.V2.FaultDelay.t(),
-          abort: Envoy.Config.Filter.Http.Fault.V2.FaultAbort.t(),
+          delay: Envoy.Config.Filter.Fault.V2.FaultDelay.t() | nil,
+          abort: Envoy.Config.Filter.Http.Fault.V2.FaultAbort.t() | nil,
           upstream_cluster: String.t(),
           headers: [Envoy.Api.V2.Route.HeaderMatcher.t()],
           downstream_nodes: [String.t()]

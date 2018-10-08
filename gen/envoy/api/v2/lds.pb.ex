@@ -4,18 +4,18 @@ defmodule Envoy.Api.V2.Listener do
 
   @type t :: %__MODULE__{
           name: String.t(),
-          address: Envoy.Api.V2.Core.Address.t(),
+          address: Envoy.Api.V2.Core.Address.t() | nil,
           filter_chains: [Envoy.Api.V2.Listener.FilterChain.t()],
-          use_original_dst: Google.Protobuf.BoolValue.t(),
-          per_connection_buffer_limit_bytes: Google.Protobuf.UInt32Value.t(),
-          metadata: Envoy.Api.V2.Core.Metadata.t(),
-          deprecated_v1: Envoy.Api.V2.Listener.DeprecatedV1.t(),
+          use_original_dst: Google.Protobuf.BoolValue.t() | nil,
+          per_connection_buffer_limit_bytes: Google.Protobuf.UInt32Value.t() | nil,
+          metadata: Envoy.Api.V2.Core.Metadata.t() | nil,
+          deprecated_v1: Envoy.Api.V2.Listener.DeprecatedV1.t() | nil,
           drain_type: integer,
           listener_filters: [Envoy.Api.V2.Listener.ListenerFilter.t()],
-          transparent: Google.Protobuf.BoolValue.t(),
-          freebind: Google.Protobuf.BoolValue.t(),
+          transparent: Google.Protobuf.BoolValue.t() | nil,
+          freebind: Google.Protobuf.BoolValue.t() | nil,
           socket_options: [Envoy.Api.V2.Core.SocketOption.t()],
-          tcp_fast_open_queue_length: Google.Protobuf.UInt32Value.t()
+          tcp_fast_open_queue_length: Google.Protobuf.UInt32Value.t() | nil
         }
   defstruct [
     :name,
@@ -53,7 +53,7 @@ defmodule Envoy.Api.V2.Listener.DeprecatedV1 do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          bind_to_port: Google.Protobuf.BoolValue.t()
+          bind_to_port: Google.Protobuf.BoolValue.t() | nil
         }
   defstruct [:bind_to_port]
 

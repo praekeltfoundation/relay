@@ -3,7 +3,7 @@ defmodule Envoy.Config.Metrics.V2.MetricsServiceConfig do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          grpc_service: Envoy.Api.V2.Core.GrpcService.t()
+          grpc_service: Envoy.Api.V2.Core.GrpcService.t() | nil
         }
   defstruct [:grpc_service]
 

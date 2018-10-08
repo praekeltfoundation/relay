@@ -6,8 +6,8 @@ defmodule Envoy.Api.V2.Core.ApiConfigSource do
           api_type: integer,
           cluster_names: [String.t()],
           grpc_services: [Envoy.Api.V2.Core.GrpcService.t()],
-          refresh_delay: Google.Protobuf.Duration.t(),
-          request_timeout: Google.Protobuf.Duration.t()
+          refresh_delay: Google.Protobuf.Duration.t() | nil,
+          request_timeout: Google.Protobuf.Duration.t() | nil
         }
   defstruct [:api_type, :cluster_names, :grpc_services, :refresh_delay, :request_timeout]
 
@@ -31,6 +31,7 @@ defmodule Envoy.Api.V2.Core.AggregatedConfigSource do
   @moduledoc false
   use Protobuf, syntax: :proto3
 
+  @type t :: %__MODULE__{}
   defstruct []
 end
 

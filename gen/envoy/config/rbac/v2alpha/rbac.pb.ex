@@ -4,7 +4,7 @@ defmodule Envoy.Config.Rbac.V2alpha.RBAC do
 
   @type t :: %__MODULE__{
           action: integer,
-          policies: %{String.t() => Envoy.Config.Rbac.V2alpha.Policy.t()}
+          policies: %{String.t() => Envoy.Config.Rbac.V2alpha.Policy.t() | nil}
         }
   defstruct [:action, :policies]
 
@@ -22,7 +22,7 @@ defmodule Envoy.Config.Rbac.V2alpha.RBAC.PoliciesEntry do
 
   @type t :: %__MODULE__{
           key: String.t(),
-          value: Envoy.Config.Rbac.V2alpha.Policy.t()
+          value: Envoy.Config.Rbac.V2alpha.Policy.t() | nil
         }
   defstruct [:key, :value]
 
@@ -121,7 +121,7 @@ defmodule Envoy.Config.Rbac.V2alpha.Principal.Authenticated do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          principal_name: Envoy.Type.Matcher.StringMatcher.t()
+          principal_name: Envoy.Type.Matcher.StringMatcher.t() | nil
         }
   defstruct [:principal_name]
 

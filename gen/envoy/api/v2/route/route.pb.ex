@@ -13,8 +13,8 @@ defmodule Envoy.Api.V2.Route.VirtualHost do
           request_headers_to_remove: [String.t()],
           response_headers_to_add: [Envoy.Api.V2.Core.HeaderValueOption.t()],
           response_headers_to_remove: [String.t()],
-          cors: Envoy.Api.V2.Route.CorsPolicy.t(),
-          per_filter_config: %{String.t() => Google.Protobuf.Struct.t()}
+          cors: Envoy.Api.V2.Route.CorsPolicy.t() | nil,
+          per_filter_config: %{String.t() => Google.Protobuf.Struct.t() | nil}
         }
   defstruct [
     :name,
@@ -55,7 +55,7 @@ defmodule Envoy.Api.V2.Route.VirtualHost.PerFilterConfigEntry do
 
   @type t :: %__MODULE__{
           key: String.t(),
-          value: Google.Protobuf.Struct.t()
+          value: Google.Protobuf.Struct.t() | nil
         }
   defstruct [:key, :value]
 
@@ -78,10 +78,10 @@ defmodule Envoy.Api.V2.Route.Route do
 
   @type t :: %__MODULE__{
           action: {atom, any},
-          match: Envoy.Api.V2.Route.RouteMatch.t(),
-          metadata: Envoy.Api.V2.Core.Metadata.t(),
-          decorator: Envoy.Api.V2.Route.Decorator.t(),
-          per_filter_config: %{String.t() => Google.Protobuf.Struct.t()},
+          match: Envoy.Api.V2.Route.RouteMatch.t() | nil,
+          metadata: Envoy.Api.V2.Core.Metadata.t() | nil,
+          decorator: Envoy.Api.V2.Route.Decorator.t() | nil,
+          per_filter_config: %{String.t() => Google.Protobuf.Struct.t() | nil},
           request_headers_to_add: [Envoy.Api.V2.Core.HeaderValueOption.t()],
           request_headers_to_remove: [String.t()],
           response_headers_to_add: [Envoy.Api.V2.Core.HeaderValueOption.t()],
@@ -124,7 +124,7 @@ defmodule Envoy.Api.V2.Route.Route.PerFilterConfigEntry do
 
   @type t :: %__MODULE__{
           key: String.t(),
-          value: Google.Protobuf.Struct.t()
+          value: Google.Protobuf.Struct.t() | nil
         }
   defstruct [:key, :value]
 
@@ -138,7 +138,7 @@ defmodule Envoy.Api.V2.Route.WeightedCluster do
 
   @type t :: %__MODULE__{
           clusters: [Envoy.Api.V2.Route.WeightedCluster.ClusterWeight.t()],
-          total_weight: Google.Protobuf.UInt32Value.t(),
+          total_weight: Google.Protobuf.UInt32Value.t() | nil,
           runtime_key_prefix: String.t()
         }
   defstruct [:clusters, :total_weight, :runtime_key_prefix]
@@ -154,13 +154,13 @@ defmodule Envoy.Api.V2.Route.WeightedCluster.ClusterWeight do
 
   @type t :: %__MODULE__{
           name: String.t(),
-          weight: Google.Protobuf.UInt32Value.t(),
-          metadata_match: Envoy.Api.V2.Core.Metadata.t(),
+          weight: Google.Protobuf.UInt32Value.t() | nil,
+          metadata_match: Envoy.Api.V2.Core.Metadata.t() | nil,
           request_headers_to_add: [Envoy.Api.V2.Core.HeaderValueOption.t()],
           request_headers_to_remove: [String.t()],
           response_headers_to_add: [Envoy.Api.V2.Core.HeaderValueOption.t()],
           response_headers_to_remove: [String.t()],
-          per_filter_config: %{String.t() => Google.Protobuf.Struct.t()}
+          per_filter_config: %{String.t() => Google.Protobuf.Struct.t() | nil}
         }
   defstruct [
     :name,
@@ -193,7 +193,7 @@ defmodule Envoy.Api.V2.Route.WeightedCluster.ClusterWeight.PerFilterConfigEntry 
 
   @type t :: %__MODULE__{
           key: String.t(),
-          value: Google.Protobuf.Struct.t()
+          value: Google.Protobuf.Struct.t() | nil
         }
   defstruct [:key, :value]
 
@@ -208,10 +208,10 @@ defmodule Envoy.Api.V2.Route.RouteMatch do
   @type t :: %__MODULE__{
           path_specifier: {atom, any},
           runtime_specifier: {atom, any},
-          case_sensitive: Google.Protobuf.BoolValue.t(),
+          case_sensitive: Google.Protobuf.BoolValue.t() | nil,
           headers: [Envoy.Api.V2.Route.HeaderMatcher.t()],
           query_parameters: [Envoy.Api.V2.Route.QueryParameterMatcher.t()],
-          grpc: Envoy.Api.V2.Route.RouteMatch.GrpcRouteMatchOptions.t()
+          grpc: Envoy.Api.V2.Route.RouteMatch.GrpcRouteMatchOptions.t() | nil
         }
   defstruct [
     :path_specifier,
@@ -239,6 +239,7 @@ defmodule Envoy.Api.V2.Route.RouteMatch.GrpcRouteMatchOptions do
   @moduledoc false
   use Protobuf, syntax: :proto3
 
+  @type t :: %__MODULE__{}
   defstruct []
 end
 
@@ -253,8 +254,8 @@ defmodule Envoy.Api.V2.Route.CorsPolicy do
           allow_headers: String.t(),
           expose_headers: String.t(),
           max_age: String.t(),
-          allow_credentials: Google.Protobuf.BoolValue.t(),
-          enabled: Google.Protobuf.BoolValue.t()
+          allow_credentials: Google.Protobuf.BoolValue.t() | nil,
+          enabled: Google.Protobuf.BoolValue.t() | nil
         }
   defstruct [
     :allow_origin,
@@ -285,23 +286,23 @@ defmodule Envoy.Api.V2.Route.RouteAction do
           cluster_specifier: {atom, any},
           host_rewrite_specifier: {atom, any},
           cluster_not_found_response_code: integer,
-          metadata_match: Envoy.Api.V2.Core.Metadata.t(),
+          metadata_match: Envoy.Api.V2.Core.Metadata.t() | nil,
           prefix_rewrite: String.t(),
-          timeout: Google.Protobuf.Duration.t(),
-          idle_timeout: Google.Protobuf.Duration.t(),
-          retry_policy: Envoy.Api.V2.Route.RouteAction.RetryPolicy.t(),
-          request_mirror_policy: Envoy.Api.V2.Route.RouteAction.RequestMirrorPolicy.t(),
+          timeout: Google.Protobuf.Duration.t() | nil,
+          idle_timeout: Google.Protobuf.Duration.t() | nil,
+          retry_policy: Envoy.Api.V2.Route.RouteAction.RetryPolicy.t() | nil,
+          request_mirror_policy: Envoy.Api.V2.Route.RouteAction.RequestMirrorPolicy.t() | nil,
           priority: integer,
           request_headers_to_add: [Envoy.Api.V2.Core.HeaderValueOption.t()],
           response_headers_to_add: [Envoy.Api.V2.Core.HeaderValueOption.t()],
           response_headers_to_remove: [String.t()],
           rate_limits: [Envoy.Api.V2.Route.RateLimit.t()],
-          include_vh_rate_limits: Google.Protobuf.BoolValue.t(),
+          include_vh_rate_limits: Google.Protobuf.BoolValue.t() | nil,
           hash_policy: [Envoy.Api.V2.Route.RouteAction.HashPolicy.t()],
-          use_websocket: Google.Protobuf.BoolValue.t(),
-          websocket_config: Envoy.Api.V2.Route.RouteAction.WebSocketProxyConfig.t(),
-          cors: Envoy.Api.V2.Route.CorsPolicy.t(),
-          max_grpc_timeout: Google.Protobuf.Duration.t()
+          use_websocket: Google.Protobuf.BoolValue.t() | nil,
+          websocket_config: Envoy.Api.V2.Route.RouteAction.WebSocketProxyConfig.t() | nil,
+          cors: Envoy.Api.V2.Route.CorsPolicy.t() | nil,
+          max_grpc_timeout: Google.Protobuf.Duration.t() | nil
         }
   defstruct [
     :cluster_specifier,
@@ -376,9 +377,9 @@ defmodule Envoy.Api.V2.Route.RouteAction.RetryPolicy do
 
   @type t :: %__MODULE__{
           retry_on: String.t(),
-          num_retries: Google.Protobuf.UInt32Value.t(),
-          per_try_timeout: Google.Protobuf.Duration.t(),
-          retry_priority: Envoy.Api.V2.Route.RouteAction.RetryPolicy.RetryPriority.t(),
+          num_retries: Google.Protobuf.UInt32Value.t() | nil,
+          per_try_timeout: Google.Protobuf.Duration.t() | nil,
+          retry_priority: Envoy.Api.V2.Route.RouteAction.RetryPolicy.RetryPriority.t() | nil,
           retry_host_predicate: [
             Envoy.Api.V2.Route.RouteAction.RetryPolicy.RetryHostPredicate.t()
           ],
@@ -411,7 +412,7 @@ defmodule Envoy.Api.V2.Route.RouteAction.RetryPolicy.RetryPriority do
 
   @type t :: %__MODULE__{
           name: String.t(),
-          config: Google.Protobuf.Struct.t()
+          config: Google.Protobuf.Struct.t() | nil
         }
   defstruct [:name, :config]
 
@@ -425,7 +426,7 @@ defmodule Envoy.Api.V2.Route.RouteAction.RetryPolicy.RetryHostPredicate do
 
   @type t :: %__MODULE__{
           name: String.t(),
-          config: Google.Protobuf.Struct.t()
+          config: Google.Protobuf.Struct.t() | nil
         }
   defstruct [:name, :config]
 
@@ -486,7 +487,7 @@ defmodule Envoy.Api.V2.Route.RouteAction.HashPolicy.Cookie do
 
   @type t :: %__MODULE__{
           name: String.t(),
-          ttl: Google.Protobuf.Duration.t(),
+          ttl: Google.Protobuf.Duration.t() | nil,
           path: String.t()
         }
   defstruct [:name, :ttl, :path]
@@ -514,8 +515,8 @@ defmodule Envoy.Api.V2.Route.RouteAction.WebSocketProxyConfig do
 
   @type t :: %__MODULE__{
           stat_prefix: String.t(),
-          idle_timeout: Google.Protobuf.Duration.t(),
-          max_connect_attempts: Google.Protobuf.UInt32Value.t()
+          idle_timeout: Google.Protobuf.Duration.t() | nil,
+          max_connect_attempts: Google.Protobuf.UInt32Value.t() | nil
         }
   defstruct [:stat_prefix, :idle_timeout, :max_connect_attempts]
 
@@ -581,7 +582,7 @@ defmodule Envoy.Api.V2.Route.DirectResponseAction do
 
   @type t :: %__MODULE__{
           status: non_neg_integer,
-          body: Envoy.Api.V2.Core.DataSource.t()
+          body: Envoy.Api.V2.Core.DataSource.t() | nil
         }
   defstruct [:status, :body]
 
@@ -622,7 +623,7 @@ defmodule Envoy.Api.V2.Route.RateLimit do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          stage: Google.Protobuf.UInt32Value.t(),
+          stage: Google.Protobuf.UInt32Value.t() | nil,
           disable_key: String.t(),
           actions: [Envoy.Api.V2.Route.RateLimit.Action.t()]
         }
@@ -662,6 +663,7 @@ defmodule Envoy.Api.V2.Route.RateLimit.Action.SourceCluster do
   @moduledoc false
   use Protobuf, syntax: :proto3
 
+  @type t :: %__MODULE__{}
   defstruct []
 end
 
@@ -669,6 +671,7 @@ defmodule Envoy.Api.V2.Route.RateLimit.Action.DestinationCluster do
   @moduledoc false
   use Protobuf, syntax: :proto3
 
+  @type t :: %__MODULE__{}
   defstruct []
 end
 
@@ -690,6 +693,7 @@ defmodule Envoy.Api.V2.Route.RateLimit.Action.RemoteAddress do
   @moduledoc false
   use Protobuf, syntax: :proto3
 
+  @type t :: %__MODULE__{}
   defstruct []
 end
 
@@ -711,7 +715,7 @@ defmodule Envoy.Api.V2.Route.RateLimit.Action.HeaderValueMatch do
 
   @type t :: %__MODULE__{
           descriptor_value: String.t(),
-          expect_match: Google.Protobuf.BoolValue.t(),
+          expect_match: Google.Protobuf.BoolValue.t() | nil,
           headers: [Envoy.Api.V2.Route.HeaderMatcher.t()]
         }
   defstruct [:descriptor_value, :expect_match, :headers]
@@ -750,7 +754,7 @@ defmodule Envoy.Api.V2.Route.QueryParameterMatcher do
   @type t :: %__MODULE__{
           name: String.t(),
           value: String.t(),
-          regex: Google.Protobuf.BoolValue.t()
+          regex: Google.Protobuf.BoolValue.t() | nil
         }
   defstruct [:name, :value, :regex]
 

@@ -41,8 +41,8 @@ defmodule Envoy.Config.Filter.Http.JwtAuthn.V2alpha.RemoteJwks do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          http_uri: Envoy.Api.V2.Core.HttpUri.t(),
-          cache_duration: Google.Protobuf.Duration.t()
+          http_uri: Envoy.Api.V2.Core.HttpUri.t() | nil,
+          cache_duration: Google.Protobuf.Duration.t() | nil
         }
   defstruct [:http_uri, :cache_duration]
 
@@ -138,8 +138,8 @@ defmodule Envoy.Config.Filter.Http.JwtAuthn.V2alpha.RequirementRule do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          match: Envoy.Api.V2.Route.RouteMatch.t(),
-          requires: Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtRequirement.t()
+          match: Envoy.Api.V2.Route.RouteMatch.t() | nil,
+          requires: Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtRequirement.t() | nil
         }
   defstruct [:match, :requires]
 
@@ -152,7 +152,9 @@ defmodule Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtAuthentication do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          providers: %{String.t() => Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtProvider.t()},
+          providers: %{
+            String.t() => Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtProvider.t() | nil
+          },
           rules: [Envoy.Config.Filter.Http.JwtAuthn.V2alpha.RequirementRule.t()]
         }
   defstruct [:providers, :rules]
@@ -171,7 +173,7 @@ defmodule Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtAuthentication.ProvidersE
 
   @type t :: %__MODULE__{
           key: String.t(),
-          value: Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtProvider.t()
+          value: Envoy.Config.Filter.Http.JwtAuthn.V2alpha.JwtProvider.t() | nil
         }
   defstruct [:key, :value]
 

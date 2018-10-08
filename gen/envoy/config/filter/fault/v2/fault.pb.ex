@@ -6,7 +6,7 @@ defmodule Envoy.Config.Filter.Fault.V2.FaultDelay do
           fault_delay_secifier: {atom, any},
           type: integer,
           percent: non_neg_integer,
-          percentage: Envoy.Type.FractionalPercent.t()
+          percentage: Envoy.Type.FractionalPercent.t() | nil
         }
   defstruct [:fault_delay_secifier, :type, :percent, :percentage]
 

@@ -43,10 +43,10 @@ defmodule Envoy.Api.V2.Auth.TlsCertificate do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          certificate_chain: Envoy.Api.V2.Core.DataSource.t(),
-          private_key: Envoy.Api.V2.Core.DataSource.t(),
-          password: Envoy.Api.V2.Core.DataSource.t(),
-          ocsp_staple: Envoy.Api.V2.Core.DataSource.t(),
+          certificate_chain: Envoy.Api.V2.Core.DataSource.t() | nil,
+          private_key: Envoy.Api.V2.Core.DataSource.t() | nil,
+          password: Envoy.Api.V2.Core.DataSource.t() | nil,
+          ocsp_staple: Envoy.Api.V2.Core.DataSource.t() | nil,
           signed_certificate_timestamp: [Envoy.Api.V2.Core.DataSource.t()]
         }
   defstruct [
@@ -81,13 +81,13 @@ defmodule Envoy.Api.V2.Auth.CertificateValidationContext do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          trusted_ca: Envoy.Api.V2.Core.DataSource.t(),
+          trusted_ca: Envoy.Api.V2.Core.DataSource.t() | nil,
           verify_certificate_spki: [String.t()],
           verify_certificate_hash: [String.t()],
           verify_subject_alt_name: [String.t()],
-          require_ocsp_staple: Google.Protobuf.BoolValue.t(),
-          require_signed_certificate_timestamp: Google.Protobuf.BoolValue.t(),
-          crl: Envoy.Api.V2.Core.DataSource.t(),
+          require_ocsp_staple: Google.Protobuf.BoolValue.t() | nil,
+          require_signed_certificate_timestamp: Google.Protobuf.BoolValue.t() | nil,
+          crl: Envoy.Api.V2.Core.DataSource.t() | nil,
           allow_expired_certificate: boolean
         }
   defstruct [
@@ -117,11 +117,11 @@ defmodule Envoy.Api.V2.Auth.CommonTlsContext do
 
   @type t :: %__MODULE__{
           validation_context_type: {atom, any},
-          tls_params: Envoy.Api.V2.Auth.TlsParameters.t(),
+          tls_params: Envoy.Api.V2.Auth.TlsParameters.t() | nil,
           tls_certificates: [Envoy.Api.V2.Auth.TlsCertificate.t()],
           tls_certificate_sds_secret_configs: [Envoy.Api.V2.Auth.SdsSecretConfig.t()],
           alpn_protocols: [String.t()],
-          deprecated_v1: Envoy.Api.V2.Auth.CommonTlsContext.DeprecatedV1.t()
+          deprecated_v1: Envoy.Api.V2.Auth.CommonTlsContext.DeprecatedV1.t() | nil
         }
   defstruct [
     :validation_context_type,
@@ -167,7 +167,7 @@ defmodule Envoy.Api.V2.Auth.UpstreamTlsContext do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          common_tls_context: Envoy.Api.V2.Auth.CommonTlsContext.t(),
+          common_tls_context: Envoy.Api.V2.Auth.CommonTlsContext.t() | nil,
           sni: String.t(),
           allow_renegotiation: boolean
         }
@@ -184,9 +184,9 @@ defmodule Envoy.Api.V2.Auth.DownstreamTlsContext do
 
   @type t :: %__MODULE__{
           session_ticket_keys_type: {atom, any},
-          common_tls_context: Envoy.Api.V2.Auth.CommonTlsContext.t(),
-          require_client_certificate: Google.Protobuf.BoolValue.t(),
-          require_sni: Google.Protobuf.BoolValue.t()
+          common_tls_context: Envoy.Api.V2.Auth.CommonTlsContext.t() | nil,
+          require_client_certificate: Google.Protobuf.BoolValue.t() | nil,
+          require_sni: Google.Protobuf.BoolValue.t() | nil
         }
   defstruct [
     :session_ticket_keys_type,
@@ -212,7 +212,7 @@ defmodule Envoy.Api.V2.Auth.SdsSecretConfig do
 
   @type t :: %__MODULE__{
           name: String.t(),
-          sds_config: Envoy.Api.V2.Core.ConfigSource.t()
+          sds_config: Envoy.Api.V2.Core.ConfigSource.t() | nil
         }
   defstruct [:name, :sds_config]
 

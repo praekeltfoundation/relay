@@ -4,7 +4,7 @@ defmodule Envoy.Config.Metrics.V2.StatsSink do
 
   @type t :: %__MODULE__{
           name: String.t(),
-          config: Google.Protobuf.Struct.t()
+          config: Google.Protobuf.Struct.t() | nil
         }
   defstruct [:name, :config]
 
@@ -18,7 +18,7 @@ defmodule Envoy.Config.Metrics.V2.StatsConfig do
 
   @type t :: %__MODULE__{
           stats_tags: [Envoy.Config.Metrics.V2.TagSpecifier.t()],
-          use_all_default_tags: Google.Protobuf.BoolValue.t()
+          use_all_default_tags: Google.Protobuf.BoolValue.t() | nil
         }
   defstruct [:stats_tags, :use_all_default_tags]
 

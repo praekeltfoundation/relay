@@ -5,13 +5,13 @@ defmodule Envoy.Config.Filter.Network.TcpProxy.V2.TcpProxy do
   @type t :: %__MODULE__{
           cluster_specifier: {atom, any},
           stat_prefix: String.t(),
-          metadata_match: Envoy.Api.V2.Core.Metadata.t(),
-          idle_timeout: Google.Protobuf.Duration.t(),
-          downstream_idle_timeout: Google.Protobuf.Duration.t(),
-          upstream_idle_timeout: Google.Protobuf.Duration.t(),
+          metadata_match: Envoy.Api.V2.Core.Metadata.t() | nil,
+          idle_timeout: Google.Protobuf.Duration.t() | nil,
+          downstream_idle_timeout: Google.Protobuf.Duration.t() | nil,
+          upstream_idle_timeout: Google.Protobuf.Duration.t() | nil,
           access_log: [Envoy.Config.Filter.Accesslog.V2.AccessLog.t()],
-          deprecated_v1: Envoy.Config.Filter.Network.TcpProxy.V2.TcpProxy.DeprecatedV1.t(),
-          max_connect_attempts: Google.Protobuf.UInt32Value.t()
+          deprecated_v1: Envoy.Config.Filter.Network.TcpProxy.V2.TcpProxy.DeprecatedV1.t() | nil,
+          max_connect_attempts: Google.Protobuf.UInt32Value.t() | nil
         }
   defstruct [
     :cluster_specifier,

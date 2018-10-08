@@ -3,17 +3,17 @@ defmodule Envoy.Api.V2.Cluster.OutlierDetection do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          consecutive_5xx: Google.Protobuf.UInt32Value.t(),
-          interval: Google.Protobuf.Duration.t(),
-          base_ejection_time: Google.Protobuf.Duration.t(),
-          max_ejection_percent: Google.Protobuf.UInt32Value.t(),
-          enforcing_consecutive_5xx: Google.Protobuf.UInt32Value.t(),
-          enforcing_success_rate: Google.Protobuf.UInt32Value.t(),
-          success_rate_minimum_hosts: Google.Protobuf.UInt32Value.t(),
-          success_rate_request_volume: Google.Protobuf.UInt32Value.t(),
-          success_rate_stdev_factor: Google.Protobuf.UInt32Value.t(),
-          consecutive_gateway_failure: Google.Protobuf.UInt32Value.t(),
-          enforcing_consecutive_gateway_failure: Google.Protobuf.UInt32Value.t()
+          consecutive_5xx: Google.Protobuf.UInt32Value.t() | nil,
+          interval: Google.Protobuf.Duration.t() | nil,
+          base_ejection_time: Google.Protobuf.Duration.t() | nil,
+          max_ejection_percent: Google.Protobuf.UInt32Value.t() | nil,
+          enforcing_consecutive_5xx: Google.Protobuf.UInt32Value.t() | nil,
+          enforcing_success_rate: Google.Protobuf.UInt32Value.t() | nil,
+          success_rate_minimum_hosts: Google.Protobuf.UInt32Value.t() | nil,
+          success_rate_request_volume: Google.Protobuf.UInt32Value.t() | nil,
+          success_rate_stdev_factor: Google.Protobuf.UInt32Value.t() | nil,
+          consecutive_gateway_failure: Google.Protobuf.UInt32Value.t() | nil,
+          enforcing_consecutive_gateway_failure: Google.Protobuf.UInt32Value.t() | nil
         }
   defstruct [
     :consecutive_5xx,

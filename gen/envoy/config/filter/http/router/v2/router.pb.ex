@@ -3,7 +3,7 @@ defmodule Envoy.Config.Filter.Http.Router.V2.Router do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          dynamic_stats: Google.Protobuf.BoolValue.t(),
+          dynamic_stats: Google.Protobuf.BoolValue.t() | nil,
           start_child_span: boolean,
           upstream_log: [Envoy.Config.Filter.Accesslog.V2.AccessLog.t()],
           suppress_envoy_headers: boolean

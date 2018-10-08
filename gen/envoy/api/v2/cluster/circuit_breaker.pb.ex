@@ -16,10 +16,10 @@ defmodule Envoy.Api.V2.Cluster.CircuitBreakers.Thresholds do
 
   @type t :: %__MODULE__{
           priority: integer,
-          max_connections: Google.Protobuf.UInt32Value.t(),
-          max_pending_requests: Google.Protobuf.UInt32Value.t(),
-          max_requests: Google.Protobuf.UInt32Value.t(),
-          max_retries: Google.Protobuf.UInt32Value.t()
+          max_connections: Google.Protobuf.UInt32Value.t() | nil,
+          max_pending_requests: Google.Protobuf.UInt32Value.t() | nil,
+          max_requests: Google.Protobuf.UInt32Value.t() | nil,
+          max_retries: Google.Protobuf.UInt32Value.t() | nil
         }
   defstruct [:priority, :max_connections, :max_pending_requests, :max_requests, :max_retries]
 

@@ -6,7 +6,7 @@ defmodule Envoy.Config.Filter.Network.RateLimit.V2.RateLimit do
           stat_prefix: String.t(),
           domain: String.t(),
           descriptors: [Envoy.Api.V2.Ratelimit.RateLimitDescriptor.t()],
-          timeout: Google.Protobuf.Duration.t(),
+          timeout: Google.Protobuf.Duration.t() | nil,
           failure_mode_deny: boolean
         }
   defstruct [:stat_prefix, :domain, :descriptors, :timeout, :failure_mode_deny]

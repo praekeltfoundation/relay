@@ -4,8 +4,8 @@ defmodule Envoy.Api.V2.Listener.Filter do
 
   @type t :: %__MODULE__{
           name: String.t(),
-          config: Google.Protobuf.Struct.t(),
-          deprecated_v1: Envoy.Api.V2.Listener.Filter.DeprecatedV1.t()
+          config: Google.Protobuf.Struct.t() | nil,
+          deprecated_v1: Envoy.Api.V2.Listener.Filter.DeprecatedV1.t() | nil
         }
   defstruct [:name, :config, :deprecated_v1]
 
@@ -31,10 +31,10 @@ defmodule Envoy.Api.V2.Listener.FilterChainMatch do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          destination_port: Google.Protobuf.UInt32Value.t(),
+          destination_port: Google.Protobuf.UInt32Value.t() | nil,
           prefix_ranges: [Envoy.Api.V2.Core.CidrRange.t()],
           address_suffix: String.t(),
-          suffix_len: Google.Protobuf.UInt32Value.t(),
+          suffix_len: Google.Protobuf.UInt32Value.t() | nil,
           source_prefix_ranges: [Envoy.Api.V2.Core.CidrRange.t()],
           source_ports: [Google.Protobuf.UInt32Value.t()],
           server_names: [String.t()],
@@ -69,12 +69,12 @@ defmodule Envoy.Api.V2.Listener.FilterChain do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          filter_chain_match: Envoy.Api.V2.Listener.FilterChainMatch.t(),
-          tls_context: Envoy.Api.V2.Auth.DownstreamTlsContext.t(),
+          filter_chain_match: Envoy.Api.V2.Listener.FilterChainMatch.t() | nil,
+          tls_context: Envoy.Api.V2.Auth.DownstreamTlsContext.t() | nil,
           filters: [Envoy.Api.V2.Listener.Filter.t()],
-          use_proxy_proto: Google.Protobuf.BoolValue.t(),
-          metadata: Envoy.Api.V2.Core.Metadata.t(),
-          transport_socket: Envoy.Api.V2.Core.TransportSocket.t()
+          use_proxy_proto: Google.Protobuf.BoolValue.t() | nil,
+          metadata: Envoy.Api.V2.Core.Metadata.t() | nil,
+          transport_socket: Envoy.Api.V2.Core.TransportSocket.t() | nil
         }
   defstruct [
     :filter_chain_match,
@@ -99,7 +99,7 @@ defmodule Envoy.Api.V2.Listener.ListenerFilter do
 
   @type t :: %__MODULE__{
           name: String.t(),
-          config: Google.Protobuf.Struct.t()
+          config: Google.Protobuf.Struct.t() | nil
         }
   defstruct [:name, :config]
 

@@ -7,27 +7,30 @@ defmodule Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionMan
           codec_type: integer,
           stat_prefix: String.t(),
           http_filters: [Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpFilter.t()],
-          add_user_agent: Google.Protobuf.BoolValue.t(),
+          add_user_agent: Google.Protobuf.BoolValue.t() | nil,
           tracing:
-            Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionManager.Tracing.t(),
-          http_protocol_options: Envoy.Api.V2.Core.Http1ProtocolOptions.t(),
-          http2_protocol_options: Envoy.Api.V2.Core.Http2ProtocolOptions.t(),
+            Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionManager.Tracing.t()
+            | nil,
+          http_protocol_options: Envoy.Api.V2.Core.Http1ProtocolOptions.t() | nil,
+          http2_protocol_options: Envoy.Api.V2.Core.Http2ProtocolOptions.t() | nil,
           server_name: String.t(),
-          idle_timeout: Google.Protobuf.Duration.t(),
-          stream_idle_timeout: Google.Protobuf.Duration.t(),
-          drain_timeout: Google.Protobuf.Duration.t(),
-          delayed_close_timeout: Google.Protobuf.Duration.t(),
+          idle_timeout: Google.Protobuf.Duration.t() | nil,
+          stream_idle_timeout: Google.Protobuf.Duration.t() | nil,
+          drain_timeout: Google.Protobuf.Duration.t() | nil,
+          delayed_close_timeout: Google.Protobuf.Duration.t() | nil,
           access_log: [Envoy.Config.Filter.Accesslog.V2.AccessLog.t()],
-          use_remote_address: Google.Protobuf.BoolValue.t(),
+          use_remote_address: Google.Protobuf.BoolValue.t() | nil,
           xff_num_trusted_hops: non_neg_integer,
           internal_address_config:
-            Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionManager.InternalAddressConfig.t(),
+            Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionManager.InternalAddressConfig.t()
+            | nil,
           skip_xff_append: boolean,
           via: String.t(),
-          generate_request_id: Google.Protobuf.BoolValue.t(),
+          generate_request_id: Google.Protobuf.BoolValue.t() | nil,
           forward_client_cert_details: integer,
           set_current_client_cert_details:
-            Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionManager.SetCurrentClientCertDetails.t(),
+            Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionManager.SetCurrentClientCertDetails.t()
+            | nil,
           proxy_100_continue: boolean,
           represent_ipv4_remote_address_as_ipv4_mapped_ipv6: boolean,
           upgrade_configs: [
@@ -124,9 +127,9 @@ defmodule Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionMan
   @type t :: %__MODULE__{
           operation_name: integer,
           request_headers_for_tags: [String.t()],
-          client_sampling: Envoy.Type.Percent.t(),
-          random_sampling: Envoy.Type.Percent.t(),
-          overall_sampling: Envoy.Type.Percent.t()
+          client_sampling: Envoy.Type.Percent.t() | nil,
+          random_sampling: Envoy.Type.Percent.t() | nil,
+          overall_sampling: Envoy.Type.Percent.t() | nil
         }
   defstruct [
     :operation_name,
@@ -172,7 +175,7 @@ defmodule Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpConnectionMan
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          subject: Google.Protobuf.BoolValue.t(),
+          subject: Google.Protobuf.BoolValue.t() | nil,
           cert: boolean,
           dns: boolean,
           uri: boolean
@@ -227,7 +230,7 @@ defmodule Envoy.Config.Filter.Network.HttpConnectionManager.V2.Rds do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          config_source: Envoy.Api.V2.Core.ConfigSource.t(),
+          config_source: Envoy.Api.V2.Core.ConfigSource.t() | nil,
           route_config_name: String.t()
         }
   defstruct [:config_source, :route_config_name]
@@ -242,9 +245,9 @@ defmodule Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpFilter do
 
   @type t :: %__MODULE__{
           name: String.t(),
-          config: Google.Protobuf.Struct.t(),
+          config: Google.Protobuf.Struct.t() | nil,
           deprecated_v1:
-            Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpFilter.DeprecatedV1.t()
+            Envoy.Config.Filter.Network.HttpConnectionManager.V2.HttpFilter.DeprecatedV1.t() | nil
         }
   defstruct [:name, :config, :deprecated_v1]
 

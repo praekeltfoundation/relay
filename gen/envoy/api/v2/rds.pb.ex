@@ -10,7 +10,7 @@ defmodule Envoy.Api.V2.RouteConfiguration do
           response_headers_to_remove: [String.t()],
           request_headers_to_add: [Envoy.Api.V2.Core.HeaderValueOption.t()],
           request_headers_to_remove: [String.t()],
-          validate_clusters: Google.Protobuf.BoolValue.t()
+          validate_clusters: Google.Protobuf.BoolValue.t() | nil
         }
   defstruct [
     :name,

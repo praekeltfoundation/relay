@@ -4,7 +4,7 @@ defmodule Envoy.Api.V2.Core.GrpcService do
 
   @type t :: %__MODULE__{
           target_specifier: {atom, any},
-          timeout: Google.Protobuf.Duration.t(),
+          timeout: Google.Protobuf.Duration.t() | nil,
           initial_metadata: [Envoy.Api.V2.Core.HeaderValue.t()]
         }
   defstruct [:target_specifier, :timeout, :initial_metadata]
@@ -34,11 +34,12 @@ defmodule Envoy.Api.V2.Core.GrpcService.GoogleGrpc do
 
   @type t :: %__MODULE__{
           target_uri: String.t(),
-          channel_credentials: Envoy.Api.V2.Core.GrpcService.GoogleGrpc.ChannelCredentials.t(),
+          channel_credentials:
+            Envoy.Api.V2.Core.GrpcService.GoogleGrpc.ChannelCredentials.t() | nil,
           call_credentials: [Envoy.Api.V2.Core.GrpcService.GoogleGrpc.CallCredentials.t()],
           stat_prefix: String.t(),
           credentials_factory_name: String.t(),
-          config: Google.Protobuf.Struct.t()
+          config: Google.Protobuf.Struct.t() | nil
         }
   defstruct [
     :target_uri,
@@ -66,9 +67,9 @@ defmodule Envoy.Api.V2.Core.GrpcService.GoogleGrpc.SslCredentials do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          root_certs: Envoy.Api.V2.Core.DataSource.t(),
-          private_key: Envoy.Api.V2.Core.DataSource.t(),
-          cert_chain: Envoy.Api.V2.Core.DataSource.t()
+          root_certs: Envoy.Api.V2.Core.DataSource.t() | nil,
+          private_key: Envoy.Api.V2.Core.DataSource.t() | nil,
+          cert_chain: Envoy.Api.V2.Core.DataSource.t() | nil
         }
   defstruct [:root_certs, :private_key, :cert_chain]
 
@@ -81,6 +82,7 @@ defmodule Envoy.Api.V2.Core.GrpcService.GoogleGrpc.GoogleLocalCredentials do
   @moduledoc false
   use Protobuf, syntax: :proto3
 
+  @type t :: %__MODULE__{}
   defstruct []
 end
 
@@ -168,7 +170,7 @@ defmodule Envoy.Api.V2.Core.GrpcService.GoogleGrpc.CallCredentials.MetadataCrede
 
   @type t :: %__MODULE__{
           name: String.t(),
-          config: Google.Protobuf.Struct.t()
+          config: Google.Protobuf.Struct.t() | nil
         }
   defstruct [:name, :config]
 

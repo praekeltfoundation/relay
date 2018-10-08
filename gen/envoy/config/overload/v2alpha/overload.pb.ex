@@ -4,7 +4,7 @@ defmodule Envoy.Config.Overload.V2alpha.ResourceMonitor do
 
   @type t :: %__MODULE__{
           name: String.t(),
-          config: Google.Protobuf.Struct.t()
+          config: Google.Protobuf.Struct.t() | nil
         }
   defstruct [:name, :config]
 
@@ -58,7 +58,7 @@ defmodule Envoy.Config.Overload.V2alpha.OverloadManager do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          refresh_interval: Google.Protobuf.Duration.t(),
+          refresh_interval: Google.Protobuf.Duration.t() | nil,
           resource_monitors: [Envoy.Config.Overload.V2alpha.ResourceMonitor.t()],
           actions: [Envoy.Config.Overload.V2alpha.OverloadAction.t()]
         }

@@ -5,7 +5,7 @@ defmodule Envoy.Type.Matcher.MetadataMatcher do
   @type t :: %__MODULE__{
           filter: String.t(),
           path: [Envoy.Type.Matcher.MetadataMatcher.PathSegment.t()],
-          value: Envoy.Type.Matcher.ValueMatcher.t()
+          value: Envoy.Type.Matcher.ValueMatcher.t() | nil
         }
   defstruct [:filter, :path, :value]
 

@@ -5,7 +5,7 @@ defmodule Envoy.Api.V2.ClusterLoadAssignment do
   @type t :: %__MODULE__{
           cluster_name: String.t(),
           endpoints: [Envoy.Api.V2.Endpoint.LocalityLbEndpoints.t()],
-          policy: Envoy.Api.V2.ClusterLoadAssignment.Policy.t()
+          policy: Envoy.Api.V2.ClusterLoadAssignment.Policy.t() | nil
         }
   defstruct [:cluster_name, :endpoints, :policy]
 
@@ -20,7 +20,7 @@ defmodule Envoy.Api.V2.ClusterLoadAssignment.Policy do
 
   @type t :: %__MODULE__{
           drop_overloads: [Envoy.Api.V2.ClusterLoadAssignment.Policy.DropOverload.t()],
-          overprovisioning_factor: Google.Protobuf.UInt32Value.t()
+          overprovisioning_factor: Google.Protobuf.UInt32Value.t() | nil
         }
   defstruct [:drop_overloads, :overprovisioning_factor]
 
@@ -37,7 +37,7 @@ defmodule Envoy.Api.V2.ClusterLoadAssignment.Policy.DropOverload do
 
   @type t :: %__MODULE__{
           category: String.t(),
-          drop_percentage: Envoy.Type.FractionalPercent.t()
+          drop_percentage: Envoy.Type.FractionalPercent.t() | nil
         }
   defstruct [:category, :drop_percentage]
 

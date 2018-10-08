@@ -3,7 +3,7 @@ defmodule Envoy.Api.V2.Endpoint.UpstreamLocalityStats do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          locality: Envoy.Api.V2.Core.Locality.t(),
+          locality: Envoy.Api.V2.Core.Locality.t() | nil,
           total_successful_requests: non_neg_integer,
           total_requests_in_progress: non_neg_integer,
           total_error_requests: non_neg_integer,
@@ -39,7 +39,7 @@ defmodule Envoy.Api.V2.Endpoint.UpstreamEndpointStats do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          address: Envoy.Api.V2.Core.Address.t(),
+          address: Envoy.Api.V2.Core.Address.t() | nil,
           total_successful_requests: non_neg_integer,
           total_requests_in_progress: non_neg_integer,
           total_error_requests: non_neg_integer,
@@ -85,7 +85,7 @@ defmodule Envoy.Api.V2.Endpoint.ClusterStats do
           upstream_locality_stats: [Envoy.Api.V2.Endpoint.UpstreamLocalityStats.t()],
           total_dropped_requests: non_neg_integer,
           dropped_requests: [Envoy.Api.V2.Endpoint.ClusterStats.DroppedRequests.t()],
-          load_report_interval: Google.Protobuf.Duration.t()
+          load_report_interval: Google.Protobuf.Duration.t() | nil
         }
   defstruct [
     :cluster_name,

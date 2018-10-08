@@ -5,7 +5,7 @@ defmodule Envoy.Api.V2.Core.HttpUri do
   @type t :: %__MODULE__{
           http_upstream_type: {atom, any},
           uri: String.t(),
-          timeout: Google.Protobuf.Duration.t()
+          timeout: Google.Protobuf.Duration.t() | nil
         }
   defstruct [:http_upstream_type, :uri, :timeout]
 
