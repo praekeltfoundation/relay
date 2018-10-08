@@ -26,9 +26,9 @@ echo
 
 echo "Fetching data-plane-api dependencies..."
 pushd envoy
-patch -p1 < ../bazel-envoy-fix.patch
+patch -p1 < ../bazel-fetch-fix.patch
 bazel fetch @envoy_api//envoy/...
-patch -p1 -R < ../bazel-envoy-fix.patch
+patch -p1 -R < ../bazel-fetch-fix.patch
 
 output_base="$(bazel info output_base)"
 popd
