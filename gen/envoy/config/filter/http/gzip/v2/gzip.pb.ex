@@ -3,14 +3,14 @@ defmodule Envoy.Config.Filter.Http.Gzip.V2.Gzip do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          memory_level: Google.Protobuf.UInt32Value.t(),
-          content_length: Google.Protobuf.UInt32Value.t(),
+          memory_level: Google.Protobuf.UInt32Value.t() | nil,
+          content_length: Google.Protobuf.UInt32Value.t() | nil,
           compression_level: integer,
           compression_strategy: integer,
           content_type: [String.t()],
           disable_on_etag_header: boolean,
           remove_accept_encoding_header: boolean,
-          window_bits: Google.Protobuf.UInt32Value.t()
+          window_bits: Google.Protobuf.UInt32Value.t() | nil
         }
   defstruct [
     :memory_level,
@@ -44,6 +44,7 @@ defmodule Envoy.Config.Filter.Http.Gzip.V2.Gzip.CompressionLevel do
   @moduledoc false
   use Protobuf, syntax: :proto3
 
+  @type t :: %__MODULE__{}
   defstruct []
 end
 

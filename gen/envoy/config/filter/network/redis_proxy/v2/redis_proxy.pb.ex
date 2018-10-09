@@ -5,7 +5,8 @@ defmodule Envoy.Config.Filter.Network.RedisProxy.V2.RedisProxy do
   @type t :: %__MODULE__{
           stat_prefix: String.t(),
           cluster: String.t(),
-          settings: Envoy.Config.Filter.Network.RedisProxy.V2.RedisProxy.ConnPoolSettings.t()
+          settings:
+            Envoy.Config.Filter.Network.RedisProxy.V2.RedisProxy.ConnPoolSettings.t() | nil
         }
   defstruct [:stat_prefix, :cluster, :settings]
 
@@ -19,7 +20,7 @@ defmodule Envoy.Config.Filter.Network.RedisProxy.V2.RedisProxy.ConnPoolSettings 
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          op_timeout: Google.Protobuf.Duration.t()
+          op_timeout: Google.Protobuf.Duration.t() | nil
         }
   defstruct [:op_timeout]
 

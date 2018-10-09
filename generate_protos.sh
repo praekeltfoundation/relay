@@ -25,8 +25,11 @@ git submodule status
 echo
 
 echo "Fetching data-plane-api dependencies..."
-pushd data-plane-api
-bazel fetch //envoy/...
+pushd envoy
+patch -p1 < ../bazel-fetch-fix.patch
+bazel fetch @envoy_api//envoy/...
+patch -p1 -R < ../bazel-fetch-fix.patch
+
 output_base="$(bazel info output_base)"
 popd
 echo
@@ -48,7 +51,7 @@ deps=(
 	com_lyft_protoc_gen_validate
 	googleapis
 )
-protocargs=("-I=data-plane-api")
+protocargs=("-I=envoy/api")
 for dep in "${deps[@]}"; do
 	protocargs+=("-I=$output_base/external/$dep")
 done
@@ -62,7 +65,7 @@ data_plane_modules=(
 # TODO: Only generate the files we need.
 echo "Generating data-plane-api protos..."
 for module in "${data_plane_modules[@]}"; do
-	find data-plane-api/envoy/"$module" -name '*.proto' | \
+	find envoy/api/envoy/"$module" -name '*.proto' | \
 		xargs $protoc ${protocargs[@]} --plugin=elixir --elixir_out="${elixirarg}":"${root}/gen/"
 done
 echo

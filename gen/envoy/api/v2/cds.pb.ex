@@ -7,31 +7,32 @@ defmodule Envoy.Api.V2.Cluster do
           name: String.t(),
           alt_stat_name: String.t(),
           type: integer,
-          eds_cluster_config: Envoy.Api.V2.Cluster.EdsClusterConfig.t(),
-          connect_timeout: Google.Protobuf.Duration.t(),
-          per_connection_buffer_limit_bytes: Google.Protobuf.UInt32Value.t(),
+          eds_cluster_config: Envoy.Api.V2.Cluster.EdsClusterConfig.t() | nil,
+          connect_timeout: Google.Protobuf.Duration.t() | nil,
+          per_connection_buffer_limit_bytes: Google.Protobuf.UInt32Value.t() | nil,
           lb_policy: integer,
           hosts: [Envoy.Api.V2.Core.Address.t()],
-          load_assignment: Envoy.Api.V2.ClusterLoadAssignment.t(),
+          load_assignment: Envoy.Api.V2.ClusterLoadAssignment.t() | nil,
           health_checks: [Envoy.Api.V2.Core.HealthCheck.t()],
-          max_requests_per_connection: Google.Protobuf.UInt32Value.t(),
-          circuit_breakers: Envoy.Api.V2.Cluster.CircuitBreakers.t(),
-          tls_context: Envoy.Api.V2.Auth.UpstreamTlsContext.t(),
-          common_http_protocol_options: Envoy.Api.V2.Core.HttpProtocolOptions.t(),
-          http_protocol_options: Envoy.Api.V2.Core.Http1ProtocolOptions.t(),
-          http2_protocol_options: Envoy.Api.V2.Core.Http2ProtocolOptions.t(),
-          dns_refresh_rate: Google.Protobuf.Duration.t(),
+          max_requests_per_connection: Google.Protobuf.UInt32Value.t() | nil,
+          circuit_breakers: Envoy.Api.V2.Cluster.CircuitBreakers.t() | nil,
+          tls_context: Envoy.Api.V2.Auth.UpstreamTlsContext.t() | nil,
+          common_http_protocol_options: Envoy.Api.V2.Core.HttpProtocolOptions.t() | nil,
+          http_protocol_options: Envoy.Api.V2.Core.Http1ProtocolOptions.t() | nil,
+          http2_protocol_options: Envoy.Api.V2.Core.Http2ProtocolOptions.t() | nil,
+          extension_protocol_options: %{String.t() => Google.Protobuf.Struct.t() | nil},
+          dns_refresh_rate: Google.Protobuf.Duration.t() | nil,
           dns_lookup_family: integer,
           dns_resolvers: [Envoy.Api.V2.Core.Address.t()],
-          outlier_detection: Envoy.Api.V2.Cluster.OutlierDetection.t(),
-          cleanup_interval: Google.Protobuf.Duration.t(),
-          upstream_bind_config: Envoy.Api.V2.Core.BindConfig.t(),
-          lb_subset_config: Envoy.Api.V2.Cluster.LbSubsetConfig.t(),
-          common_lb_config: Envoy.Api.V2.Cluster.CommonLbConfig.t(),
-          transport_socket: Envoy.Api.V2.Core.TransportSocket.t(),
-          metadata: Envoy.Api.V2.Core.Metadata.t(),
+          outlier_detection: Envoy.Api.V2.Cluster.OutlierDetection.t() | nil,
+          cleanup_interval: Google.Protobuf.Duration.t() | nil,
+          upstream_bind_config: Envoy.Api.V2.Core.BindConfig.t() | nil,
+          lb_subset_config: Envoy.Api.V2.Cluster.LbSubsetConfig.t() | nil,
+          common_lb_config: Envoy.Api.V2.Cluster.CommonLbConfig.t() | nil,
+          transport_socket: Envoy.Api.V2.Core.TransportSocket.t() | nil,
+          metadata: Envoy.Api.V2.Core.Metadata.t() | nil,
           protocol_selection: integer,
-          upstream_connection_options: Envoy.Api.V2.UpstreamConnectionOptions.t(),
+          upstream_connection_options: Envoy.Api.V2.UpstreamConnectionOptions.t() | nil,
           close_connections_on_host_health_failure: boolean,
           drain_connections_on_host_removal: boolean
         }
@@ -53,6 +54,7 @@ defmodule Envoy.Api.V2.Cluster do
     :common_http_protocol_options,
     :http_protocol_options,
     :http2_protocol_options,
+    :extension_protocol_options,
     :dns_refresh_rate,
     :dns_lookup_family,
     :dns_resolvers,
@@ -77,7 +79,7 @@ defmodule Envoy.Api.V2.Cluster do
   field :connect_timeout, 4, type: Google.Protobuf.Duration
   field :per_connection_buffer_limit_bytes, 5, type: Google.Protobuf.UInt32Value
   field :lb_policy, 6, type: Envoy.Api.V2.Cluster.LbPolicy, enum: true
-  field :hosts, 7, repeated: true, type: Envoy.Api.V2.Core.Address
+  field :hosts, 7, repeated: true, type: Envoy.Api.V2.Core.Address, deprecated: true
   field :load_assignment, 33, type: Envoy.Api.V2.ClusterLoadAssignment
   field :health_checks, 8, repeated: true, type: Envoy.Api.V2.Core.HealthCheck
   field :max_requests_per_connection, 9, type: Google.Protobuf.UInt32Value
@@ -86,6 +88,12 @@ defmodule Envoy.Api.V2.Cluster do
   field :common_http_protocol_options, 29, type: Envoy.Api.V2.Core.HttpProtocolOptions
   field :http_protocol_options, 13, type: Envoy.Api.V2.Core.Http1ProtocolOptions
   field :http2_protocol_options, 14, type: Envoy.Api.V2.Core.Http2ProtocolOptions
+
+  field :extension_protocol_options, 35,
+    repeated: true,
+    type: Envoy.Api.V2.Cluster.ExtensionProtocolOptionsEntry,
+    map: true
+
   field :dns_refresh_rate, 16, type: Google.Protobuf.Duration
   field :dns_lookup_family, 17, type: Envoy.Api.V2.Cluster.DnsLookupFamily, enum: true
   field :dns_resolvers, 18, repeated: true, type: Envoy.Api.V2.Core.Address
@@ -94,6 +102,7 @@ defmodule Envoy.Api.V2.Cluster do
   field :upstream_bind_config, 21, type: Envoy.Api.V2.Core.BindConfig
   field :lb_subset_config, 22, type: Envoy.Api.V2.Cluster.LbSubsetConfig
   field :ring_hash_lb_config, 23, type: Envoy.Api.V2.Cluster.RingHashLbConfig, oneof: 0
+  field :original_dst_lb_config, 34, type: Envoy.Api.V2.Cluster.OriginalDstLbConfig, oneof: 0
   field :common_lb_config, 27, type: Envoy.Api.V2.Cluster.CommonLbConfig
   field :transport_socket, 24, type: Envoy.Api.V2.Core.TransportSocket
   field :metadata, 25, type: Envoy.Api.V2.Core.Metadata
@@ -108,7 +117,7 @@ defmodule Envoy.Api.V2.Cluster.EdsClusterConfig do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          eds_config: Envoy.Api.V2.Core.ConfigSource.t(),
+          eds_config: Envoy.Api.V2.Core.ConfigSource.t() | nil,
           service_name: String.t()
         }
   defstruct [:eds_config, :service_name]
@@ -117,16 +126,31 @@ defmodule Envoy.Api.V2.Cluster.EdsClusterConfig do
   field :service_name, 2, type: :string
 end
 
+defmodule Envoy.Api.V2.Cluster.ExtensionProtocolOptionsEntry do
+  @moduledoc false
+  use Protobuf, map: true, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          key: String.t(),
+          value: Google.Protobuf.Struct.t() | nil
+        }
+  defstruct [:key, :value]
+
+  field :key, 1, type: :string
+  field :value, 2, type: Google.Protobuf.Struct
+end
+
 defmodule Envoy.Api.V2.Cluster.LbSubsetConfig do
   @moduledoc false
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
           fallback_policy: integer,
-          default_subset: Google.Protobuf.Struct.t(),
-          subset_selectors: [Envoy.Api.V2.Cluster.LbSubsetConfig.LbSubsetSelector.t()]
+          default_subset: Google.Protobuf.Struct.t() | nil,
+          subset_selectors: [Envoy.Api.V2.Cluster.LbSubsetConfig.LbSubsetSelector.t()],
+          locality_weight_aware: boolean
         }
-  defstruct [:fallback_policy, :default_subset, :subset_selectors]
+  defstruct [:fallback_policy, :default_subset, :subset_selectors, :locality_weight_aware]
 
   field :fallback_policy, 1,
     type: Envoy.Api.V2.Cluster.LbSubsetConfig.LbSubsetFallbackPolicy,
@@ -137,6 +161,8 @@ defmodule Envoy.Api.V2.Cluster.LbSubsetConfig do
   field :subset_selectors, 3,
     repeated: true,
     type: Envoy.Api.V2.Cluster.LbSubsetConfig.LbSubsetSelector
+
+  field :locality_weight_aware, 4, type: :bool
 end
 
 defmodule Envoy.Api.V2.Cluster.LbSubsetConfig.LbSubsetSelector do
@@ -165,8 +191,8 @@ defmodule Envoy.Api.V2.Cluster.RingHashLbConfig do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          minimum_ring_size: Google.Protobuf.UInt64Value.t(),
-          deprecated_v1: Envoy.Api.V2.Cluster.RingHashLbConfig.DeprecatedV1.t()
+          minimum_ring_size: Google.Protobuf.UInt64Value.t() | nil,
+          deprecated_v1: Envoy.Api.V2.Cluster.RingHashLbConfig.DeprecatedV1.t() | nil
         }
   defstruct [:minimum_ring_size, :deprecated_v1]
 
@@ -182,11 +208,23 @@ defmodule Envoy.Api.V2.Cluster.RingHashLbConfig.DeprecatedV1 do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          use_std_hash: Google.Protobuf.BoolValue.t()
+          use_std_hash: Google.Protobuf.BoolValue.t() | nil
         }
   defstruct [:use_std_hash]
 
   field :use_std_hash, 1, type: Google.Protobuf.BoolValue
+end
+
+defmodule Envoy.Api.V2.Cluster.OriginalDstLbConfig do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          use_http_header: boolean
+        }
+  defstruct [:use_http_header]
+
+  field :use_http_header, 1, type: :bool
 end
 
 defmodule Envoy.Api.V2.Cluster.CommonLbConfig do
@@ -195,9 +233,10 @@ defmodule Envoy.Api.V2.Cluster.CommonLbConfig do
 
   @type t :: %__MODULE__{
           locality_config_specifier: {atom, any},
-          healthy_panic_threshold: Envoy.Type.Percent.t()
+          healthy_panic_threshold: Envoy.Type.Percent.t() | nil,
+          update_merge_window: Google.Protobuf.Duration.t() | nil
         }
-  defstruct [:locality_config_specifier, :healthy_panic_threshold]
+  defstruct [:locality_config_specifier, :healthy_panic_threshold, :update_merge_window]
 
   oneof :locality_config_specifier, 0
   field :healthy_panic_threshold, 1, type: Envoy.Type.Percent
@@ -209,6 +248,8 @@ defmodule Envoy.Api.V2.Cluster.CommonLbConfig do
   field :locality_weighted_lb_config, 3,
     type: Envoy.Api.V2.Cluster.CommonLbConfig.LocalityWeightedLbConfig,
     oneof: 0
+
+  field :update_merge_window, 4, type: Google.Protobuf.Duration
 end
 
 defmodule Envoy.Api.V2.Cluster.CommonLbConfig.ZoneAwareLbConfig do
@@ -216,8 +257,8 @@ defmodule Envoy.Api.V2.Cluster.CommonLbConfig.ZoneAwareLbConfig do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          routing_enabled: Envoy.Type.Percent.t(),
-          min_cluster_size: Google.Protobuf.UInt64Value.t()
+          routing_enabled: Envoy.Type.Percent.t() | nil,
+          min_cluster_size: Google.Protobuf.UInt64Value.t() | nil
         }
   defstruct [:routing_enabled, :min_cluster_size]
 
@@ -229,6 +270,7 @@ defmodule Envoy.Api.V2.Cluster.CommonLbConfig.LocalityWeightedLbConfig do
   @moduledoc false
   use Protobuf, syntax: :proto3
 
+  @type t :: %__MODULE__{}
   defstruct []
 end
 
@@ -277,7 +319,7 @@ defmodule Envoy.Api.V2.UpstreamBindConfig do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          source_address: Envoy.Api.V2.Core.Address.t()
+          source_address: Envoy.Api.V2.Core.Address.t() | nil
         }
   defstruct [:source_address]
 
@@ -289,7 +331,7 @@ defmodule Envoy.Api.V2.UpstreamConnectionOptions do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          tcp_keepalive: Envoy.Api.V2.Core.TcpKeepalive.t()
+          tcp_keepalive: Envoy.Api.V2.Core.TcpKeepalive.t() | nil
         }
   defstruct [:tcp_keepalive]
 
@@ -303,6 +345,10 @@ defmodule Envoy.Api.V2.ClusterDiscoveryService.Service do
   rpc :StreamClusters,
       stream(Envoy.Api.V2.DiscoveryRequest),
       stream(Envoy.Api.V2.DiscoveryResponse)
+
+  rpc :IncrementalClusters,
+      stream(Envoy.Api.V2.IncrementalDiscoveryRequest),
+      stream(Envoy.Api.V2.IncrementalDiscoveryResponse)
 
   rpc :FetchClusters, Envoy.Api.V2.DiscoveryRequest, Envoy.Api.V2.DiscoveryResponse
 end

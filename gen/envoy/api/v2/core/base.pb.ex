@@ -21,8 +21,8 @@ defmodule Envoy.Api.V2.Core.Node do
   @type t :: %__MODULE__{
           id: String.t(),
           cluster: String.t(),
-          metadata: Google.Protobuf.Struct.t(),
-          locality: Envoy.Api.V2.Core.Locality.t(),
+          metadata: Google.Protobuf.Struct.t() | nil,
+          locality: Envoy.Api.V2.Core.Locality.t() | nil,
           build_version: String.t()
         }
   defstruct [:id, :cluster, :metadata, :locality, :build_version]
@@ -39,7 +39,7 @@ defmodule Envoy.Api.V2.Core.Metadata do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          filter_metadata: %{String.t() => Google.Protobuf.Struct.t()}
+          filter_metadata: %{String.t() => Google.Protobuf.Struct.t() | nil}
         }
   defstruct [:filter_metadata]
 
@@ -55,7 +55,7 @@ defmodule Envoy.Api.V2.Core.Metadata.FilterMetadataEntry do
 
   @type t :: %__MODULE__{
           key: String.t(),
-          value: Google.Protobuf.Struct.t()
+          value: Google.Protobuf.Struct.t() | nil
         }
   defstruct [:key, :value]
 
@@ -96,8 +96,8 @@ defmodule Envoy.Api.V2.Core.HeaderValueOption do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          header: Envoy.Api.V2.Core.HeaderValue.t(),
-          append: Google.Protobuf.BoolValue.t()
+          header: Envoy.Api.V2.Core.HeaderValue.t() | nil,
+          append: Google.Protobuf.BoolValue.t() | nil
         }
   defstruct [:header, :append]
 
@@ -126,12 +126,57 @@ defmodule Envoy.Api.V2.Core.TransportSocket do
 
   @type t :: %__MODULE__{
           name: String.t(),
-          config: Google.Protobuf.Struct.t()
+          config: Google.Protobuf.Struct.t() | nil
         }
   defstruct [:name, :config]
 
   field :name, 1, type: :string
   field :config, 2, type: Google.Protobuf.Struct
+end
+
+defmodule Envoy.Api.V2.Core.SocketOption do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          value: {atom, any},
+          description: String.t(),
+          level: integer,
+          name: integer,
+          state: integer
+        }
+  defstruct [:value, :description, :level, :name, :state]
+
+  oneof :value, 0
+  field :description, 1, type: :string
+  field :level, 2, type: :int64
+  field :name, 3, type: :int64
+  field :int_value, 4, type: :int64, oneof: 0
+  field :buf_value, 5, type: :bytes, oneof: 0
+  field :state, 6, type: Envoy.Api.V2.Core.SocketOption.SocketState, enum: true
+end
+
+defmodule Envoy.Api.V2.Core.SocketOption.SocketState do
+  @moduledoc false
+  use Protobuf, enum: true, syntax: :proto3
+
+  field :STATE_PREBIND, 0
+  field :STATE_BOUND, 1
+  field :STATE_LISTENING, 2
+end
+
+defmodule Envoy.Api.V2.Core.RuntimeFractionalPercent do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          default_value: Envoy.Type.FractionalPercent.t() | nil,
+          runtime_key: String.t()
+        }
+  defstruct [:default_value, :runtime_key]
+
+  field :default_value, 1, type: Envoy.Type.FractionalPercent
+  field :runtime_key, 2, type: :string
 end
 
 defmodule Envoy.Api.V2.Core.RoutingPriority do

@@ -3,8 +3,8 @@ defmodule Envoy.Api.V2.Endpoint.Endpoint do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          address: Envoy.Api.V2.Core.Address.t(),
-          health_check_config: Envoy.Api.V2.Endpoint.Endpoint.HealthCheckConfig.t()
+          address: Envoy.Api.V2.Core.Address.t() | nil,
+          health_check_config: Envoy.Api.V2.Endpoint.Endpoint.HealthCheckConfig.t() | nil
         }
   defstruct [:address, :health_check_config]
 
@@ -29,10 +29,10 @@ defmodule Envoy.Api.V2.Endpoint.LbEndpoint do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          endpoint: Envoy.Api.V2.Endpoint.Endpoint.t(),
+          endpoint: Envoy.Api.V2.Endpoint.Endpoint.t() | nil,
           health_status: integer,
-          metadata: Envoy.Api.V2.Core.Metadata.t(),
-          load_balancing_weight: Google.Protobuf.UInt32Value.t()
+          metadata: Envoy.Api.V2.Core.Metadata.t() | nil,
+          load_balancing_weight: Google.Protobuf.UInt32Value.t() | nil
         }
   defstruct [:endpoint, :health_status, :metadata, :load_balancing_weight]
 
@@ -47,9 +47,9 @@ defmodule Envoy.Api.V2.Endpoint.LocalityLbEndpoints do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          locality: Envoy.Api.V2.Core.Locality.t(),
+          locality: Envoy.Api.V2.Core.Locality.t() | nil,
           lb_endpoints: [Envoy.Api.V2.Endpoint.LbEndpoint.t()],
-          load_balancing_weight: Google.Protobuf.UInt32Value.t(),
+          load_balancing_weight: Google.Protobuf.UInt32Value.t() | nil,
           priority: non_neg_integer
         }
   defstruct [:locality, :lb_endpoints, :load_balancing_weight, :priority]

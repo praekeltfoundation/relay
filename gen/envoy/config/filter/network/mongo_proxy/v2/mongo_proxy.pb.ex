@@ -5,7 +5,7 @@ defmodule Envoy.Config.Filter.Network.MongoProxy.V2.MongoProxy do
   @type t :: %__MODULE__{
           stat_prefix: String.t(),
           access_log: String.t(),
-          delay: Envoy.Config.Filter.Fault.V2.FaultDelay.t()
+          delay: Envoy.Config.Filter.Fault.V2.FaultDelay.t() | nil
         }
   defstruct [:stat_prefix, :access_log, :delay]
 

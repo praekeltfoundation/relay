@@ -4,8 +4,8 @@ defmodule Envoy.Config.Filter.Accesslog.V2.AccessLog do
 
   @type t :: %__MODULE__{
           name: String.t(),
-          filter: Envoy.Config.Filter.Accesslog.V2.AccessLogFilter.t(),
-          config: Google.Protobuf.Struct.t()
+          filter: Envoy.Config.Filter.Accesslog.V2.AccessLogFilter.t() | nil,
+          config: Google.Protobuf.Struct.t() | nil
         }
   defstruct [:name, :filter, :config]
 
@@ -36,6 +36,10 @@ defmodule Envoy.Config.Filter.Accesslog.V2.AccessLogFilter do
   field :and_filter, 6, type: Envoy.Config.Filter.Accesslog.V2.AndFilter, oneof: 0
   field :or_filter, 7, type: Envoy.Config.Filter.Accesslog.V2.OrFilter, oneof: 0
   field :header_filter, 8, type: Envoy.Config.Filter.Accesslog.V2.HeaderFilter, oneof: 0
+
+  field :response_flag_filter, 9,
+    type: Envoy.Config.Filter.Accesslog.V2.ResponseFlagFilter,
+    oneof: 0
 end
 
 defmodule Envoy.Config.Filter.Accesslog.V2.ComparisonFilter do
@@ -44,7 +48,7 @@ defmodule Envoy.Config.Filter.Accesslog.V2.ComparisonFilter do
 
   @type t :: %__MODULE__{
           op: integer,
-          value: Envoy.Api.V2.Core.RuntimeUInt32.t()
+          value: Envoy.Api.V2.Core.RuntimeUInt32.t() | nil
         }
   defstruct [:op, :value]
 
@@ -66,7 +70,7 @@ defmodule Envoy.Config.Filter.Accesslog.V2.StatusCodeFilter do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          comparison: Envoy.Config.Filter.Accesslog.V2.ComparisonFilter.t()
+          comparison: Envoy.Config.Filter.Accesslog.V2.ComparisonFilter.t() | nil
         }
   defstruct [:comparison]
 
@@ -78,7 +82,7 @@ defmodule Envoy.Config.Filter.Accesslog.V2.DurationFilter do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          comparison: Envoy.Config.Filter.Accesslog.V2.ComparisonFilter.t()
+          comparison: Envoy.Config.Filter.Accesslog.V2.ComparisonFilter.t() | nil
         }
   defstruct [:comparison]
 
@@ -89,6 +93,7 @@ defmodule Envoy.Config.Filter.Accesslog.V2.NotHealthCheckFilter do
   @moduledoc false
   use Protobuf, syntax: :proto3
 
+  @type t :: %__MODULE__{}
   defstruct []
 end
 
@@ -96,6 +101,7 @@ defmodule Envoy.Config.Filter.Accesslog.V2.TraceableFilter do
   @moduledoc false
   use Protobuf, syntax: :proto3
 
+  @type t :: %__MODULE__{}
   defstruct []
 end
 
@@ -105,7 +111,7 @@ defmodule Envoy.Config.Filter.Accesslog.V2.RuntimeFilter do
 
   @type t :: %__MODULE__{
           runtime_key: String.t(),
-          percent_sampled: Envoy.Type.FractionalPercent.t(),
+          percent_sampled: Envoy.Type.FractionalPercent.t() | nil,
           use_independent_randomness: boolean
         }
   defstruct [:runtime_key, :percent_sampled, :use_independent_randomness]
@@ -144,9 +150,21 @@ defmodule Envoy.Config.Filter.Accesslog.V2.HeaderFilter do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          header: Envoy.Api.V2.Route.HeaderMatcher.t()
+          header: Envoy.Api.V2.Route.HeaderMatcher.t() | nil
         }
   defstruct [:header]
 
   field :header, 1, type: Envoy.Api.V2.Route.HeaderMatcher
+end
+
+defmodule Envoy.Config.Filter.Accesslog.V2.ResponseFlagFilter do
+  @moduledoc false
+  use Protobuf, syntax: :proto3
+
+  @type t :: %__MODULE__{
+          flags: [String.t()]
+        }
+  defstruct [:flags]
+
+  field :flags, 1, repeated: true, type: :string
 end

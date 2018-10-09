@@ -6,7 +6,7 @@ defmodule Envoy.Config.Filter.Http.Transcoder.V2.GrpcJsonTranscoder do
           descriptor_set: {atom, any},
           services: [String.t()],
           print_options:
-            Envoy.Config.Filter.Http.Transcoder.V2.GrpcJsonTranscoder.PrintOptions.t(),
+            Envoy.Config.Filter.Http.Transcoder.V2.GrpcJsonTranscoder.PrintOptions.t() | nil,
           match_incoming_request_route: boolean
         }
   defstruct [:descriptor_set, :services, :print_options, :match_incoming_request_route]

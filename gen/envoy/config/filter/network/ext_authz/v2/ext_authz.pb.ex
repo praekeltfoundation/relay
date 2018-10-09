@@ -4,7 +4,7 @@ defmodule Envoy.Config.Filter.Network.ExtAuthz.V2.ExtAuthz do
 
   @type t :: %__MODULE__{
           stat_prefix: String.t(),
-          grpc_service: Envoy.Api.V2.Core.GrpcService.t(),
+          grpc_service: Envoy.Api.V2.Core.GrpcService.t() | nil,
           failure_mode_allow: boolean
         }
   defstruct [:stat_prefix, :grpc_service, :failure_mode_allow]

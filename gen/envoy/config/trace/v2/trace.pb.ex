@@ -3,7 +3,7 @@ defmodule Envoy.Config.Trace.V2.Tracing do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          http: Envoy.Config.Trace.V2.Tracing.Http.t()
+          http: Envoy.Config.Trace.V2.Tracing.Http.t() | nil
         }
   defstruct [:http]
 
@@ -16,7 +16,7 @@ defmodule Envoy.Config.Trace.V2.Tracing.Http do
 
   @type t :: %__MODULE__{
           name: String.t(),
-          config: Google.Protobuf.Struct.t()
+          config: Google.Protobuf.Struct.t() | nil
         }
   defstruct [:name, :config]
 
@@ -45,13 +45,15 @@ defmodule Envoy.Config.Trace.V2.ZipkinConfig do
   @type t :: %__MODULE__{
           collector_cluster: String.t(),
           collector_endpoint: String.t(),
-          trace_id_128bit: boolean
+          trace_id_128bit: boolean,
+          shared_span_context: Google.Protobuf.BoolValue.t() | nil
         }
-  defstruct [:collector_cluster, :collector_endpoint, :trace_id_128bit]
+  defstruct [:collector_cluster, :collector_endpoint, :trace_id_128bit, :shared_span_context]
 
   field :collector_cluster, 1, type: :string
   field :collector_endpoint, 2, type: :string
   field :trace_id_128bit, 3, type: :bool
+  field :shared_span_context, 4, type: Google.Protobuf.BoolValue
 end
 
 defmodule Envoy.Config.Trace.V2.DynamicOtConfig do
@@ -60,7 +62,7 @@ defmodule Envoy.Config.Trace.V2.DynamicOtConfig do
 
   @type t :: %__MODULE__{
           library: String.t(),
-          config: Google.Protobuf.Struct.t()
+          config: Google.Protobuf.Struct.t() | nil
         }
   defstruct [:library, :config]
 
@@ -73,7 +75,7 @@ defmodule Envoy.Config.Trace.V2.TraceServiceConfig do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          grpc_service: Envoy.Api.V2.Core.GrpcService.t()
+          grpc_service: Envoy.Api.V2.Core.GrpcService.t() | nil
         }
   defstruct [:grpc_service]
 

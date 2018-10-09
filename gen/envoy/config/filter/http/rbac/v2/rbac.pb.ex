@@ -3,8 +3,8 @@ defmodule Envoy.Config.Filter.Http.Rbac.V2.RBAC do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          rules: Envoy.Config.Rbac.V2alpha.RBAC.t(),
-          shadow_rules: Envoy.Config.Rbac.V2alpha.RBAC.t()
+          rules: Envoy.Config.Rbac.V2alpha.RBAC.t() | nil,
+          shadow_rules: Envoy.Config.Rbac.V2alpha.RBAC.t() | nil
         }
   defstruct [:rules, :shadow_rules]
 
@@ -17,7 +17,7 @@ defmodule Envoy.Config.Filter.Http.Rbac.V2.RBACPerRoute do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          rbac: Envoy.Config.Filter.Http.Rbac.V2.RBAC.t()
+          rbac: Envoy.Config.Filter.Http.Rbac.V2.RBAC.t() | nil
         }
   defstruct [:rbac]
 

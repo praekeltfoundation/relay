@@ -17,7 +17,7 @@ jobs:
   include:
     - {} # Use 'default' Elixir/OTP versions
     - elixir: '1.7'
-      otp_release: '21.0'
+      otp_release: '21.1'
 
     - env:
         - RUN_DIALYZER=1
@@ -39,8 +39,8 @@ jobs:
         - mix dialyzer --halt-exit-status
 
     - env:
-        - BAZEL_VERSION=0.15.1
-        - PROTOC_VERSION=3.6.0
+        - BAZEL_VERSION=0.17.2
+        - PROTOC_VERSION=3.6.1
         - PROTOBUF_ELIXIR_VERSION=0.5.4
 
       install:
@@ -51,7 +51,11 @@ jobs:
         - curl -fL https://github.com/google/protobuf/releases/download/v$PROTOC_VERSION/protoc-$PROTOC_VERSION-linux-x86_64.zip > protoc.zip
         - mkdir ~/protoc && unzip -d ~/protoc protoc.zip && ln -s ~/protoc/bin/protoc ~/bin/protoc
         # Install protoc-gen-elixir
-        - mix local.hex --force && mix escript.install --force hex protobuf "$PROTOBUF_ELIXIR_VERSION"
+        - mix local.hex --force
+        # FIXME: Use released protobuf-elixir when this is fixed:
+        # https://github.com/tony612/protobuf-elixir/pull/41
+        # - mix escript.install --force hex protobuf "$PROTOBUF_ELIXIR_VERSION"
+        - mix escript.install --force git https://github.com/JayH5/protobuf-elixir.git branch type-without-fields
         # Check everything is available
         - export PATH="$HOME/.mix/escripts:$PATH"
         - echo "Installed Bazel ($(which bazel)), protoc ($(which protoc)), protobuf-elixir ($(which protoc-gen-elixir))"

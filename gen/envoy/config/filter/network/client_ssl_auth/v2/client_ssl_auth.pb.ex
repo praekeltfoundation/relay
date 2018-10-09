@@ -5,7 +5,7 @@ defmodule Envoy.Config.Filter.Network.ClientSslAuth.V2.ClientSSLAuth do
   @type t :: %__MODULE__{
           auth_api_cluster: String.t(),
           stat_prefix: String.t(),
-          refresh_delay: Google.Protobuf.Duration.t(),
+          refresh_delay: Google.Protobuf.Duration.t() | nil,
           ip_white_list: [Envoy.Api.V2.Core.CidrRange.t()]
         }
   defstruct [:auth_api_cluster, :stat_prefix, :refresh_delay, :ip_white_list]

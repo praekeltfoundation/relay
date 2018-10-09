@@ -3,25 +3,28 @@ defmodule Envoy.Config.Bootstrap.V2.Bootstrap do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          node: Envoy.Api.V2.Core.Node.t(),
-          static_resources: Envoy.Config.Bootstrap.V2.Bootstrap.StaticResources.t(),
-          dynamic_resources: Envoy.Config.Bootstrap.V2.Bootstrap.DynamicResources.t(),
-          cluster_manager: Envoy.Config.Bootstrap.V2.ClusterManager.t(),
+          node: Envoy.Api.V2.Core.Node.t() | nil,
+          static_resources: Envoy.Config.Bootstrap.V2.Bootstrap.StaticResources.t() | nil,
+          dynamic_resources: Envoy.Config.Bootstrap.V2.Bootstrap.DynamicResources.t() | nil,
+          cluster_manager: Envoy.Config.Bootstrap.V2.ClusterManager.t() | nil,
+          hds_config: Envoy.Api.V2.Core.ApiConfigSource.t() | nil,
           flags_path: String.t(),
           stats_sinks: [Envoy.Config.Metrics.V2.StatsSink.t()],
-          stats_config: Envoy.Config.Metrics.V2.StatsConfig.t(),
-          stats_flush_interval: Google.Protobuf.Duration.t(),
-          watchdog: Envoy.Config.Bootstrap.V2.Watchdog.t(),
-          tracing: Envoy.Config.Trace.V2.Tracing.t(),
-          rate_limit_service: Envoy.Config.Ratelimit.V2.RateLimitServiceConfig.t(),
-          runtime: Envoy.Config.Bootstrap.V2.Runtime.t(),
-          admin: Envoy.Config.Bootstrap.V2.Admin.t()
+          stats_config: Envoy.Config.Metrics.V2.StatsConfig.t() | nil,
+          stats_flush_interval: Google.Protobuf.Duration.t() | nil,
+          watchdog: Envoy.Config.Bootstrap.V2.Watchdog.t() | nil,
+          tracing: Envoy.Config.Trace.V2.Tracing.t() | nil,
+          rate_limit_service: Envoy.Config.Ratelimit.V2.RateLimitServiceConfig.t() | nil,
+          runtime: Envoy.Config.Bootstrap.V2.Runtime.t() | nil,
+          admin: Envoy.Config.Bootstrap.V2.Admin.t() | nil,
+          overload_manager: Envoy.Config.Overload.V2alpha.OverloadManager.t() | nil
         }
   defstruct [
     :node,
     :static_resources,
     :dynamic_resources,
     :cluster_manager,
+    :hds_config,
     :flags_path,
     :stats_sinks,
     :stats_config,
@@ -30,13 +33,15 @@ defmodule Envoy.Config.Bootstrap.V2.Bootstrap do
     :tracing,
     :rate_limit_service,
     :runtime,
-    :admin
+    :admin,
+    :overload_manager
   ]
 
   field :node, 1, type: Envoy.Api.V2.Core.Node
   field :static_resources, 2, type: Envoy.Config.Bootstrap.V2.Bootstrap.StaticResources
   field :dynamic_resources, 3, type: Envoy.Config.Bootstrap.V2.Bootstrap.DynamicResources
   field :cluster_manager, 4, type: Envoy.Config.Bootstrap.V2.ClusterManager
+  field :hds_config, 14, type: Envoy.Api.V2.Core.ApiConfigSource
   field :flags_path, 5, type: :string
   field :stats_sinks, 6, repeated: true, type: Envoy.Config.Metrics.V2.StatsSink
   field :stats_config, 13, type: Envoy.Config.Metrics.V2.StatsConfig
@@ -46,6 +51,7 @@ defmodule Envoy.Config.Bootstrap.V2.Bootstrap do
   field :rate_limit_service, 10, type: Envoy.Config.Ratelimit.V2.RateLimitServiceConfig
   field :runtime, 11, type: Envoy.Config.Bootstrap.V2.Runtime
   field :admin, 12, type: Envoy.Config.Bootstrap.V2.Admin
+  field :overload_manager, 15, type: Envoy.Config.Overload.V2alpha.OverloadManager
 end
 
 defmodule Envoy.Config.Bootstrap.V2.Bootstrap.StaticResources do
@@ -69,10 +75,11 @@ defmodule Envoy.Config.Bootstrap.V2.Bootstrap.DynamicResources do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          lds_config: Envoy.Api.V2.Core.ConfigSource.t(),
-          cds_config: Envoy.Api.V2.Core.ConfigSource.t(),
-          ads_config: Envoy.Api.V2.Core.ApiConfigSource.t(),
-          deprecated_v1: Envoy.Config.Bootstrap.V2.Bootstrap.DynamicResources.DeprecatedV1.t()
+          lds_config: Envoy.Api.V2.Core.ConfigSource.t() | nil,
+          cds_config: Envoy.Api.V2.Core.ConfigSource.t() | nil,
+          ads_config: Envoy.Api.V2.Core.ApiConfigSource.t() | nil,
+          deprecated_v1:
+            Envoy.Config.Bootstrap.V2.Bootstrap.DynamicResources.DeprecatedV1.t() | nil
         }
   defstruct [:lds_config, :cds_config, :ads_config, :deprecated_v1]
 
@@ -90,7 +97,7 @@ defmodule Envoy.Config.Bootstrap.V2.Bootstrap.DynamicResources.DeprecatedV1 do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          sds_config: Envoy.Api.V2.Core.ConfigSource.t()
+          sds_config: Envoy.Api.V2.Core.ConfigSource.t() | nil
         }
   defstruct [:sds_config]
 
@@ -104,7 +111,7 @@ defmodule Envoy.Config.Bootstrap.V2.Admin do
   @type t :: %__MODULE__{
           access_log_path: String.t(),
           profile_path: String.t(),
-          address: Envoy.Api.V2.Core.Address.t()
+          address: Envoy.Api.V2.Core.Address.t() | nil
         }
   defstruct [:access_log_path, :profile_path, :address]
 
@@ -119,9 +126,9 @@ defmodule Envoy.Config.Bootstrap.V2.ClusterManager do
 
   @type t :: %__MODULE__{
           local_cluster_name: String.t(),
-          outlier_detection: Envoy.Config.Bootstrap.V2.ClusterManager.OutlierDetection.t(),
-          upstream_bind_config: Envoy.Api.V2.Core.BindConfig.t(),
-          load_stats_config: Envoy.Api.V2.Core.ApiConfigSource.t()
+          outlier_detection: Envoy.Config.Bootstrap.V2.ClusterManager.OutlierDetection.t() | nil,
+          upstream_bind_config: Envoy.Api.V2.Core.BindConfig.t() | nil,
+          load_stats_config: Envoy.Api.V2.Core.ApiConfigSource.t() | nil
         }
   defstruct [:local_cluster_name, :outlier_detection, :upstream_bind_config, :load_stats_config]
 
@@ -148,10 +155,10 @@ defmodule Envoy.Config.Bootstrap.V2.Watchdog do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          miss_timeout: Google.Protobuf.Duration.t(),
-          megamiss_timeout: Google.Protobuf.Duration.t(),
-          kill_timeout: Google.Protobuf.Duration.t(),
-          multikill_timeout: Google.Protobuf.Duration.t()
+          miss_timeout: Google.Protobuf.Duration.t() | nil,
+          megamiss_timeout: Google.Protobuf.Duration.t() | nil,
+          kill_timeout: Google.Protobuf.Duration.t() | nil,
+          multikill_timeout: Google.Protobuf.Duration.t() | nil
         }
   defstruct [:miss_timeout, :megamiss_timeout, :kill_timeout, :multikill_timeout]
 

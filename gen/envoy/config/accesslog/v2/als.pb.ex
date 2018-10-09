@@ -3,7 +3,7 @@ defmodule Envoy.Config.Accesslog.V2.HttpGrpcAccessLogConfig do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          common_config: Envoy.Config.Accesslog.V2.CommonGrpcAccessLogConfig.t(),
+          common_config: Envoy.Config.Accesslog.V2.CommonGrpcAccessLogConfig.t() | nil,
           additional_request_headers_to_log: [String.t()],
           additional_response_headers_to_log: [String.t()],
           additional_response_trailers_to_log: [String.t()]
@@ -26,7 +26,7 @@ defmodule Envoy.Config.Accesslog.V2.TcpGrpcAccessLogConfig do
   use Protobuf, syntax: :proto3
 
   @type t :: %__MODULE__{
-          common_config: Envoy.Config.Accesslog.V2.CommonGrpcAccessLogConfig.t()
+          common_config: Envoy.Config.Accesslog.V2.CommonGrpcAccessLogConfig.t() | nil
         }
   defstruct [:common_config]
 
@@ -39,7 +39,7 @@ defmodule Envoy.Config.Accesslog.V2.CommonGrpcAccessLogConfig do
 
   @type t :: %__MODULE__{
           log_name: String.t(),
-          grpc_service: Envoy.Api.V2.Core.GrpcService.t()
+          grpc_service: Envoy.Api.V2.Core.GrpcService.t() | nil
         }
   defstruct [:log_name, :grpc_service]
 
