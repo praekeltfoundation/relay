@@ -7,7 +7,7 @@ defmodule Relay.Certs.Filesystem do
   # Retry timeout in milliseconds
   @retry_timeout 1_000
 
-  alias Plug.Adapters.Cowboy2
+  alias Plug.Cowboy
   alias Relay.{Certs, Resources, RetryStart}
   alias Relay.Certs.MarathonLbPlug
   alias Relay.Resources.CertInfo
@@ -61,7 +61,7 @@ defmodule Relay.Certs.Filesystem do
 
   defp start_mlb_listener do
     start_fun = fn ->
-      Cowboy2.http(MarathonLbPlug, [cfs: self()], port: certs_cfg(:mlb_port))
+      Cowboy.http(MarathonLbPlug, [cfs: self()], port: certs_cfg(:mlb_port))
     end
 
     RetryStart.retry_start(start_fun, @retry_timeout)
@@ -69,13 +69,13 @@ defmodule Relay.Certs.Filesystem do
 
   defp restart_mlb_listener do
     # TODO: Log a warning here?
-    :ok = Cowboy2.shutdown(MarathonLbPlug.HTTP)
+    :ok = Cowboy.shutdown(MarathonLbPlug.HTTP)
     start_mlb_listener()
   end
 
   @impl GenServer
   def terminate(reason, _state) do
-    _ = Cowboy2.shutdown(MarathonLbPlug.HTTP)
+    _ = Cowboy.shutdown(MarathonLbPlug.HTTP)
     reason
   end
 
