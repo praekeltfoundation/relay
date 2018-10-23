@@ -45,20 +45,14 @@ defmodule Relay.MixProject do
       # from sending messages to our servers. It's been fixed on master:
       # https://github.com/tony612/grpc-elixir/issues/59
       #
-      # Another issue prevents us from using the current latest git commit :-/
-      # https://github.com/tony612/grpc-elixir/issues/67
-      #
       # We still want to use the pre-release code because the API has taken a
       # slightly different direction from the last working release
       # (0.3.0-alpha.1) and we want to keep up.
       {
         :grpc,
         git: "https://github.com/tony612/grpc-elixir.git",
-        ref: "fce2dea02fb8be815cc5f47ab4cc240132261533"
+        ref: "936f5362bb1f16e671d368605f0195328d16e441"
       },
-      # As of the above commit, grpc uses cowlib from git for the 2.4.0 tag
-      # which is now available on Hex. Prefer Hex.
-      {:cowlib, "~> 2.4", override: true},
       {:google_protos, "~> 0.1"},
       {:httpoison, "~> 1.0"},
       # Hackney is a dependency of HTTPoison but had a bug in versions 1.10.0 to
