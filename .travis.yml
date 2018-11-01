@@ -27,13 +27,7 @@ jobs:
           - $HOME/.pltcache
 
       before_script:
-        - mix compile
-        # Juggle cached PLTs.
-        - mkdir -p ~/.pltcache
-        - cp ~/.pltcache/*-dev.plt _build/dev/ || true
-        - travis_wait mix dialyzer --plt
-        - cp _build/dev/*-dev.plt ~/.pltcache/
-        # Now that we've done the PLT dance, we can run dialyzer.
+        - travis_wait .ci/build-plt-cache.sh
 
       script:
         - mix dialyzer --halt-exit-status
