@@ -70,7 +70,7 @@ defmodule Relay.MixProject do
 
       # Dev/test/build tools.
       {:dialyxir, "~> 1.0.0-rc.3", only: :dev, runtime: false},
-      {:credo, "~> 0.9", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
       {:distillery, "~> 2.0", runtime: false}
     ]
   end
