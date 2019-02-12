@@ -103,12 +103,14 @@ defmodule Relay.Certs.VaultKV do
     %{state | version: state.version + 1}
   end
 
-  @spec kv_get(ExVault.KV2.t(), String.t()) :: map()
+  @type get_resp :: {:ok, map()} | {:error, any()}
+
+  @spec kv_get(ExVault.KV2.t(), String.t()) :: get_resp()
   defp kv_get(kv2, path) do
     case ExVault.KV2.get_data(kv2, path) do
-      {:ok, %ExVault.Response.Error{status: 404}} -> {:ok, %{}}
       {:ok, %ExVault.KV2.GetData{data: data}} -> {:ok, data}
-      resp -> resp
+      {:ok, %ExVault.Response.Error{status: 404}} -> {:ok, %{}}
+      resp -> {:error, resp}
     end
   end
 
