@@ -62,11 +62,13 @@ defmodule Relay.MixProject do
       {:plug, "~> 1.7"},
       {:plug_cowboy, "~> 2.0"},
       {:cowboy, "~> 2.3"},
+      {:exvault, github: "praekeltfoundation/exvault", sparse: "apps/exvault"},
 
       # Test deps.
       {:uuid, "~> 1.1", only: :test},
       {:temp, "~> 0.4", only: :test},
       {:excoveralls, "~> 0.8", only: :test},
+      {:vaultdevserver, github: "praekeltfoundation/exvault", sparse: "apps/vaultdevserver"},
 
       # Dev/test/build tools.
       {:dialyxir, "~> 1.0.0-rc.3", only: :dev, runtime: false},
@@ -77,11 +79,11 @@ defmodule Relay.MixProject do
 
   defp dialyzer do
     [
-      # There are some warnings in the generated code that we don't control, so
-      # we put them in the ignore file. The exact details of the warnings may
-      # change when we regenerate the code, so the ignore file should be
-      # updated to match.
-      ignore_warnings: "dialyzer.ignore-warnings",
+      # # There are some warnings in the generated code that we don't control, so
+      # # we put them in the ignore file. The exact details of the warnings may
+      # # change when we regenerate the code, so the ignore file should be
+      # # updated to match.
+      # ignore_warnings: "dialyzer.ignore-warnings",
       # These are most of the optional warnings in the dialyzer docs. We skip
       # :error_handling (because we don't care about functions that only raise
       # exceptions) and two others that are intended for developing dialyzer

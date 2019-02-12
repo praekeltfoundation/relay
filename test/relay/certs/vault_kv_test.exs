@@ -1,25 +1,37 @@
-Code.require_file(Path.join([__DIR__, "..", "..", "vault_client", "vault_client_helper.exs"]))
-
 defmodule Relay.Certs.VaultKVTest do
   use ExUnit.Case, async: false
+
+  alias VaultDevServer.DevServer
 
   alias Relay.Certs.VaultKV
   alias Relay.{Certs, Resources}
 
-  setup do
+  setup_all do
+    TestHelpers.setup_apps([:hackney])
+    {:ok, ds} = start_supervised(DevServer)
+    address = DevServer.api_addr(ds)
+    token = DevServer.root_token(ds)
+    client = ExVault.new(address: address, token: token)
+    kv2 = ExVault.KV2.new(client, "marathon-acme")
+    {:ok, devserver: ds, address: address, token: token, client: client, kv2: kv2}
+  end
+
+  setup %{address: address, token: token, client: client, kv2: kv2} do
     TestHelpers.override_log_level(:warn)
-    TestHelpers.setup_apps([:cowboy, :httpoison])
 
-    {:ok, fv} = start_supervised(FakeVault)
-    base_url = FakeVault.base_url(fv)
-    token = FakeVault.auth_token(fv)
-    FakeVault.set_kv_data(fv, "/marathon-acme/live", %{})
+    ExVault.write(client, "sys/mounts/marathon-acme", %{
+      "type" => "kv",
+      "options" => %{"version" => 2}
+    })
 
-    put_certs_config(vault: [address: base_url, token: token, base_path: "/marathon-acme"])
+    on_exit(fn -> ExVault.delete(client, "sys/mounts/marathon-acme") end)
+    ExVault.KV2.put_data(kv2, "live", %{})
+
+    put_certs_config(vault: [address: address, token: token, base_path: "marathon-acme"])
 
     {:ok, res} = start_supervised({TestHelpers.StubGenServer, self()})
 
-    %{res: res, fv: fv}
+    %{res: res}
   end
 
   defp put_certs_config(opts) do
@@ -30,12 +42,15 @@ defmodule Relay.Certs.VaultKVTest do
   defp merge_cfg(:vault, old, new), do: Keyword.merge(old, new)
   defp merge_cfg(_key, _old, new), do: new
 
-  defp store_cert(fv, cert_file, cert_name) do
-    path = "/marathon-acme/certificates/#{cert_name}"
-    FakeVault.set_kv_data(fv, path, cert_info_from_file(cert_file))
-    live_path = "/marathon-acme/live"
-    live = FakeVault.get_kv_data(fv, live_path)
-    FakeVault.set_kv_data(fv, live_path, Map.put(live, cert_name, ""))
+  defp store_cert(kv2, cert_file, cert_name) do
+    certinfo = cert_info_from_file(cert_file)
+    ExVault.KV2.put_data(kv2, "certificates/#{cert_name}", certinfo)
+    update_live(kv2, cert_name)
+  end
+
+  defp update_live(kv2, cert_name) do
+    {:ok, %ExVault.KV2.GetData{data: live}} = ExVault.KV2.get_data(kv2, "live")
+    ExVault.KV2.put_data(kv2, "live", Map.put(live, cert_name, ""))
   end
 
   defp cert_info_from_file(cert_file) do
@@ -64,38 +79,38 @@ defmodule Relay.Certs.VaultKVTest do
     assert_receive_update([])
   end
 
-  test "startup sync one cert", %{fv: fv, res: res} do
-    store_cert(fv, "localhost.pem", "localhost")
+  test "startup sync one cert", %{kv2: kv2, res: res} do
+    store_cert(kv2, "localhost.pem", "localhost")
     {:ok, _} = start_supervised({VaultKV, resources: res})
     assert_receive_update(["localhost.pem"])
   end
 
-  test "update with new cert", %{fv: fv, res: res} do
-    store_cert(fv, "localhost.pem", "localhost")
+  test "update with new cert", %{kv2: kv2, res: res} do
+    store_cert(kv2, "localhost.pem", "localhost")
     {:ok, cfs} = start_supervised({VaultKV, resources: res})
     assert_receive_update(["localhost.pem"])
-    store_cert(fv, "demo.pem", "demo")
+    store_cert(kv2, "demo.pem", "demo")
     GenServer.call(cfs, :update_state)
     assert_receive_update(["localhost.pem", "demo.pem"])
   end
 
-  test "mlb signal update", %{fv: fv, res: res} do
-    store_cert(fv, "localhost.pem", "localhost")
+  test "mlb signal update", %{kv2: kv2, res: res} do
+    store_cert(kv2, "localhost.pem", "localhost")
     {:ok, _} = start_supervised({VaultKV, resources: res})
     assert_receive_update(["localhost.pem"])
-    store_cert(fv, "demo.pem", "demo")
+    store_cert(kv2, "demo.pem", "demo")
     assert_post("http://localhost:9090/_mlb_signal/hup", 204)
     assert_receive_update(["localhost.pem", "demo.pem"])
   end
 
-  test "mlb listener restart", %{fv: fv, res: res} do
-    store_cert(fv, "localhost.pem", "localhost")
+  test "mlb listener restart", %{kv2: kv2, res: res} do
+    store_cert(kv2, "localhost.pem", "localhost")
     {:ok, vkv} = start_supervised({VaultKV, resources: res})
     assert_receive_update(["localhost.pem"])
     # A kill signal means the terminate function isn't called.
     Process.exit(vkv, :kill)
     assert_receive_update(["localhost.pem"])
-    store_cert(fv, "demo.pem", "demo")
+    store_cert(kv2, "demo.pem", "demo")
     assert_post("http://localhost:9090/_mlb_signal/hup", 204)
     assert_receive_update(["localhost.pem", "demo.pem"])
   end
@@ -106,8 +121,8 @@ defmodule Relay.Certs.VaultKVTest do
     assert_post("http://localhost:9090/wordpress/wp-login.php", 404)
   end
 
-  test "configure mlb port", %{fv: fv, res: res} do
-    store_cert(fv, "localhost.pem", "localhost")
+  test "configure mlb port", %{kv2: kv2, res: res} do
+    store_cert(kv2, "localhost.pem", "localhost")
     put_certs_config(mlb_port: 9091)
     {:ok, _} = start_supervised({VaultKV, resources: res})
     assert_receive_update(["localhost.pem"])
