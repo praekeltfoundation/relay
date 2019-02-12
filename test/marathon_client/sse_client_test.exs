@@ -65,7 +65,7 @@ defmodule MarathonClient.SSEClientTest do
     t0 = Time.utc_now()
     {:ok, _} = stream_events(fm)
     t1 = Time.utc_now()
-    assert Time.diff(t1, t0, :milliseconds) >= delay_ms
+    assert Time.diff(t1, t0, :millisecond) >= delay_ms
 
     # Stream an event, assert that we receive it within a second.
     event = marathon_event("event_stream_attached", remoteAddress: "127.0.0.1")

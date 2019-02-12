@@ -41,7 +41,7 @@ defmodule Relay.ResolverTest do
     assert Resolver.getaddr("localhost") == {:ok, "127.0.0.1"}
 
     assert %{"localhost" => {"127.0.0.1", expiry1}} = get_cache()
-    assert expiry1 > System.monotonic_time(:milliseconds)
+    assert expiry1 > System.monotonic_time(:millisecond)
 
     # Lookup again... should hit the cache and have the same expiry
     assert Resolver.getaddr("localhost") == {:ok, "127.0.0.1"}
