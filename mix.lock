@@ -9,7 +9,7 @@
   "distillery": {:hex, :distillery, "2.0.12", "6e78fe042df82610ac3fa50bd7d2d8190ad287d120d3cd1682d83a44e8b34dfb", [:mix], [{:artificery, "~> 0.2", [hex: :artificery, repo: "hexpm", optional: false]}], "hexpm"},
   "erlex": {:hex, :erlex, "0.2.1", "cee02918660807cbba9a7229cae9b42d1c6143b768c781fa6cee1eaf03ad860b", [:mix], [], "hexpm"},
   "excoveralls": {:hex, :excoveralls, "0.10.5", "7c912c4ec0715a6013647d835c87cde8154855b9b84e256bc7a63858d5f284e3", [:mix], [{:hackney, "~> 1.13", [hex: :hackney, repo: "hexpm", optional: false]}, {:jason, "~> 1.0", [hex: :jason, repo: "hexpm", optional: false]}], "hexpm"},
-  "exvault": {:git, "https://github.com/praekeltfoundation/exvault.git", "1faeb604b656e907a0a96799c0d5feb3b4f49923", [sparse: "apps/exvault"]},
+  "exvault": {:hex, :exvault, "0.1.0-beta.1", "2a24d20e316d22a5ea82809e9869d69c68d7ac3626110a282d1b08c9b89ccabf", [:mix], [{:hackney, "~> 1.15", [hex: :hackney, repo: "hexpm", optional: false]}, {:jason, "~> 1.0", [hex: :jason, repo: "hexpm", optional: false]}, {:tesla, "~> 1.2", [hex: :tesla, repo: "hexpm", optional: false]}], "hexpm"},
   "google_protos": {:hex, :google_protos, "0.1.0", "c6b9e12092d17571b093d4156d004494ca143b65dbbcbfc3ffff463ea03467c0", [:mix], [{:protobuf, "~> 0.5", [hex: :protobuf, repo: "hexpm", optional: false]}], "hexpm"},
   "grpc": {:git, "https://github.com/tony612/grpc-elixir.git", "936f5362bb1f16e671d368605f0195328d16e441", [ref: "936f5362bb1f16e671d368605f0195328d16e441"]},
   "gun": {:hex, :gun, "1.2.0", "9878541161fb9e0d2fd1b3b38f001ac9c68e3f9075ed647b7827208dc8b3ec2b", [:rebar3], [{:cowlib, "~> 2.6.0", [hex: :cowlib, repo: "hexpm", optional: false]}], "hexpm"},
@@ -31,5 +31,5 @@
   "tesla": {:hex, :tesla, "1.2.1", "864783cc27f71dd8c8969163704752476cec0f3a51eb3b06393b3971dc9733ff", [:mix], [{:exjsx, ">= 3.0.0", [hex: :exjsx, repo: "hexpm", optional: true]}, {:fuse, "~> 2.4", [hex: :fuse, repo: "hexpm", optional: true]}, {:hackney, "~> 1.6", [hex: :hackney, repo: "hexpm", optional: true]}, {:ibrowse, "~> 4.4.0", [hex: :ibrowse, repo: "hexpm", optional: true]}, {:jason, ">= 1.0.0", [hex: :jason, repo: "hexpm", optional: true]}, {:mime, "~> 1.0", [hex: :mime, repo: "hexpm", optional: false]}, {:poison, ">= 1.0.0", [hex: :poison, repo: "hexpm", optional: true]}], "hexpm"},
   "unicode_util_compat": {:hex, :unicode_util_compat, "0.4.1", "d869e4c68901dd9531385bb0c8c40444ebf624e60b6962d95952775cac5e90cd", [:rebar3], [], "hexpm"},
   "uuid": {:hex, :uuid, "1.1.8", "e22fc04499de0de3ed1116b770c7737779f226ceefa0badb3592e64d5cfb4eb9", [:mix], [], "hexpm"},
-  "vaultdevserver": {:git, "https://github.com/praekeltfoundation/exvault.git", "1faeb604b656e907a0a96799c0d5feb3b4f49923", [sparse: "apps/vaultdevserver"]},
+  "vaultdevserver": {:hex, :vaultdevserver, "0.1.0", "6831e3101b7054610fc7e47017b1dd777536b405164f60baf1b65f7b4f5e6e5a", [:mix], [], "hexpm"},
 }

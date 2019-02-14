@@ -62,13 +62,13 @@ defmodule Relay.MixProject do
       {:plug, "~> 1.7"},
       {:plug_cowboy, "~> 2.0"},
       {:cowboy, "~> 2.3"},
-      {:exvault, github: "praekeltfoundation/exvault", sparse: "apps/exvault"},
+      {:exvault, "~> 0.1.0-beta.1"},
 
       # Test deps.
       {:uuid, "~> 1.1", only: :test},
       {:temp, "~> 0.4", only: :test},
       {:excoveralls, "~> 0.8", only: :test},
-      {:vaultdevserver, github: "praekeltfoundation/exvault", sparse: "apps/vaultdevserver"},
+      {:vaultdevserver, "~> 0.1", only: [:dev, :test]},
 
       # Dev/test/build tools.
       {:dialyxir, "~> 1.0.0-rc.3", only: :dev, runtime: false},
