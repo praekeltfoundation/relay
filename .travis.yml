@@ -2,9 +2,14 @@ language: elixir
 elixir: '1.6'
 otp_release: '20.3'
 
+env:
+  - VAULT_VERSION=1.0.2
+
+before_script: .ci/fetch-vault.sh
+
 script:
   # This is basically `mix test` with coverage enabled.
-  - mix coveralls.json
+  - VAULT_PATH=$(pwd) mix coveralls.json
   - mix format --check-formatted
   # This will mention FIXME and TODO comments without failing, any other issue
   # fails the build.
