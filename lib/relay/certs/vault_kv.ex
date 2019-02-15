@@ -110,7 +110,7 @@ defmodule Relay.Certs.VaultKV do
     case ExVault.KV2.get_data(kv2, path) do
       {:ok, %ExVault.KV2.GetData{data: data}} -> {:ok, data}
       {:ok, %ExVault.Response.Error{status: 404}} -> {:ok, %{}}
-      resp -> {:error, resp}
+      {_, resp} -> {:error, resp}
     end
   end
 
