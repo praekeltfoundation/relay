@@ -79,11 +79,6 @@ defmodule Relay.MixProject do
 
   defp dialyzer do
     [
-      # # There are some warnings in the generated code that we don't control, so
-      # # we put them in the ignore file. The exact details of the warnings may
-      # # change when we regenerate the code, so the ignore file should be
-      # # updated to match.
-      # ignore_warnings: "dialyzer.ignore-warnings",
       # These are most of the optional warnings in the dialyzer docs. We skip
       # :error_handling (because we don't care about functions that only raise
       # exceptions) and two others that are intended for developing dialyzer
