@@ -282,7 +282,7 @@ defmodule RelayTest do
     cds_v_3 = assert_cds_request_response(streams, res_enums, expected_clusters())
     assert cds_v_3 > cds_v_2
     t1 = Time.utc_now()
-    assert Time.diff(t1, t0, :milliseconds) < 1_000
+    assert Time.diff(t1, t0, :millisecond) < 1_000
 
     # FIXME: Uncomment this when we have scheduled marathon updates.
     # cds_v_4 = assert_cds_request_response(streams, res_enums, expected_clusters())
@@ -292,6 +292,6 @@ defmodule RelayTest do
     lds_v_3 = assert_lds_request_response(streams, res_enums, expected_listeners())
     assert lds_v_3 > lds_v_2
     t2 = Time.utc_now()
-    assert Time.diff(t2, t0, :milliseconds) < 1_500
+    assert Time.diff(t2, t0, :millisecond) < 1_500
   end
 end

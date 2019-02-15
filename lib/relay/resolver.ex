@@ -67,7 +67,7 @@ defmodule Relay.Resolver do
   defp cache_get(cache, hostname) do
     case Map.get(cache, hostname) do
       {address, expiry} ->
-        if System.monotonic_time(:milliseconds) < expiry, do: address, else: nil
+        if System.monotonic_time(:millisecond) < expiry, do: address, else: nil
 
       nil ->
         nil
@@ -76,7 +76,7 @@ defmodule Relay.Resolver do
 
   @spec cache_put(cache, String.t(), String.t()) :: cache
   defp cache_put(cache, hostname, address),
-    do: Map.put(cache, hostname, {address, System.monotonic_time(:milliseconds) + ttl()})
+    do: Map.put(cache, hostname, {address, System.monotonic_time(:millisecond) + ttl()})
 
   @spec ttl() :: non_neg_integer
   defp ttl(), do: Application.fetch_env!(:relay, :resolver) |> Keyword.fetch!(:ttl)

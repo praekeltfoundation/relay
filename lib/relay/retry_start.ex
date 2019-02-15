@@ -8,7 +8,7 @@ defmodule Relay.RetryStart do
   @retry_interval 50
 
   @spec now() :: integer
-  defp now, do: System.monotonic_time(:milliseconds)
+  defp now, do: System.monotonic_time(:millisecond)
 
   @spec retry_start((() -> {:ok, pid} | {:error, any}), integer) :: {:ok, pid} | {:error, any}
   def retry_start(start_fun, timeout) do

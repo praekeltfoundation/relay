@@ -17,12 +17,12 @@ defmodule Relay.Certs.VaultKV do
   defmodule State do
     @moduledoc false
     # TODO: Better version management.
-    defstruct [:resources, :sync_period, :vault_cfg, version: 1]
+    defstruct [:resources, :sync_period, :vault_kv2, version: 1]
 
     @type t :: %__MODULE__{
             resources: GenServer.server(),
             sync_period: integer,
-            vault_cfg: VaultClient.Config.t(),
+            vault_kv2: ExVault.KV2.t(),
             version: integer
           }
   end
@@ -49,16 +49,13 @@ defmodule Relay.Certs.VaultKV do
         x -> x
       end
 
-    vault_cfg = %VaultClient.Config{
-      base_url: vault_cfg(:address),
-      token: vault_cfg(:token),
-      kv_path_prefix: vault_cfg(:base_path)
-    }
+    client = ExVault.new(address: vault_cfg(:address), token: vault_cfg(:token))
+    kv2 = ExVault.KV2.new(client, vault_cfg(:base_path))
 
     state = %State{
       resources: resources,
       sync_period: certs_cfg(:sync_period),
-      vault_cfg: vault_cfg
+      vault_kv2: kv2
     }
 
     {:ok, scheduled_update(state)}
@@ -106,18 +103,29 @@ defmodule Relay.Certs.VaultKV do
     %{state | version: state.version + 1}
   end
 
+  @type get_resp :: {:ok, map()} | {:error, any()}
+
+  @spec kv_get(ExVault.KV2.t(), String.t()) :: get_resp()
+  defp kv_get(kv2, path) do
+    case ExVault.KV2.get_data(kv2, path) do
+      {:ok, %ExVault.KV2.GetData{data: data}} -> {:ok, data}
+      {:ok, %ExVault.Response.Error{status: 404}} -> {:ok, %{}}
+      {_, resp} -> {:error, resp}
+    end
+  end
+
   @spec read_sni_certs(State.t()) :: [CertInfo.t()]
-  defp read_sni_certs(%State{vault_cfg: vault_cfg}) do
-    {:ok, live} = VaultClient.read_kv_data(vault_cfg, "/live")
+  defp read_sni_certs(%State{vault_kv2: kv2}) do
+    {:ok, live} = kv_get(kv2, "live")
 
     live
     |> Map.keys()
-    |> Enum.map(&read_sni_cert(&1, vault_cfg))
+    |> Enum.map(&read_sni_cert(&1, kv2))
   end
 
-  @spec read_sni_cert(String.t(), VaultClient.Config.t()) :: CertInfo.t()
-  defp read_sni_cert(cert_path, vault_cfg) do
-    {:ok, fields} = VaultClient.read_kv_data(vault_cfg, "/certificates/" <> cert_path)
+  @spec read_sni_cert(String.t(), ExVault.KV2.t()) :: CertInfo.t()
+  defp read_sni_cert(cert_path, kv2) do
+    {:ok, fields} = kv_get(kv2, "certificates/" <> cert_path)
     json_to_cert_info(fields)
   end
 
