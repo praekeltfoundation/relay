@@ -11,21 +11,21 @@ defmodule Relay.Certs.VaultKVTest do
     {:ok, ds} = start_supervised(DevServer)
     address = DevServer.api_addr(ds)
     token = DevServer.root_token(ds)
-    client = ExVault.new(address: address, token: token)
-    kv2 = ExVault.KV2.new(client, "marathon-acme")
+    client = Vault.new(host: address, token: token)
+    kv2 = %Vault{client | engine: Vault.Engine.KVV2}
     {:ok, devserver: ds, address: address, token: token, client: client, kv2: kv2}
   end
 
   setup %{address: address, token: token, client: client, kv2: kv2} do
     TestHelpers.override_log_level(:warn)
 
-    ExVault.write(client, "sys/mounts/marathon-acme", %{
+    Vault.write(client, "sys/mounts/marathon-acme", %{
       "type" => "kv",
       "options" => %{"version" => 2}
     })
 
-    on_exit(fn -> ExVault.delete(client, "sys/mounts/marathon-acme") end)
-    ExVault.KV2.put_data(kv2, "live", %{})
+    on_exit(fn -> Vault.delete(client, "sys/mounts/marathon-acme") end)
+    Vault.write(kv2, "marathon-acme/live", %{})
 
     put_certs_config(vault: [address: address, token: token, base_path: "marathon-acme"])
 
@@ -44,13 +44,13 @@ defmodule Relay.Certs.VaultKVTest do
 
   defp store_cert(kv2, cert_file, cert_name) do
     certinfo = cert_info_from_file(cert_file)
-    ExVault.KV2.put_data(kv2, "certificates/#{cert_name}", certinfo)
+    Vault.write(kv2, "marathon-acme/certificates/#{cert_name}", certinfo)
     update_live(kv2, cert_name)
   end
 
   defp update_live(kv2, cert_name) do
-    {:ok, %ExVault.KV2.GetData{data: live}} = ExVault.KV2.get_data(kv2, "live")
-    ExVault.KV2.put_data(kv2, "live", Map.put(live, cert_name, ""))
+    {:ok, live} = Vault.read(kv2, "marathon-acme/live")
+    Vault.write(kv2, "marathon-acme/live", Map.put(live, cert_name, ""))
   end
 
   defp cert_info_from_file(cert_file) do

@@ -22,7 +22,7 @@ defmodule Relay.Certs.VaultKV do
     @type t :: %__MODULE__{
             resources: GenServer.server(),
             sync_period: integer,
-            vault_kv2: ExVault.KV2.t(),
+            vault_kv2: Vault.t(),
             version: integer
           }
   end
@@ -49,13 +49,14 @@ defmodule Relay.Certs.VaultKV do
         x -> x
       end
 
-    client = ExVault.new(address: vault_cfg(:address), token: vault_cfg(:token))
-    kv2 = ExVault.KV2.new(client, vault_cfg(:base_path))
+    {:ok, vault} =
+      Vault.new(engine: Vault.Engine.KVV2, auth: Vault.Auth.Token, host: vault_cfg(:address))
+      |> Vault.auth(%{token: vault_cfg(:token)})
 
     state = %State{
       resources: resources,
       sync_period: certs_cfg(:sync_period),
-      vault_kv2: kv2
+      vault_kv2: vault
     }
 
     {:ok, scheduled_update(state)}
@@ -105,11 +106,11 @@ defmodule Relay.Certs.VaultKV do
 
   @type get_resp :: {:ok, map()} | {:error, any()}
 
-  @spec kv_get(ExVault.KV2.t(), String.t()) :: get_resp()
+  @spec kv_get(Vault.t(), String.t()) :: get_resp()
   defp kv_get(kv2, path) do
-    case ExVault.KV2.get_data(kv2, path) do
-      {:ok, %ExVault.KV2.GetData{data: data}} -> {:ok, data}
-      {:ok, %ExVault.Response.Error{status: 404}} -> {:ok, %{}}
+    case Vault.read(kv2, "#{vault_cfg(:base_path)}/#{path}") do
+      {:ok, data} -> {:ok, data}
+      {:error, ["Key not found"]} -> {:ok, %{}}
       {_, resp} -> {:error, resp}
     end
   end
@@ -123,7 +124,7 @@ defmodule Relay.Certs.VaultKV do
     |> Enum.map(&read_sni_cert(&1, kv2))
   end
 
-  @spec read_sni_cert(String.t(), ExVault.KV2.t()) :: CertInfo.t()
+  @spec read_sni_cert(String.t(), Vault.t()) :: CertInfo.t()
   defp read_sni_cert(cert_path, kv2) do
     {:ok, fields} = kv_get(kv2, "certificates/" <> cert_path)
     json_to_cert_info(fields)

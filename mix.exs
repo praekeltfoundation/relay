@@ -62,7 +62,8 @@ defmodule Relay.MixProject do
       {:plug, "~> 1.7"},
       {:plug_cowboy, "~> 2.0"},
       {:cowboy, "~> 2.3"},
-      {:exvault, "~> 0.1.0-beta.1"},
+      {:libvault, "~> 0.1.0"},
+      {:tesla, "~> 1.0"},
 
       # Test deps.
       {:uuid, "~> 1.1", only: :test},
